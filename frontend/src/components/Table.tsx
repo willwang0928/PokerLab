@@ -1,9 +1,11 @@
 import { AnimatePresence, motion } from "motion/react";
+import { type Ref, useRef } from "react";
 import { AI, HUMAN } from "../hooks/usePokerGame";
 import { formatChips } from "../lib/betting";
 import type { GameEvent, GameState } from "../types";
 import { ChipStack } from "./ChipStack";
-import { CardSlot, PlayingCard } from "./PlayingCard";
+import { DeckContext, TIMING } from "../lib/motion";
+import { CardBack, CardSlot, PlayingCard } from "./PlayingCard";
 import { Seat } from "./Seat";
 
 interface Props {
@@ -27,14 +29,43 @@ function currentPayouts(state: GameState, lastEvent: GameEvent | null): Record<n
   return {};
 }
 
+/** Cards that make the winning hand: the pot being awarded, or the main pot once the hand is over. */
+export function winningCards(state: GameState, lastEvent: GameEvent | null): Set<string> | null {
+  if (lastEvent?.type === "pot_awarded") {
+    const cards = (lastEvent.cards as string[] | undefined) ?? [];
+    return cards.length ? new Set(cards) : null;
+  }
+  if (state.status !== "in_hand" && state.result && !state.result.uncontested) {
+    const cards = state.result.pots[0]?.cards ?? [];
+    return cards.length ? new Set(cards) : null;
+  }
+  return null;
+}
+
+/** Delay before a board card leaves the deck, and how long after that it turns over. */
+function boardTiming(i: number): { delay: number; revealAfter: number } {
+  if (i < 3) {
+    // Flop: three cards land face down, then turn over left to right.
+    const delay = i * TIMING.boardGap;
+    const flipStart = 2 * TIMING.boardGap + TIMING.dealTravel + 0.06 + i * TIMING.flipGap;
+    return { delay, revealAfter: flipStart - delay };
+  }
+  return { delay: 0, revealAfter: TIMING.dealTravel + 0.04 };
+}
+
 export function Table({ state, lastEvent, thinkingSeat, humanTurn }: Props) {
   const human = state.players[HUMAN];
   const ai = state.players[AI];
   const payouts = currentPayouts(state, lastEvent);
   const awarding = lastEvent?.type === "pot_awarded";
   const winners = Object.keys(payouts).map(Number);
+  const highlight = winningCards(state, lastEvent);
+  const deckRef = useRef<HTMLDivElement>(null);
+  // Heads-up the deal starts with the player who is not on the button.
+  const dealOrder = (seat: number) => (seat === state.button ? 1 : 0);
 
   return (
+    <DeckContext value={deckRef}>
     <div className="mx-auto flex w-full max-w-[min(1000px,max(340px,calc((100vh-360px)*2.1)))] flex-col items-center">
       <div className="relative z-10 -mb-[34px]">
         <Seat
@@ -47,6 +78,8 @@ export function Table({ state, lastEvent, thinkingSeat, humanTurn }: Props) {
           winAmount={payouts[AI] ?? 0}
           handNumber={state.hand_number}
           handOver={state.status !== "in_hand"}
+          dealOrder={dealOrder(AI)}
+          highlight={highlight}
         />
       </div>
 
@@ -97,15 +130,26 @@ export function Table({ state, lastEvent, thinkingSeat, humanTurn }: Props) {
               </AnimatePresence>
             </div>
 
-            <div className="flex gap-[calc(var(--card-w)*0.09)]" data-testid="board">
-              {Array.from({ length: 5 }, (_, i) => {
-                const code = state.board[i];
-                return code ? (
-                  <PlayingCard key={`${state.hand_number}-${code}`} code={code} delay={(i % 3) * 0.1} />
-                ) : (
-                  <CardSlot key={`slot-${i}`} />
-                );
-              })}
+            <div className="relative" data-testid="board">
+              <div className="flex gap-[calc(var(--card-w)*0.09)]">
+                {Array.from({ length: 5 }, (_, i) => (
+                  <CardSlot key={i} />
+                ))}
+              </div>
+              <AnimatePresence>
+                {state.board.map((code, i) => (
+                  <PlayingCard
+                    key={`${state.hand_number}-${code}`}
+                    className="absolute top-0"
+                    style={{ left: `calc(var(--card-w) * ${i * 1.09})` }}
+                    code={code}
+                    {...boardTiming(i)}
+                    emphasis={highlight ? (highlight.has(code) ? "win" : "muted") : undefined}
+                    exitTo={{ x: 0, y: -24 }}
+                  />
+                ))}
+              </AnimatePresence>
+              <Deck ref={deckRef} />
             </div>
           </div>
 
@@ -129,9 +173,12 @@ export function Table({ state, lastEvent, thinkingSeat, humanTurn }: Props) {
           winAmount={payouts[HUMAN] ?? 0}
           handNumber={state.hand_number}
           handOver={state.status !== "in_hand"}
+          dealOrder={dealOrder(HUMAN)}
+          highlight={highlight}
         />
       </div>
     </div>
+    </DeckContext>
   );
 }
 
@@ -172,5 +219,27 @@ function ResultBanner({ state }: { state: GameState }) {
         </motion.div>
       )}
     </AnimatePresence>
+  );
+}
+
+/** A short stack of face-down cards beside the board that every card is dealt from. */
+function Deck({ ref }: { ref: Ref<HTMLDivElement> }) {
+  const w = "calc(var(--card-w) * 0.62)";
+  return (
+    <div
+      className="pointer-events-none absolute left-full top-1/2 ml-[calc(var(--card-w)*0.2)] -translate-y-1/2 max-[379px]:opacity-0"
+      aria-hidden
+      data-testid="deck"
+    >
+      <div ref={ref} className="relative" style={{ width: w, aspectRatio: "5 / 7", "--w": w } as React.CSSProperties}>
+        {[3, 2, 1, 0].map((i) => (
+          <CardBack
+            key={i}
+            className="absolute inset-0"
+            style={{ transform: `translate(${i * 1.2}px, ${-i * 1.2}px)`, boxShadow: i ? "none" : undefined }}
+          />
+        ))}
+      </div>
+    </div>
   );
 }

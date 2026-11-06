@@ -271,3 +271,12 @@ input[type="number"] {
     animation: none;
   }
 }
+
+/* ---------- animation helpers ---------- */
+/* a card that is part of the winning hand */
+.card-win {
+  box-shadow:
+    0 0 0 2px rgba(240, 201, 106, 0.95),
+    0 0 18px 3px rgba(240, 201, 106, 0.55),
+    0 10px 20px -6px rgba(0, 0, 0, 0.6);
+}

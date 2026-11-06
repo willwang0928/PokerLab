@@ -1,5 +1,5 @@
-import { AnimatePresence } from "motion/react";
-import { useEffect, useState } from "react";
+import { AnimatePresence, MotionConfig, useReducedMotion } from "motion/react";
+import { useEffect, useMemo, useState } from "react";
 import { ActionBar } from "./components/ActionBar";
 import { GameOverModal } from "./components/GameOverModal";
 import { HandLog } from "./components/HandLog";
@@ -8,7 +8,8 @@ import { StartScreen } from "./components/StartScreen";
 import { SuitIcon } from "./components/SuitIcon";
 import { Table } from "./components/Table";
 import { AI, usePokerGame } from "./hooks/usePokerGame";
-import { useSettings } from "./hooks/useSettings";
+import { SPEED_SCALE, useSettings } from "./hooks/useSettings";
+import { type MotionPrefs, MotionPrefsContext } from "./lib/motion";
 import type { GameConfig } from "./types";
 
 const DEFAULT_CONFIG: GameConfig = {
@@ -20,7 +21,12 @@ const DEFAULT_CONFIG: GameConfig = {
 
 export default function App() {
   const [settings, updateSettings] = useSettings();
+  const reducedMotion = Boolean(useReducedMotion());
   const game = usePokerGame(settings);
+  const motionPrefs = useMemo<MotionPrefs>(
+    () => ({ scale: SPEED_SCALE[settings.speed], reduced: reducedMotion }),
+    [settings.speed, reducedMotion],
+  );
   const { state } = game;
   const [config, setConfig] = useState<GameConfig>(DEFAULT_CONFIG);
   const [showSetup, setShowSetup] = useState(true);
@@ -51,6 +57,8 @@ export default function App() {
   }, [matchEnded]);
 
   return (
+    <MotionConfig reducedMotion="user">
+    <MotionPrefsContext value={motionPrefs}>
     <div className="flex min-h-screen flex-col">
       <header className="flex items-center justify-between gap-3 px-4 py-3 sm:px-6">
         <div className="flex items-center gap-3">
@@ -171,6 +179,8 @@ export default function App() {
         )}
       </AnimatePresence>
     </div>
+    </MotionPrefsContext>
+    </MotionConfig>
   );
 }
 

@@ -2,7 +2,8 @@ import { AnimatePresence, motion } from "motion/react";
 import { formatChips } from "../lib/betting";
 import type { PlayerView } from "../types";
 import { Chip } from "./ChipStack";
-import { PlayingCard } from "./PlayingCard";
+import { TIMING } from "../lib/motion";
+import { type CardEmphasis, PlayingCard } from "./PlayingCard";
 
 interface Props {
   player: PlayerView;
@@ -14,6 +15,10 @@ interface Props {
   position: "top" | "bottom";
   handNumber: number;
   handOver: boolean;
+  /** 0 if this seat receives the first card of the deal, 1 otherwise. */
+  dealOrder?: number;
+  /** Cards that make the winning hand, once the pot is awarded at showdown. */
+  highlight?: ReadonlySet<string> | null;
 }
 
 function actionLabel(p: PlayerView): string | null {
@@ -55,6 +60,9 @@ export function Seat({
   winAmount,
   handNumber,
   handOver,
+  position,
+  dealOrder = 0,
+  highlight = null,
 }: Props) {
   const label = handOver ? null : actionLabel(player);
   const holeCount = player.hole?.length ?? 0;
@@ -70,22 +78,35 @@ export function Seat({
   return (
     <div className="relative flex flex-col items-center" data-testid={`seat-${player.seat}`}>
       {/* hole cards, fanned */}
-      <div
-        className="relative isolate flex items-end justify-center"
-        style={{ height: `calc(${cardW} * 1.4)`, minWidth: `calc(${cardW} * 1.7)` }}
-      >
-        {cards.map((i) => (
-          <div key={`${handNumber}-${i}`} style={{ marginLeft: i === 1 ? `calc(${cardW} * -0.32)` : 0 }}>
-            <PlayingCard
-              code={player.hole?.[i]}
-              faceUp={faceUp}
-              size={lg ? "lg" : "md"}
-              delay={i * 0.12 + (lg ? 0.06 : 0)}
-              dimmed={player.folded}
-              tilt={i === 0 ? -5 : 5}
-            />
-          </div>
-        ))}
+      <div className="relative isolate" style={{ height: `calc(${cardW} * 1.4)`, width: `calc(${cardW} * 1.68)` }}>
+        <AnimatePresence>
+          {cards.map((i) => {
+            const code = player.hole?.[i];
+            const emphasis: CardEmphasis | undefined = player.folded
+              ? "folded"
+              : highlight && code
+                ? highlight.has(code)
+                  ? "win"
+                  : "muted"
+                : undefined;
+            return (
+              <PlayingCard
+                key={`${handNumber}-${i}`}
+                className="absolute bottom-0"
+                style={{ left: i === 1 ? `calc(${cardW} * 0.68)` : 0 }}
+                code={code}
+                faceUp={faceUp}
+                size={lg ? "lg" : "md"}
+                delay={(i * 2 + dealOrder) * TIMING.dealGap}
+                revealAfter={lg ? TIMING.dealTravel + 0.04 : undefined}
+                flipDelay={i * TIMING.flipGap}
+                emphasis={emphasis}
+                tilt={i === 0 ? -5 : 5}
+                exitTo={{ x: i === 0 ? 10 : -10, y: position === "top" ? 70 : -70 }}
+              />
+            );
+          })}
+        </AnimatePresence>
       </div>
 
       {/* nameplate */}

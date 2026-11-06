@@ -32,13 +32,18 @@ export interface PotResult {
   amount: number;
   winners: number[];
   hand: string | null;
+  /** Cards making the winning hand(s); empty when the pot was uncontested. */
+  cards?: string[];
 }
 
 export interface HandResult {
   winnings: Record<string, number>;
   uncontested: boolean;
   pots: PotResult[];
-  showdown: Record<string, { cards: string[]; category: string; description: string }> | null;
+  showdown: Record<
+    string,
+    { cards: string[]; category: string; description: string; best?: string[] }
+  > | null;
 }
 
 export interface GameState {

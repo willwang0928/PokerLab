@@ -6,20 +6,25 @@ import { SPEED_SCALE, type Settings } from "./useSettings";
 export const HUMAN = 0;
 export const AI = 1;
 
-/** Base pause (ms) after each kind of event so the table reads like a live deal. */
+/**
+ * Base pause (ms) after each kind of event so the table reads like a live deal. Each
+ * value leaves just enough time for that event's animation to land (see lib/motion).
+ */
 const EVENT_DELAY: Record<string, number> = {
-  hand_start: 150,
-  post_blind: 280,
-  deal_hole: 750,
+  hand_start: 320, // last hand's cards are collected
+  post_blind: 300,
+  deal_hole: 950, // four cards leave the deck one by one
   action: 650,
-  uncalled_returned: 350,
-  bets_collected: 420,
-  reveal: 900,
+  uncalled_returned: 450,
+  bets_collected: 480,
+  reveal: 950,
   street: 850,
-  showdown: 700,
-  pot_awarded: 1100,
+  showdown: 950, // opponent's cards turn over before the pot moves
+  pot_awarded: 1250,
   hand_complete: 0,
 };
+/** The flop deals three cards and turns them over in sequence. */
+const FLOP_DELAY = 1150;
 const AI_THINK_MS = 700;
 const AUTO_DEAL_MS = 4000;
 
@@ -66,7 +71,8 @@ export function usePokerGame(settings: Settings): PokerGame {
       }
       setState(step.state);
       setLastEvent(ev);
-      const base = EVENT_DELAY[ev.type] ?? 300;
+      const base =
+        ev.type === "street" && ev.street === "flop" ? FLOP_DELAY : (EVENT_DELAY[ev.type] ?? 300);
       const humanAction = ev.type === "action" && ev.seat === HUMAN;
       await sleep((humanAction ? 200 : base) * scale);
     }
