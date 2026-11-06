@@ -1,21 +1,27 @@
 @import "tailwindcss";
 
 @theme {
-  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  --font-display: "Georgia", "Iowan Old Style", ui-serif, serif;
-  --color-ink: #0b0f14;
-  --color-panel: #121922;
-  --color-panel-2: #18212c;
-  --color-line: #263241;
-  --color-gold: #f2c86b;
-  --color-gold-deep: #c8973a;
-  --color-felt: #13664c;
+  --font-sans: "Inter Variable", "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-display: "Playfair Display Variable", "Playfair Display", "Iowan Old Style", Georgia, ui-serif, serif;
+  --color-ink: #080b10;
+  --color-panel: #10161e;
+  --color-panel-2: #161e29;
+  --color-line: #232e3c;
+  --color-gold: #f0c96a;
+  --color-gold-deep: #c5953b;
+  --color-felt: #12604a;
+  --color-suit-red: #c8102e;
+  --color-suit-black: #15171c;
 }
 
 :root {
   color-scheme: dark;
-  --card-w: clamp(40px, min(6.2vw, 8vh), 78px);
-  --card-w-lg: clamp(54px, min(8vw, 10.5vh), 96px);
+  /* Board / opponent cards and the human's larger hole cards. */
+  --card-w: clamp(44px, min(11.5vw, 7.6vh), 80px);
+  --card-w-lg: clamp(56px, min(15vw, 10.2vh), 96px);
+  --chip: clamp(18px, min(4.6vw, 2.9vh), 24px);
+  --surface: linear-gradient(180deg, rgba(23, 31, 42, 0.92) 0%, rgba(14, 19, 27, 0.92) 100%);
+  --hairline: rgba(255, 255, 255, 0.07);
 }
 
 html,
@@ -27,63 +33,111 @@ body,
 body {
   margin: 0;
   background:
-    radial-gradient(1200px 600px at 50% -10%, #1b2633 0%, transparent 60%),
-    radial-gradient(900px 500px at 50% 120%, #10261f 0%, transparent 60%),
+    radial-gradient(1100px 520px at 50% -8%, #18222e 0%, transparent 62%),
+    radial-gradient(900px 480px at 40% 115%, #0c211a 0%, transparent 60%),
     var(--color-ink);
   color: #e6edf3;
   font-family: var(--font-sans);
+  font-feature-settings: "cv11", "ss01";
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ---------- shared surfaces ---------- */
+.surface {
+  background: var(--surface);
+  box-shadow:
+    0 0 0 1px var(--hairline),
+    0 12px 32px -16px rgba(0, 0, 0, 0.7),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+.eyebrow {
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
 }
 
 /* ---------- table ---------- */
 .table-rail {
   border-radius: 9999px;
   background:
-    linear-gradient(180deg, #3a2a1e 0%, #24180f 45%, #160e08 100%);
+    radial-gradient(120% 90% at 50% 0%, rgba(255, 255, 255, 0.07) 0%, transparent 45%),
+    linear-gradient(180deg, #2b2018 0%, #1a120c 50%, #0f0a06 100%);
   box-shadow:
-    0 30px 80px -20px rgba(0, 0, 0, 0.8),
-    0 0 0 1px rgba(255, 255, 255, 0.04),
-    inset 0 2px 0 rgba(255, 255, 255, 0.08),
-    inset 0 -6px 16px rgba(0, 0, 0, 0.6);
+    0 40px 90px -30px rgba(0, 0, 0, 0.9),
+    0 0 0 1px rgba(0, 0, 0, 0.7),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1),
+    inset 0 -8px 18px rgba(0, 0, 0, 0.55);
+}
+/* thin brass inlay between the rail and the felt */
+.table-rail::before {
+  content: "";
+  position: absolute;
+  inset: calc(var(--rail) * 0.55);
+  border-radius: 9999px;
+  border: 1px solid rgba(240, 201, 106, 0.28);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35);
+  pointer-events: none;
 }
 .table-felt {
   border-radius: 9999px;
   background:
-    radial-gradient(ellipse at 50% 40%, rgba(255, 255, 255, 0.09) 0%, transparent 55%),
-    radial-gradient(ellipse at center, #1a7d5d 0%, #11624a 50%, #0a4232 100%);
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.55 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>"),
+    radial-gradient(ellipse 70% 60% at 50% 42%, rgba(255, 255, 255, 0.08) 0%, transparent 70%),
+    radial-gradient(ellipse at center, #1a7a5b 0%, #12604a 48%, #0a3d2f 100%);
+  background-blend-mode: overlay, normal, normal;
   box-shadow:
-    inset 0 0 0 2px rgba(242, 200, 107, 0.18),
-    inset 0 0 60px rgba(0, 0, 0, 0.55);
+    inset 0 0 0 1px rgba(0, 0, 0, 0.4),
+    inset 0 2px 30px rgba(0, 0, 0, 0.55),
+    inset 0 0 90px rgba(0, 0, 0, 0.35);
 }
+/* betting line */
 .table-felt::after {
   content: "";
   position: absolute;
-  inset: 7%;
+  inset: 9% 7%;
   border-radius: 9999px;
-  border: 1px solid rgba(255, 255, 255, 0.07);
+  border: 1.5px solid rgba(255, 255, 255, 0.075);
   pointer-events: none;
 }
 
 /* ---------- cards ---------- */
 .card-face {
-  background: linear-gradient(160deg, #ffffff 0%, #f4f1ea 100%);
+  background: linear-gradient(165deg, #ffffff 0%, #f7f4ee 60%, #ece7dc 100%);
   box-shadow:
-    0 6px 14px -4px rgba(0, 0, 0, 0.55),
-    inset 0 0 0 1px rgba(0, 0, 0, 0.08);
+    0 1px 1px rgba(0, 0, 0, 0.25),
+    0 8px 18px -6px rgba(0, 0, 0, 0.6),
+    inset 0 0 0 1px rgba(0, 0, 0, 0.1);
+}
+.card-court {
+  border: 1px solid currentColor;
+  border-radius: 6%;
+  background:
+    linear-gradient(160deg, color-mix(in srgb, currentColor 9%, transparent), color-mix(in srgb, currentColor 3%, transparent));
+  box-shadow: inset 0 0 0 2px #fff, inset 0 0 0 2.5px color-mix(in srgb, currentColor 35%, transparent);
 }
 .card-back {
-  background:
-    repeating-linear-gradient(45deg, rgba(242, 200, 107, 0.16) 0 2px, transparent 2px 9px),
-    repeating-linear-gradient(-45deg, rgba(242, 200, 107, 0.16) 0 2px, transparent 2px 9px),
-    linear-gradient(160deg, #1d3557 0%, #132238 100%);
+  background: linear-gradient(165deg, #fbf9f4 0%, #e9e4d8 100%);
   box-shadow:
-    0 6px 14px -4px rgba(0, 0, 0, 0.55),
-    inset 0 0 0 3px #0e1a2b,
-    inset 0 0 0 4px rgba(242, 200, 107, 0.55);
+    0 1px 1px rgba(0, 0, 0, 0.25),
+    0 8px 18px -6px rgba(0, 0, 0, 0.6),
+    inset 0 0 0 1px rgba(0, 0, 0, 0.12);
+}
+.card-back-inner {
+  position: absolute;
+  inset: 6.5%;
+  border-radius: 6%;
+  background:
+    radial-gradient(circle at 50% 50%, rgba(240, 201, 106, 0.22) 0 14%, transparent 15%),
+    repeating-linear-gradient(45deg, rgba(240, 201, 106, 0.22) 0 1px, transparent 1px 7px),
+    repeating-linear-gradient(-45deg, rgba(240, 201, 106, 0.22) 0 1px, transparent 1px 7px),
+    linear-gradient(160deg, #8e1b2c 0%, #5e0f1c 100%);
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.35), inset 0 0 0 3px rgba(240, 201, 106, 0.35);
 }
 .card-slot {
-  border: 1.5px dashed rgba(255, 255, 255, 0.12);
-  background: rgba(0, 0, 0, 0.08);
+  border: 1.5px dashed rgba(255, 255, 255, 0.13);
+  background: rgba(0, 0, 0, 0.1);
 }
 .preserve-3d {
   transform-style: preserve-3d;
@@ -96,18 +150,64 @@ body {
 /* ---------- chips ---------- */
 .chip {
   border-radius: 9999px;
+  /* the chip's edge, giving each disc visible thickness in a stack */
   box-shadow:
-    0 2px 0 rgba(0, 0, 0, 0.45),
-    inset 0 0 0 2px rgba(255, 255, 255, 0.85),
-    inset 0 0 0 4px currentColor;
+    0 1.5px 0 color-mix(in srgb, currentColor 55%, #000),
+    0 2.5px 2px rgba(0, 0, 0, 0.45);
+}
+.amount-tag {
+  border-radius: 9999px;
+  background: linear-gradient(180deg, rgba(8, 12, 16, 0.82), rgba(8, 12, 16, 0.68));
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.09), 0 4px 10px -4px rgba(0, 0, 0, 0.7);
+}
+
+/* ---------- seats ---------- */
+.nameplate {
   background:
-    repeating-conic-gradient(currentColor 0 30deg, rgba(255, 255, 255, 0.9) 30deg 45deg);
+    linear-gradient(180deg, #1e2836 0%, #0c1118 100%);
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.09),
+    0 14px 30px -12px rgba(0, 0, 0, 0.85),
+    inset 0 1px 0 rgba(255, 255, 255, 0.07);
+}
+.dealer-button {
+  background: radial-gradient(circle at 35% 30%, #ffffff 0%, #ece8df 55%, #c9c2b3 100%);
+  box-shadow:
+    0 2px 0 #8d8676,
+    0 4px 8px rgba(0, 0, 0, 0.5),
+    inset 0 0 0 2px rgba(0, 0, 0, 0.08);
+}
+
+/* ---------- buttons ---------- */
+.btn-gold {
+  background: linear-gradient(180deg, #f8d98a 0%, #eebd57 55%, #d9a23c 100%);
+  color: #1b1405;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.55), 0 8px 20px -10px rgba(240, 190, 80, 0.8);
+}
+.btn-gold:hover:not(:disabled) {
+  filter: brightness(1.06);
+}
+.btn-green {
+  background: linear-gradient(180deg, #1fb487 0%, #12916b 60%, #0d7a59 100%);
+  color: #fff;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25), 0 8px 20px -10px rgba(16, 185, 129, 0.7);
+}
+.btn-green:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+.btn-dark {
+  background: linear-gradient(180deg, #273241 0%, #1b2430 100%);
+  color: #e2e8f0;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07), 0 0 0 1px rgba(255, 255, 255, 0.06);
+}
+.btn-dark:hover:not(:disabled) {
+  background: linear-gradient(180deg, #2f3b4c 0%, #222c3a 100%);
 }
 
 /* ---------- misc ---------- */
 @keyframes turn-glow {
-  0%, 100% { box-shadow: 0 0 0 2px rgba(242, 200, 107, 0.85), 0 0 18px 2px rgba(242, 200, 107, 0.35); }
-  50% { box-shadow: 0 0 0 2px rgba(242, 200, 107, 1), 0 0 28px 6px rgba(242, 200, 107, 0.55); }
+  0%, 100% { box-shadow: 0 0 0 1.5px rgba(240, 201, 106, 0.9), 0 0 18px 2px rgba(240, 201, 106, 0.3), 0 14px 30px -12px rgba(0, 0, 0, 0.85); }
+  50% { box-shadow: 0 0 0 1.5px rgba(240, 201, 106, 1), 0 0 28px 6px rgba(240, 201, 106, 0.5), 0 14px 30px -12px rgba(0, 0, 0, 0.85); }
 }
 .turn-glow {
   animation: turn-glow 1.6s ease-in-out infinite;
@@ -127,20 +227,20 @@ input[type="range"].bet-slider {
   border-radius: 9999px;
   background: linear-gradient(
     90deg,
-    var(--color-gold) 0%,
+    var(--color-gold-deep) 0%,
     var(--color-gold) var(--fill, 0%),
-    #2b3644 var(--fill, 0%),
-    #2b3644 100%
+    #263142 var(--fill, 0%),
+    #263142 100%
   );
 }
 input[type="range"].bet-slider::-webkit-slider-thumb {
   appearance: none;
-  width: 20px;
-  height: 20px;
+  width: 22px;
+  height: 22px;
   border-radius: 9999px;
-  background: #fff7e0;
+  background: radial-gradient(circle at 35% 30%, #fffaf0, #f1dfb4);
   border: 3px solid var(--color-gold-deep);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.55);
   cursor: grab;
 }
 input[type="range"].bet-slider::-moz-range-thumb {
@@ -150,6 +250,19 @@ input[type="range"].bet-slider::-moz-range-thumb {
   background: #fff7e0;
   border: 3px solid var(--color-gold-deep);
   cursor: grab;
+}
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  appearance: none;
+  margin: 0;
+}
+input[type="number"] {
+  -moz-appearance: textfield;
+}
+
+.scroll-thin {
+  scrollbar-width: thin;
+  scrollbar-color: #2a3646 transparent;
 }
 
 @media (prefers-reduced-motion: reduce) {
