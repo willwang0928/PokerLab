@@ -10,6 +10,7 @@ from typing import Any
 
 from .ai import Agent, HeuristicAgent, Observation
 from .engine import Action, Event, HoldemHand, IllegalActionError
+from .evaluator import evaluate
 
 HUMAN = 0
 AI = 1
@@ -215,6 +216,11 @@ class HeadsUpSession:
                     "all_in": p.all_in if p else False,
                     "last_action": p.last_action if p else None,
                     "hole": [c.code for c in p.hole] if show else None,
+                    "hand_description": (
+                        evaluate(p.hole + hand.board).description
+                        if show and hand and len(hand.board) >= 3
+                        else None
+                    ),
                     "has_cards": bool(p and p.hole and not p.folded),
                 }
             )
