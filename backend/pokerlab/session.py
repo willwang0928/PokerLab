@@ -10,7 +10,7 @@ from typing import Any
 
 from .ai import Agent, HeuristicAgent, Observation
 from .engine import Action, Event, HoldemHand, IllegalActionError
-from .evaluator import evaluate
+from .evaluator import best_five, evaluate
 
 HUMAN = 0
 AI = 1
@@ -141,15 +141,45 @@ class HeadsUpSession:
             "winnings": {int(k): v for k, v in event.data["winnings"].items()},
             "uncontested": event.data["uncontested"],
             "pots": [
-                {"amount": p["amount"], "winners": p["winners"], "hand": p["hand"]} for p in pots
+                {
+                    "amount": p["amount"],
+                    "winners": p["winners"],
+                    "hand": p["hand"],
+                    "cards": self._winning_codes(p),
+                }
+                for p in pots
             ],
-            "showdown": {int(k): v for k, v in showdown.items()} if showdown else None,
+            "showdown": (
+                {int(k): {**v, "best": self._best_codes(int(k))} for k, v in showdown.items()}
+                if showdown
+                else None
+            ),
         }
         self.status = SessionStatus.GAME_OVER if min(self.stacks) == 0 else SessionStatus.WAITING
 
     def _public_event(self, event: Event) -> dict[str, Any]:
         data = dict(event.data)
+        if event.type == "showdown":
+            data["hands"] = {
+                s: {**h, "best": self._best_codes(int(s))} for s, h in data["hands"].items()
+            }
+        elif event.type == "pot_awarded":
+            data["cards"] = self._winning_codes(data)
         return {"type": event.type, **data}
+
+    def _best_codes(self, seat: int) -> list[str]:
+        """The five cards ``seat`` plays at showdown (hole cards preferred on ties)."""
+        assert self.hand is not None
+        return [c.code for c in best_five(self.hand.players[seat].hole + self.hand.board)]
+
+    def _winning_codes(self, pot: dict[str, Any]) -> list[str]:
+        """Cards that make the winning hand(s) of an awarded pot; empty if uncontested."""
+        if pot["hand"] is None:
+            return []
+        codes: list[str] = []
+        for seat in pot["winners"]:
+            codes += [c for c in self._best_codes(seat) if c not in codes]
+        return codes
 
     def _name(self, seat: int) -> str:
         return self.config.player_name if seat == HUMAN else self.config.ai_name

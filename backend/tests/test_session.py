@@ -102,3 +102,31 @@ def test_log_is_human_readable():
     s.start_hand()
     assert s.log[0].startswith("Hand #1")
     assert any("blind" in line for line in s.log)
+
+
+def test_showdown_exposes_the_winning_cards():
+    s = HeadsUpSession(seed=3, agent=RandomAgent(random.Random(1)))
+    seen = 0
+    for _ in range(60):
+        steps = s.start_hand()
+        while s.status.value == "in_hand":
+            legal = s.view()["legal"]
+            steps += s.act(Action.call() if legal["can_call"] else Action.check())
+        showdown = next((st.event for st in steps if st.event["type"] == "showdown"), None)
+        awards = [st.event for st in steps if st.event["type"] == "pot_awarded"]
+        if showdown is None:
+            assert all(a["cards"] == [] for a in awards)
+        else:
+            seen += 1
+            board = set(s.view()["board"])
+            for hand in showdown["hands"].values():
+                assert len(hand["best"]) == 5
+                assert set(hand["best"]) <= board | set(hand["cards"])
+            for a in awards:
+                expected = {c for w in a["winners"] for c in showdown["hands"][w]["best"]}
+                assert set(a["cards"]) == expected
+            assert s.result["pots"][0]["cards"] == awards[0]["cards"]
+            assert s.result["showdown"][int(next(iter(showdown["hands"])))]["best"]
+        if s.status.value == "game_over":
+            break
+    assert seen > 0

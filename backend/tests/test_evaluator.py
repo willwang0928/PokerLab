@@ -4,7 +4,7 @@ import random
 import pytest
 
 from pokerlab.cards import FULL_DECK, parse_cards
-from pokerlab.evaluator import HandCategory, evaluate
+from pokerlab.evaluator import HandCategory, best_five, evaluate
 
 
 def ev(text):
@@ -109,3 +109,20 @@ def test_seven_card_matches_best_of_21_five_card_hands():
     for _ in range(2000):
         cards = rng.sample(FULL_DECK, 7)
         assert evaluate(cards) == _brute_force(cards)
+
+
+def test_best_five_returns_the_cards_that_make_the_hand():
+    rng = random.Random(77)
+    for _ in range(500):
+        cards = rng.sample(FULL_DECK, 7)
+        best = best_five(cards)
+        assert len(best) == 5 and set(best) <= set(cards)
+        assert evaluate(best) == evaluate(cards)
+
+
+def test_best_five_picks_flush_cards_and_prefers_earlier_cards_on_ties():
+    cards = parse_cards("Ah 2h 9h Jh Kh 3c 4h")
+    assert {c.code for c in best_five(cards)} == {"Ah", "Kh", "Jh", "9h", "4h"}
+    # Board plays (straight on board): the hole cards are not needed but come first on ties.
+    straight = parse_cards("2c 3d 9h Ts Jc Qd Kh")
+    assert {c.code for c in best_five(straight)} == {"9h", "Ts", "Jc", "Qd", "Kh"}

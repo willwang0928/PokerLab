@@ -10,6 +10,7 @@ from collections import Counter
 from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
 from enum import IntEnum
+from itertools import combinations
 
 from .cards import RANK_NAMES, Card, Rank
 
@@ -125,3 +126,16 @@ def evaluate(cards: Sequence[Card]) -> HandValue:
         return HandValue(HandCategory.ONE_PAIR, (pairs[0], *kickers))
 
     return HandValue(HandCategory.HIGH_CARD, tuple(ranks_desc[:5]))
+
+
+def best_five(cards: Sequence[Card]) -> list[Card]:
+    """The five cards that make the best hand in ``cards`` (5–7 cards), for display.
+
+    When several five-card combinations tie (e.g. a board-played hand), the first in
+    input order is returned, so hole cards win ties when they are listed first.
+    """
+    target = evaluate(cards)
+    for combo in combinations(cards, 5):
+        if evaluate(combo) == target:
+            return list(combo)
+    raise AssertionError("unreachable: some five-card subset always matches")  # pragma: no cover
