@@ -1,8 +1,9 @@
-import { AnimatePresence, motion } from "motion/react";
+import { animate, AnimatePresence, motion } from "motion/react";
+import { type Ref, useEffect, useRef, useState } from "react";
 import { formatChips } from "../lib/betting";
 import type { PlayerView } from "../types";
 import { Chip } from "./ChipStack";
-import { TIMING } from "../lib/motion";
+import { durationScale, TIMING, useMotionPrefs } from "../lib/motion";
 import { type CardEmphasis, PlayingCard } from "./PlayingCard";
 
 interface Props {
@@ -19,6 +20,12 @@ interface Props {
   dealOrder?: number;
   /** Cards that make the winning hand, once the pot is awarded at showdown. */
   highlight?: ReadonlySet<string> | null;
+  /** Where chips leave from and arrive at (the stack readout). */
+  stackRef?: Ref<HTMLDivElement>;
+  /** Hide the last-action tag (the betting round it belongs to is over). */
+  hideAction?: boolean;
+  /** Seconds to hold back a new made-hand tag while the cards that make it turn over. */
+  descDelay?: number;
 }
 
 function actionLabel(p: PlayerView): string | null {
@@ -63,8 +70,11 @@ export function Seat({
   position,
   dealOrder = 0,
   highlight = null,
+  stackRef,
+  hideAction = false,
+  descDelay = 0,
 }: Props) {
-  const label = handOver ? null : actionLabel(player);
+  const label = handOver || hideAction ? null : actionLabel(player);
   const holeCount = player.hole?.length ?? 0;
   const cards = player.has_cards || holeCount > 0 ? [0, 1] : [];
   const faceUp = holeCount > 0;
@@ -128,13 +138,13 @@ export function Seat({
                 </span>
               )}
             </div>
-            <div className="mt-0.5 flex items-center gap-1.5">
+            <div ref={stackRef} className="mt-0.5 flex items-center gap-1.5">
               <Chip color="#d99a1e" className="h-3.5 w-3.5 shrink-0" />
               <span
                 className="text-[17px] font-bold tabular-nums tracking-tight text-amber-100 sm:text-lg"
                 data-testid={`stack-${player.seat}`}
               >
-                {formatChips(player.stack)}
+                <CountingNumber value={player.stack} />
               </span>
             </div>
           </div>
@@ -177,8 +187,10 @@ export function Seat({
           </AnimatePresence>
           {handDesc && (
             <motion.div
+              key={handDesc}
               initial={{ opacity: 0, y: -4 }}
               animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: descDelay, duration: 0.25 }}
               className="rounded-full bg-[#0b1a14] px-2.5 py-[3px] text-[11px] font-semibold text-emerald-200 shadow-lg ring-1 ring-emerald-300/30"
               data-testid={`hand-desc-${player.seat}`}
             >
@@ -231,4 +243,29 @@ function Avatar({ player }: { player: PlayerView }) {
       )}
     </div>
   );
+}
+
+/** A chip count that rolls to its new value instead of jumping. */
+function CountingNumber({ value }: { value: number }) {
+  const prefs = useMotionPrefs();
+  const [shown, setShown] = useState(value);
+  const from = useRef(value);
+  useEffect(() => {
+    const start = from.current;
+    from.current = value;
+    if (prefs.reduced || prefs.scale === 0 || start === value) {
+      setShown(value);
+      return;
+    }
+    const ctl = animate(start, value, {
+      duration: 0.55 * durationScale(prefs),
+      ease: "easeOut",
+      onUpdate: (v) => setShown(Math.round(v)),
+    });
+    return () => {
+      ctl.stop();
+      setShown(value);
+    };
+  }, [value, prefs]);
+  return <>{formatChips(shown)}</>;
 }

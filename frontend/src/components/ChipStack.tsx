@@ -69,9 +69,25 @@ interface Props {
   tagFirst?: boolean;
   /** Hide the amount tag (when the caller renders its own). */
   hideTag?: boolean;
+  /** Skip the stack's own pop-in (when a parent animates it). */
+  still?: boolean;
+  /** Seconds to wait before popping in (lets flying chips land first). */
+  enterDelay?: number;
+  /** Seconds the stack takes to disappear. */
+  exitDuration?: number;
 }
 
-export function ChipStack({ amount, label, className = "", columns = 1, tagFirst = false, hideTag = false }: Props) {
+export function ChipStack({
+  amount,
+  label,
+  className = "",
+  columns = 1,
+  tagFirst = false,
+  hideTag = false,
+  still = false,
+  enterDelay = 0,
+  exitDuration,
+}: Props) {
   const perColumn = 5;
   const chips = chipColors(amount, perColumn * columns);
   const stacks: string[][] = [];
@@ -86,11 +102,15 @@ export function ChipStack({ amount, label, className = "", columns = 1, tagFirst
 
   return (
     <motion.div
-      layout
-      initial={{ opacity: 0, scale: 0.6 }}
+      layout={!still}
+      initial={still ? false : { opacity: 0, scale: 0.6 }}
       animate={{ opacity: 1, scale: 1 }}
-      exit={{ opacity: 0, scale: 0.6 }}
-      transition={{ type: "spring", stiffness: 380, damping: 26 }}
+      exit={
+        exitDuration === undefined
+          ? { opacity: 0, scale: 0.6, transition: { duration: 0.2, delay: 0 } }
+          : { opacity: 0, transition: { duration: exitDuration, delay: 0 } }
+      }
+      transition={{ type: "spring", stiffness: 380, damping: 26, delay: enterDelay }}
       className={`flex items-center gap-1.5 ${className}`}
     >
       {tagFirst && !hideTag && tag}
