@@ -101,6 +101,8 @@ describe("automatic dealing", () => {
     await userEvent.click(screen.getByRole("button", { name: "New game" }));
     await new Promise((r) => setTimeout(r, 1200)); // longer than the instant-speed auto-deal delay
     expect(calls(fetchMock, "/hands")).toBe(1);
+    // Space with focus outside the dialog's buttons must not deal behind it either.
+    (document.activeElement as HTMLElement | null)?.blur();
     await userEvent.keyboard(" ");
     expect(calls(fetchMock, "/hands")).toBe(1);
   });
@@ -137,7 +139,7 @@ describe("connection problems", () => {
     await startGame();
     await userEvent.click(await screen.findByRole("button", { name: /Call 5/ }));
     expect(await screen.findByText(/It is not your turn. The table has been refreshed/)).toBeInTheDocument();
-    expect(screen.getByRole("img", { name: "7 of hearts" })).toBeInTheDocument();
+    expect(within(screen.getByTestId("board")).getByRole("img", { name: "7 of hearts" })).toBeInTheDocument();
   });
 
   it("lets the player retry after the connection drops, then resumes the real game", async () => {
@@ -160,6 +162,6 @@ describe("connection problems", () => {
     await userEvent.click(screen.getByRole("button", { name: "Retry" }));
     await waitFor(() => expect(screen.queryByRole("alert")).not.toBeInTheDocument());
     // The server had in fact received the call: the table shows where the hand really is.
-    expect(screen.getByRole("img", { name: "7 of hearts" })).toBeInTheDocument();
+    expect(within(screen.getByTestId("board")).getByRole("img", { name: "7 of hearts" })).toBeInTheDocument();
   });
 });

@@ -38,8 +38,9 @@ describe("Seat", () => {
     );
     expect(screen.getByText("Raise 60")).toBeInTheDocument();
     expect(screen.getByTitle("Dealer button")).toBeInTheDocument();
+    expect(screen.getByText("Dealer button")).toHaveClass("sr-only");
     rerender(<Seat {...base} thinking player={player({ all_in: true })} />);
-    expect(screen.getByLabelText("Thinking")).toBeInTheDocument();
+    expect(screen.getByText("Thinking")).toBeInTheDocument();
     expect(screen.getAllByText(/All-in/i).length).toBeGreaterThan(0);
   });
 

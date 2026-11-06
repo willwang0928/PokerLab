@@ -1,5 +1,5 @@
 import { AnimatePresence, MotionConfig, useReducedMotion } from "motion/react";
-import { useEffect, useLayoutEffect, useMemo, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { ActionBar } from "./components/ActionBar";
 import { GameOverModal } from "./components/GameOverModal";
 import { HandLog } from "./components/HandLog";
@@ -11,9 +11,9 @@ import { AI, type GameError, usePokerGame } from "./hooks/usePokerGame";
 import { useGameSounds } from "./hooks/useGameSounds";
 import { SPEED_SCALE, useSettings } from "./hooks/useSettings";
 import { type MotionPrefs, MotionPrefsContext } from "./lib/motion";
-import { shortcutBlocked } from "./lib/keys";
+import { restoreFocus, shortcutBlocked } from "./lib/keys";
 import { sound } from "./lib/sound";
-import type { GameConfig } from "./types";
+import type { GameConfig, GameState } from "./types";
 
 const DEFAULT_CONFIG: GameConfig = {
   player_name: "You",
@@ -87,9 +87,9 @@ export default function App() {
           >
             <SuitIcon suit="s" className="h-[18px] w-[18px] drop-shadow" />
           </div>
-          <div className="hidden leading-tight min-[420px]:block">
-            <div className="font-display text-[19px] font-bold tracking-wide text-amber-50">PokerLab</div>
-            <div className="hidden text-[11px] font-medium uppercase tracking-[0.14em] text-slate-500 sm:block">
+          <div className="sr-only leading-tight min-[420px]:not-sr-only min-[420px]:block">
+            <h1 className="font-display text-[19px] font-bold tracking-wide text-amber-50">PokerLab</h1>
+            <div className="hidden text-[11px] font-medium uppercase tracking-[0.14em] text-slate-400 sm:block">
               Heads-up No-Limit Hold'em
             </div>
           </div>
@@ -184,6 +184,11 @@ export default function App() {
         )}
       </main>
 
+      {/* Screen-reader announcement of the player's turn (always mounted so changes are read). */}
+      <div className="sr-only" role="status" aria-live="polite" data-testid="turn-announcer">
+        {humanTurn && state?.legal ? turnAnnouncement(state.legal) : ""}
+      </div>
+
       {game.error && state && !showSetup && (
         <ErrorToast
           error={game.error}
@@ -242,6 +247,12 @@ function StatusBar({
     return () => clearInterval(t);
   }, [autoDealAt]);
 
+  // Keep keyboard focus on the table's main control as hands come and go.
+  const dealRef = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    if (waiting) restoreFocus(dealRef.current);
+  }, [waiting]);
+
   useEffect(() => {
     if (!waiting) return;
     const onKey = (e: KeyboardEvent) => {
@@ -266,6 +277,7 @@ function StatusBar({
           <button
             type="button"
             onClick={onDeal}
+            ref={dealRef}
             className="btn-gold rounded-xl px-4 py-2 text-sm font-bold"
           >
             Deal next hand
@@ -307,13 +319,21 @@ function ErrorToast({
     >
       <span className="min-w-0 flex-1">{error.message}</span>
       {action && (
-        <button type="button" onClick={action.run} className="shrink-0 rounded-lg bg-white px-3 py-1.5 text-xs font-bold text-rose-700">
+        <button type="button" onClick={action.run} className="min-h-9 shrink-0 rounded-lg bg-white px-3 py-1.5 text-xs font-bold text-rose-700">
           {action.label}
         </button>
       )}
-      <button type="button" onClick={onDismiss} className="shrink-0 rounded-lg bg-black/20 px-3 py-1.5 text-xs">
+      <button type="button" onClick={onDismiss} className="min-h-9 shrink-0 rounded-lg bg-black/20 px-3 py-1.5 text-xs">
         Dismiss
       </button>
     </div>
   );
+}
+
+function turnAnnouncement(legal: NonNullable<GameState["legal"]>): string {
+  const passive = legal.can_check ? "check" : `call ${legal.call_amount.toLocaleString("en-US")}`;
+  const options = [legal.can_fold && !legal.can_check ? "fold" : null, passive, legal.can_raise ? legal.raise_type : null]
+    .filter(Boolean)
+    .join(", ");
+  return `Your turn: ${options}.`;
 }

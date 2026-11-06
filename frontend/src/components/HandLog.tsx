@@ -11,6 +11,7 @@ function MiniCard({ code }: { code: string }) {
   const { rank, suit, red } = parseCard(code);
   return (
     <span
+      role="img"
       aria-label={cardLabel(code)}
       title={cardLabel(code)}
       className={`mx-[1px] inline-flex h-[18px] items-center gap-[1px] rounded-[4px] bg-[#f5f2ea] px-[4px] align-[-3px] text-[11.5px] font-bold leading-none shadow-[0_1px_2px_rgba(0,0,0,.5)] ${
@@ -79,8 +80,11 @@ export function HandLog({ lines }: { lines: string[] }) {
         ref={ref}
         className="scroll-thin max-h-64 flex-1 space-y-1 overflow-y-auto px-4 py-3 text-[13px] leading-relaxed lg:max-h-none"
         aria-live="polite"
+        aria-labelledby="hand-history-title"
+        // Focusable so the history can be scrolled with the keyboard.
+        tabIndex={0}
       >
-        {lines.length === 0 && <li className="text-slate-500">No actions yet.</li>}
+        {lines.length === 0 && <li className="text-slate-400">No actions yet.</li>}
         {lines.map((line, i) => (
           <li key={i} className={lineClass(line)}>
             {renderLogLine(line)}

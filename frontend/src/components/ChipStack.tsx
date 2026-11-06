@@ -96,6 +96,7 @@ export function ChipStack({
 
   const tag = (
     <span className="amount-tag px-2 py-0.5 text-xs font-semibold tabular-nums text-amber-50 sm:text-[13px]">
+      <span className="sr-only">Bet </span>
       {label ?? formatChips(amount)}
     </span>
   );

@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { clamp, formatChips, potSizedRaiseTo } from "../lib/betting";
-import { shortcutBlocked } from "../lib/keys";
+import { restoreFocus, shortcutBlocked } from "../lib/keys";
 import type { ActionType, LegalView } from "../types";
 
 interface Props {
@@ -22,6 +22,11 @@ export function ActionBar({ legal, pot, currentBet, bigBlind, disabled, onAction
   const { min_raise_to: min, max_raise_to: max } = legal;
   const [amount, setAmount] = useState(min);
   const [draft, setDraft] = useState(String(min));
+  const passiveRef = useRef<HTMLButtonElement>(null);
+
+  // The controls reappear each turn; if focus was lost when they went away, bring it back
+  // so keyboard players don't have to Tab through the header again.
+  useEffect(() => restoreFocus(passiveRef.current), []);
 
   useEffect(() => {
     setAmount(min);
@@ -68,7 +73,7 @@ export function ActionBar({ legal, pot, currentBet, bigBlind, disabled, onAction
   const kbd = "ml-2 hidden rounded-[5px] bg-black/20 px-1.5 py-0.5 text-[10px] font-semibold leading-none opacity-70 ring-1 ring-black/10 sm:inline";
 
   return (
-    <div className="surface flex w-full flex-col gap-2.5 rounded-2xl p-2.5 sm:p-3" aria-label="Betting controls">
+    <div className="surface flex w-full flex-col gap-2.5 rounded-2xl p-2.5 sm:p-3" role="group" aria-label="Betting controls">
       {legal.can_raise && (
         <div className="flex flex-col gap-2.5 md:flex-row md:items-center md:gap-3">
           <div className="flex flex-wrap gap-1.5">
@@ -106,7 +111,7 @@ export function ActionBar({ legal, pot, currentBet, bigBlind, disabled, onAction
             <input
               type="number"
               inputMode="numeric"
-              className="w-[5.5rem] rounded-lg bg-black/40 px-2.5 py-1.5 text-right text-[15px] font-bold tabular-nums text-amber-100 ring-1 ring-white/10 focus:outline-none focus:ring-2 focus:ring-amber-300/60"
+              className="w-[5.5rem] rounded-lg bg-black/40 px-2.5 py-1.5 text-right text-base font-bold sm:text-[15px] tabular-nums text-amber-100 ring-1 ring-white/10 focus:outline-none focus:ring-2 focus:ring-amber-300/60"
               min={min}
               max={max}
               value={draft}
@@ -132,17 +137,20 @@ export function ActionBar({ legal, pot, currentBet, bigBlind, disabled, onAction
           className={`${btn} btn-dark`}
           onClick={() => onAction("fold")}
           disabled={disabled || !legal.can_fold}
+          aria-keyshortcuts="F"
         >
-          Fold<span className={kbd}>F</span>
+          Fold<span className={kbd} aria-hidden>F</span>
         </button>
         <button
           type="button"
           className={`${btn} btn-green`}
           onClick={doPassive}
           disabled={disabled}
+          ref={passiveRef}
+          aria-keyshortcuts="C"
         >
           {legal.can_check ? "Check" : `Call ${formatChips(legal.call_amount)}`}
-          <span className={kbd}>C</span>
+          <span className={kbd} aria-hidden>C</span>
         </button>
         {legal.can_raise && (
           <button
@@ -150,9 +158,10 @@ export function ActionBar({ legal, pot, currentBet, bigBlind, disabled, onAction
             className={`${btn} btn-gold`}
             onClick={doRaise}
             disabled={disabled}
+            aria-keyshortcuts="R"
           >
             {isAllIn ? `All-in ${formatChips(amount)}` : `${raiseWord} ${formatChips(amount)}`}
-            <span className={kbd}>R</span>
+            <span className={kbd} aria-hidden>R</span>
           </button>
         )}
       </div>
@@ -176,7 +185,7 @@ function Preset({
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition disabled:opacity-30 ${
+      className={`min-h-10 rounded-lg px-3 py-1.5 text-xs font-semibold transition disabled:opacity-30 sm:min-h-0 ${
         active
           ? "bg-amber-300 text-slate-950 shadow-[inset_0_1px_0_rgba(255,255,255,.5)]"
           : "bg-white/[0.06] text-slate-200 ring-1 ring-white/[0.06] hover:bg-white/10"
@@ -205,7 +214,7 @@ function Nudge({
       aria-label={`Adjust raise ${title}`}
       onClick={onClick}
       disabled={disabled}
-      className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-white/[0.06] text-lg font-bold text-slate-200 ring-1 ring-white/[0.06] transition hover:bg-white/10 disabled:opacity-30"
+      className="grid h-10 w-10 shrink-0 place-items-center rounded-full sm:h-8 sm:w-8 bg-white/[0.06] text-lg font-bold text-slate-200 ring-1 ring-white/[0.06] transition hover:bg-white/10 disabled:opacity-30"
     >
       {label}
     </button>

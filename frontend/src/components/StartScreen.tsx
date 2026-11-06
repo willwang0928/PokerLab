@@ -24,7 +24,7 @@ export function StartScreen({ initial, busy, error, onStart, onCancel }: Props) 
   const [blinds, setBlinds] = useState<[number, number]>([initial.small_blind, initial.big_blind]);
 
   return (
-    <Modal labelledBy="start-title">
+    <Modal labelledBy="start-title" onClose={busy ? undefined : onCancel}>
       <form
         onSubmit={(e) => {
           e.preventDefault();
@@ -64,7 +64,7 @@ export function StartScreen({ initial, busy, error, onStart, onCancel }: Props) 
             value={name}
             maxLength={24}
             onChange={(e) => setName(e.target.value)}
-            className="rounded-xl bg-black/35 px-3 py-2.5 text-slate-100 ring-1 ring-white/10 focus:outline-none focus:ring-2 focus:ring-amber-300/60"
+            className="rounded-xl bg-black/35 px-3 py-2.5 text-base text-slate-100 sm:text-[13px] ring-1 ring-white/10 focus:outline-none focus:ring-2 focus:ring-amber-300/60"
           />
         </label>
 
@@ -88,7 +88,7 @@ export function StartScreen({ initial, busy, error, onStart, onCancel }: Props) 
               </Choice>
             ))}
           </div>
-          <p className="text-xs text-slate-500">{Math.floor(stack / blinds[1])} big blinds deep</p>
+          <p className="text-xs text-slate-400">{Math.floor(stack / blinds[1])} big blinds deep</p>
         </fieldset>
 
         {error && (
@@ -100,6 +100,7 @@ export function StartScreen({ initial, busy, error, onStart, onCancel }: Props) 
         <button
           type="submit"
           disabled={busy}
+          data-autofocus
           className="btn-gold rounded-xl py-3 text-base font-bold transition active:scale-[0.98] disabled:opacity-50"
         >
           {busy ? "Shuffling…" : onCancel ? "Start new game" : "Take a seat"}

@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import App from "../App";
@@ -29,10 +29,10 @@ describe("SettingsMenu", () => {
     expect(onChange).toHaveBeenLastCalledWith({ volume: 0.65 });
     expect(onPreview).toHaveBeenCalled();
 
-    const themes = screen.getAllByRole("radio");
+    const themes = within(screen.getByRole("group", { name: "Table theme" })).getAllByRole("button");
     expect(themes.map((t) => t.textContent)).toEqual(["Classic green", "Midnight blue", "Burgundy"]);
-    expect(screen.getByRole("radio", { name: "Classic green" })).toHaveAttribute("aria-checked", "true");
-    await userEvent.click(screen.getByRole("radio", { name: "Burgundy" }));
+    expect(screen.getByRole("button", { name: "Classic green" })).toHaveAttribute("aria-pressed", "true");
+    await userEvent.click(screen.getByRole("button", { name: "Burgundy" }));
     expect(onChange).toHaveBeenLastCalledWith({ theme: "burgundy" });
   });
 
@@ -42,11 +42,21 @@ describe("SettingsMenu", () => {
     expect(screen.getByRole("slider", { name: "Volume" })).toBeDisabled();
   });
 
-  it("labels the mute button by what it will do", () => {
+  it("is a toggle with a fixed name, pressed while muted", () => {
     const { rerender } = render(<MuteButton muted={false} onToggle={() => {}} />);
     expect(screen.getByRole("button", { name: "Mute sound effects" })).toHaveAttribute("aria-pressed", "false");
     rerender(<MuteButton muted onToggle={() => {}} />);
-    expect(screen.getByRole("button", { name: "Unmute sound effects" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("button", { name: "Mute sound effects" })).toHaveAttribute("aria-pressed", "true");
+  });
+
+  it("closes on Escape and returns focus to the settings button", async () => {
+    render(<SettingsMenu settings={DEFAULT_SETTINGS} onChange={() => {}} />);
+    const gear = screen.getByRole("button", { name: "Settings" });
+    await userEvent.click(gear);
+    await userEvent.click(screen.getByRole("button", { name: "fast" }));
+    await userEvent.keyboard("{Escape}");
+    expect(screen.queryByRole("group", { name: "Table theme" })).not.toBeInTheDocument();
+    expect(gear).toHaveFocus();
   });
 });
 
@@ -57,7 +67,7 @@ describe("saved preferences", () => {
 
     await userEvent.click(screen.getByRole("button", { name: "Mute sound effects" }));
     await userEvent.click(screen.getByRole("button", { name: "Settings" }));
-    await userEvent.click(screen.getByRole("radio", { name: "Midnight blue" }));
+    await userEvent.click(screen.getByRole("button", { name: "Midnight blue" }));
     await userEvent.click(screen.getByRole("button", { name: "fast" }));
     expect(document.documentElement.dataset.tableTheme).toBe("midnight");
     expect(stored()).toMatchObject({ sound: false, theme: "midnight", speed: "fast" });
@@ -66,16 +76,16 @@ describe("saved preferences", () => {
     // "Reload": a fresh App reads the saved settings.
     render(<App />);
     expect(document.documentElement.dataset.tableTheme).toBe("midnight");
-    expect(screen.getByRole("button", { name: "Unmute sound effects" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Mute sound effects" })).toHaveAttribute("aria-pressed", "true");
     await userEvent.click(screen.getByRole("button", { name: "Settings" }));
     expect(screen.getByRole("button", { name: "fast" })).toHaveAttribute("aria-pressed", "true");
-    expect(screen.getByRole("radio", { name: "Midnight blue" })).toHaveAttribute("aria-checked", "true");
+    expect(screen.getByRole("button", { name: "Midnight blue" })).toHaveAttribute("aria-pressed", "true");
   });
 
   it("unmuting at zero volume restores an audible level", async () => {
     localStorage.setItem(SETTINGS_KEY, JSON.stringify({ volume: 0 }));
     render(<App />);
-    await userEvent.click(screen.getByRole("button", { name: "Unmute sound effects" }));
+    await userEvent.click(screen.getByRole("button", { name: "Mute sound effects" }));
     expect(stored()).toMatchObject({ sound: true, volume: 0.6 });
   });
 
@@ -83,6 +93,6 @@ describe("saved preferences", () => {
     localStorage.setItem(SETTINGS_KEY, "{not json");
     render(<App />);
     expect(document.documentElement.dataset.tableTheme).toBe("classic");
-    expect(screen.getByRole("button", { name: "Mute sound effects" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Mute sound effects" })).toHaveAttribute("aria-pressed", "false");
   });
 });

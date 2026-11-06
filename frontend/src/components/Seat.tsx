@@ -163,6 +163,7 @@ export function Seat({
                 data-testid={`stack-${player.seat}`}
               >
                 <CountingNumber value={player.stack} />
+                <span className="sr-only"> chips</span>
               </span>
             </div>
           </div>
@@ -172,7 +173,8 @@ export function Seat({
               className="dealer-button absolute -right-2.5 -top-2.5 grid h-6 w-6 place-items-center rounded-full text-[11px] font-black text-slate-800 sm:h-7 sm:w-7 sm:text-xs"
               title="Dealer button"
             >
-              D
+              <span aria-hidden>D</span>
+              <span className="sr-only">Dealer button</span>
             </motion.div>
           )}
         </motion.div>
@@ -192,11 +194,11 @@ export function Seat({
                 }`}
               >
                 {thinking ? (
-                  <span className="flex items-center gap-0.5" aria-label="Thinking">
+                  <span className="flex items-center gap-0.5">
                     Thinking
-                    <span className="thinking-dot">.</span>
-                    <span className="thinking-dot [animation-delay:150ms]">.</span>
-                    <span className="thinking-dot [animation-delay:300ms]">.</span>
+                    <span className="thinking-dot" aria-hidden>.</span>
+                    <span className="thinking-dot [animation-delay:150ms]" aria-hidden>.</span>
+                    <span className="thinking-dot [animation-delay:300ms]" aria-hidden>.</span>
                   </span>
                 ) : (
                   label

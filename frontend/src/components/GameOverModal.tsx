@@ -43,6 +43,7 @@ export function GameOverModal({ state, onPlayAgain, onChangeSettings }: Props) {
           <button
             type="button"
             onClick={onPlayAgain}
+            data-autofocus
             className="btn-gold flex-1 rounded-xl py-3 font-bold"
           >
             Play again

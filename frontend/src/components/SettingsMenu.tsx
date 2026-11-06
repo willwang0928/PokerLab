@@ -15,13 +15,18 @@ export function SettingsMenu({
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     if (!open) return;
     const close = (e: MouseEvent) => {
       if (!ref.current?.contains(e.target as Node)) setOpen(false);
     };
-    const esc = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
+    const esc = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      setOpen(false);
+      buttonRef.current?.focus();
+    };
     document.addEventListener("mousedown", close);
     document.addEventListener("keydown", esc);
     return () => {
@@ -34,6 +39,7 @@ export function SettingsMenu({
     <div className="relative" ref={ref}>
       <button
         type="button"
+        ref={buttonRef}
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
         aria-label="Settings"
@@ -55,15 +61,15 @@ export function SettingsMenu({
               className="h-4 w-4 accent-amber-400"
             />
           </label>
-          <div className="mt-4 text-sm text-slate-200">Animation speed</div>
-          <div className="mt-2 grid grid-cols-3 gap-1.5">
+          <div className="mt-4 text-sm text-slate-200" id="speed-label">Animation speed</div>
+          <div className="mt-2 grid grid-cols-3 gap-1.5" role="group" aria-labelledby="speed-label">
             {SPEEDS.map((s) => (
               <button
                 key={s}
                 type="button"
                 onClick={() => onChange({ speed: s })}
                 aria-pressed={settings.speed === s}
-                className={`rounded-lg py-1.5 text-xs font-semibold capitalize ${
+                className={`min-h-10 rounded-lg py-1.5 text-xs font-semibold capitalize sm:min-h-0 ${
                   settings.speed === s ? "bg-amber-300 text-slate-950" : "bg-white/[0.06] text-slate-300 ring-1 ring-white/[0.06] hover:bg-white/10"
                 }`}
               >
@@ -107,15 +113,14 @@ export function SettingsMenu({
           <div className="mt-4 border-t border-white/[0.06] pt-4 text-sm text-slate-200" id="theme-label">
             Table theme
           </div>
-          <div className="mt-2 grid grid-cols-3 gap-1.5" role="radiogroup" aria-labelledby="theme-label">
+          <div className="mt-2 grid grid-cols-3 gap-1.5" role="group" aria-labelledby="theme-label">
             {THEMES.map((t) => {
               const active = settings.theme === t.id;
               return (
                 <button
                   key={t.id}
                   type="button"
-                  role="radio"
-                  aria-checked={active}
+                  aria-pressed={active}
                   onClick={() => onChange({ theme: t.id })}
                   className={`flex flex-col items-center gap-1.5 rounded-lg px-1 py-2 text-[11px] font-medium leading-tight ${
                     active ? "bg-white/[0.1] text-amber-100 ring-1 ring-amber-300/70" : "bg-white/[0.04] text-slate-400 ring-1 ring-white/[0.06] hover:bg-white/[0.08]"
@@ -135,7 +140,7 @@ export function SettingsMenu({
             })}
           </div>
 
-          <p className="mt-4 border-t border-white/[0.06] pt-3 text-xs leading-relaxed text-slate-500">
+          <p className="mt-4 border-t border-white/[0.06] pt-3 text-xs leading-relaxed text-slate-400">
             Shortcuts: <kbd className="text-slate-300">F</kbd> fold · <kbd className="text-slate-300">C</kbd>{" "}
             check/call · <kbd className="text-slate-300">R</kbd> bet/raise · <kbd className="text-slate-300">Space</kbd>{" "}
             next hand
@@ -169,7 +174,7 @@ export function MuteButton({ muted, onToggle }: { muted: boolean; onToggle: () =
       type="button"
       onClick={onToggle}
       aria-pressed={muted}
-      aria-label={muted ? "Unmute sound effects" : "Mute sound effects"}
+      aria-label="Mute sound effects"
       title={muted ? "Unmute" : "Mute"}
       className="btn-dark grid h-9 w-9 place-items-center rounded-xl text-slate-300"
     >

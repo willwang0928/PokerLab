@@ -237,7 +237,6 @@ function ResultBanner({ state }: { state: GameState }) {
           exit={{ opacity: 0, scale: 0.9 }}
           transition={{ type: "spring", stiffness: 300, damping: 22 }}
           className="col-start-1 row-start-1 flex max-w-[calc(100vw-56px)] items-center gap-2 overflow-hidden whitespace-nowrap rounded-full bg-gradient-to-b from-[#fbe3a1] via-[#f0c96a] to-[#d9a23c] px-4 py-1.5 text-[#1b1405] shadow-[inset_0_1px_0_rgba(255,255,255,.6),0_10px_30px_-8px_rgba(240,201,106,0.7)]"
-          role="status"
           data-testid="result-banner"
         >
           <span className="text-sm font-extrabold sm:text-base">{title}</span>

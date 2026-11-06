@@ -68,6 +68,20 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* ---------- focus and touch ---------- */
+/* A clear focus ring for keyboard users on every control (mouse clicks don't show it). */
+:where(button, a, input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid #fde68a;
+  outline-offset: 2px;
+}
+/* No double-tap zoom when tapping quickly on buttons and sliders. */
+button,
+input,
+label,
+a {
+  touch-action: manipulation;
+}
+
 /* ---------- shared surfaces ---------- */
 .surface {
   background: var(--surface);
