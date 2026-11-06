@@ -125,6 +125,7 @@ export function Table({ state, lastEvent, thinkingSeat, humanTurn }: Props) {
           stackRef={stackRefs[AI]}
           hideAction={hideActions}
           descDelay={descDelay}
+          actionEvent={lastEvent?.type === "action" && lastEvent.seat === AI ? lastEvent : null}
           highlight={highlight}
         />
       </div>
@@ -208,6 +209,7 @@ export function Table({ state, lastEvent, thinkingSeat, humanTurn }: Props) {
           stackRef={stackRefs[HUMAN]}
           hideAction={hideActions}
           descDelay={descDelay}
+          actionEvent={lastEvent?.type === "action" && lastEvent.seat === HUMAN ? lastEvent : null}
           highlight={highlight}
         />
       </div>

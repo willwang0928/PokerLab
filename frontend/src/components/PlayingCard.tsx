@@ -96,7 +96,7 @@ export function PlayingCard({
 
   const pose =
     emphasis === "win"
-      ? { opacity: 1, y: size === "lg" ? -10 : -8, scale: 1.04 }
+      ? { opacity: 1, y: size === "lg" ? -10 : -5, scale: 1.04 }
       : emphasis === "muted"
         ? { opacity: 0.55, y: 0, scale: 1 }
         : emphasis === "folded"

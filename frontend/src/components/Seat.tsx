@@ -1,7 +1,7 @@
 import { animate, AnimatePresence, motion } from "motion/react";
 import { type Ref, useEffect, useRef, useState } from "react";
 import { formatChips } from "../lib/betting";
-import type { PlayerView } from "../types";
+import type { GameEvent, PlayerView } from "../types";
 import { Chip } from "./ChipStack";
 import { durationScale, TIMING, useMotionPrefs } from "../lib/motion";
 import { type CardEmphasis, PlayingCard } from "./PlayingCard";
@@ -26,6 +26,8 @@ interface Props {
   hideAction?: boolean;
   /** Seconds to hold back a new made-hand tag while the cards that make it turn over. */
   descDelay?: number;
+  /** The action this seat just took, if the latest event is one; drives the reaction. */
+  actionEvent?: GameEvent | null;
 }
 
 function actionLabel(p: PlayerView): string | null {
@@ -53,6 +55,8 @@ function actionTone(action: string | null): string {
       return "btn-gold";
     case "all-in":
       return "bg-gradient-to-b from-rose-500 to-rose-700 text-white";
+    case "check":
+      return "bg-gradient-to-b from-sky-300 to-sky-500 text-sky-950";
     default:
       return "bg-gradient-to-b from-emerald-400 to-emerald-600 text-emerald-950";
   }
@@ -73,7 +77,9 @@ export function Seat({
   stackRef,
   hideAction = false,
   descDelay = 0,
+  actionEvent = null,
 }: Props) {
+  const pulse = useActionReaction(actionEvent);
   const label = handOver || hideAction ? null : actionLabel(player);
   const holeCount = player.hole?.length ?? 0;
   const cards = player.has_cards || holeCount > 0 ? [0, 1] : [];
@@ -121,6 +127,18 @@ export function Seat({
 
       {/* nameplate */}
       <div className="relative z-10" style={{ marginTop: `calc(${cardW} * -1.4 * ${overlap})` }}>
+        <div ref={pulse.ref} className="relative">
+        {pulse.ring && (
+          <motion.span
+            key={pulse.ring.id}
+            className={`pointer-events-none absolute inset-0 z-20 rounded-2xl ${RING[pulse.ring.kind]}`}
+            initial={{ opacity: 0.95, scale: 1 }}
+            animate={{ opacity: 0, scale: pulse.ring.kind === "all-in" ? 1.32 : 1.14 }}
+            transition={{ duration: pulse.ring.kind === "all-in" ? 0.8 : 0.55, ease: "easeOut" }}
+            data-testid={`reaction-${player.seat}`}
+            data-kind={pulse.ring.kind}
+          />
+        )}
         <motion.div
           className={`nameplate relative flex min-w-[9.75rem] items-center gap-2.5 rounded-2xl py-2 pl-2 pr-4 sm:min-w-[12rem] ${
             isTurn ? "turn-glow" : isWinner ? "ring-2 ring-amber-300/80" : ""
@@ -158,13 +176,14 @@ export function Seat({
             </motion.div>
           )}
         </motion.div>
+        </div>
 
         {/* last action / thinking and made-hand tags, tucked under the plate */}
         <div className="absolute left-1/2 top-full z-10 -mt-2 flex -translate-x-1/2 items-center gap-1 whitespace-nowrap">
           <AnimatePresence mode="popLayout">
             {(thinking || label) && (
               <motion.div
-                key={thinking ? "thinking" : label}
+                key={thinking ? "thinking" : `${label}-${pulse.ring?.id ?? 0}`}
                 initial={{ opacity: 0, y: -4, scale: 0.9 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.9 }}
@@ -268,4 +287,43 @@ function CountingNumber({ value }: { value: number }) {
     };
   }, [value, prefs]);
   return <>{formatChips(shown)}</>;
+}
+
+/** Outline flashed around the nameplate for each kind of action. */
+const RING: Record<string, string> = {
+  check: "ring-2 ring-sky-300/80",
+  call: "ring-2 ring-emerald-300/80",
+  bet: "ring-2 ring-amber-300",
+  raise: "ring-2 ring-amber-300",
+  "all-in": "ring-[3px] ring-rose-400 shadow-[0_0_24px_6px_rgba(244,63,94,0.55)]",
+  fold: "ring-1 ring-slate-400/50",
+};
+
+/** Body language for each action: a knock for a check, a push for chips, a jolt for all-in. */
+const MOVES: Record<string, Record<string, number[]>> = {
+  check: { y: [0, 3, 0] },
+  call: { scale: [1, 1.03, 1] },
+  bet: { scale: [1, 1.06, 1] },
+  raise: { scale: [1, 1.06, 1] },
+  "all-in": { scale: [1, 1.1, 1], x: [0, -4, 4, -3, 2, 0] },
+  fold: { y: [0, 5, 0] },
+};
+
+function useActionReaction(event: GameEvent | null) {
+  const prefs = useMotionPrefs();
+  const ref = useRef<HTMLDivElement>(null);
+  const [ring, setRing] = useState<{ id: number; kind: string } | null>(null);
+  const counter = useRef(0);
+  useEffect(() => {
+    if (!event) return;
+    const kind = String(event.label ?? event.action);
+    setRing({ id: ++counter.current, kind });
+    const el = ref.current;
+    const move = MOVES[kind];
+    if (!el || !move || prefs.reduced || prefs.scale === 0) return;
+    const ctl = animate(el, move, { duration: (kind === "all-in" ? 0.5 : 0.3) * durationScale(prefs) });
+    return () => ctl.stop();
+    // React to each new action event only.
+  }, [event]);
+  return { ref, ring };
 }
