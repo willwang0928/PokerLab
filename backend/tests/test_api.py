@@ -8,7 +8,7 @@ from pokerlab.api.app import create_app
 
 @pytest.fixture
 def client():
-    return TestClient(create_app())
+    return TestClient(create_app(allow_seed=True))
 
 
 def new_session(client, **kw):

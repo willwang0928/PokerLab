@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import random
+import threading
+import time
 import uuid
 from dataclasses import dataclass, field
 from enum import StrEnum
@@ -69,6 +71,9 @@ class HeadsUpSession:
         self.log: list[str] = []
         self.result: dict[str, Any] | None = None
         self._steps: list[Step] = []
+        # Serialises requests for this session (the API runs handlers on a threadpool).
+        self.lock = threading.RLock()
+        self.last_active = time.monotonic()
 
     # ------------------------------------------------------------------ commands
 

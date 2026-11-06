@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Annotated, Any
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field, StrictInt, model_validator
 
 from ..engine import ActionType
 
@@ -14,6 +14,8 @@ class CreateSessionRequest(BaseModel):
     small_blind: int = Field(5, ge=1, le=100_000)
     big_blind: int = Field(10, ge=1, le=200_000)
     player_name: str = Field("You", min_length=1, max_length=24)
+    # Only honoured when the server allows seeded games (tests and debugging); a known
+    # seed would let a client work out the opponent's cards.
     seed: int | None = None
 
     @model_validator(mode="after")
@@ -27,7 +29,8 @@ class CreateSessionRequest(BaseModel):
 
 class ActionRequest(BaseModel):
     action: ActionType
-    amount: int | None = Field(None, ge=0)
+    # Strict, so JSON like true or "30" is rejected instead of coerced.
+    amount: Annotated[StrictInt, Field(ge=0)] | None = None
 
 
 class StepModel(BaseModel):
