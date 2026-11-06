@@ -40,6 +40,14 @@ The first release, **v0.1**, is a fully playable game of **heads-up No-Limit Tex
 - Hand history shows board and shown cards as mini cards.
 - Bundled Inter and Playfair Display fonts, a unified dark surface system, and a reworked betting dock.
 
+**v0.2.2 — Animations and interactions**
+- Cards are dealt one at a time from a deck on the felt. Your cards land face down and turn over, and the flop lands face down before turning left to right.
+- Chips fly from stacks to bets, from bets into the pot, back to the owner when a bet is uncalled, and from the pot to the winner. Stack counts roll to their new value.
+- Each action has its own feedback: check, call, bet/raise, all-in and fold.
+- At showdown the opponent's cards flip, the five cards that make the winning hand light up, and the rest are muted.
+- Cards are collected between hands, and stale action tags clear when a betting round ends.
+- Animation speed follows the speed setting. Instant speed and the OS "reduce motion" preference skip movement.
+
 ## Quick start
 
 Requirements: **Python 3.11+** and **Node.js 20.19+** (CI uses Node 24).
@@ -123,11 +131,13 @@ frontend/src/
 | `POST` | `/api/sessions/{id}/actions` | `{"action": "fold"\|"check"\|"call"\|"bet"\|"raise"\|"all_in", "amount"?: raise-to total}` |
 | `DELETE` | `/api/sessions/{id}` | End a match |
 
+Each response includes `steps`: one event plus a state snapshot for every change, which the UI replays to drive its animations. Showdown events list each player's best five cards (`best`), and `pot_awarded` events list the winning cards (`cards`).
+
 Illegal actions return `400` with an explanation. Out-of-turn or out-of-state requests return `409`. Interactive docs are served at `/docs`.
 
 ## Roadmap
 
-- **v0.2 — Visual polish:** v0.2.1 visual redesign (done). Next: richer animations, sound and an accessibility pass.
+- **v0.2 — Visual polish:** v0.2.1 visual redesign and v0.2.2 animations (done). Next: sound and an accessibility pass.
 - **v0.3 — Smarter AI:** Monte Carlo equity, better bet sizing, difficulty levels, basic opponent modeling.
 - **v0.4 — Analytics:** persistent hand history (SQLite), replays, performance stats, AI-vs-AI simulations.
 - **Later:** multiplayer, tournaments, Omaha / Stud / Draw, CFR agents, reinforcement learning, strategy dashboards.
