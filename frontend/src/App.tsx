@@ -1,15 +1,17 @@
 import { AnimatePresence, MotionConfig, useReducedMotion } from "motion/react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useState } from "react";
 import { ActionBar } from "./components/ActionBar";
 import { GameOverModal } from "./components/GameOverModal";
 import { HandLog } from "./components/HandLog";
-import { SettingsMenu } from "./components/SettingsMenu";
+import { MuteButton, SettingsMenu } from "./components/SettingsMenu";
 import { StartScreen } from "./components/StartScreen";
 import { SuitIcon } from "./components/SuitIcon";
 import { Table } from "./components/Table";
 import { AI, usePokerGame } from "./hooks/usePokerGame";
+import { useGameSounds } from "./hooks/useGameSounds";
 import { SPEED_SCALE, useSettings } from "./hooks/useSettings";
 import { type MotionPrefs, MotionPrefsContext } from "./lib/motion";
+import { sound } from "./lib/sound";
 import type { GameConfig } from "./types";
 
 const DEFAULT_CONFIG: GameConfig = {
@@ -28,6 +30,12 @@ export default function App() {
     [settings.speed, reducedMotion],
   );
   const { state } = game;
+  useGameSounds(game.lastEvent, settings, motionPrefs);
+
+  // Before paint, so a saved theme never flashes the default felt.
+  useLayoutEffect(() => {
+    document.documentElement.dataset.tableTheme = settings.theme;
+  }, [settings.theme]);
   const [config, setConfig] = useState<GameConfig>(DEFAULT_CONFIG);
   const [showSetup, setShowSetup] = useState(true);
 
@@ -92,7 +100,24 @@ export default function App() {
               </span>
             </div>
           )}
-          <SettingsMenu settings={settings} onChange={updateSettings} />
+          <MuteButton
+            muted={!settings.sound || settings.volume === 0}
+            onToggle={() =>
+              updateSettings(
+                settings.sound && settings.volume > 0
+                  ? { sound: false }
+                  : { sound: true, volume: settings.volume > 0 ? settings.volume : 0.6 },
+              )
+            }
+          />
+          <SettingsMenu
+            settings={settings}
+            onChange={updateSettings}
+            onPreviewSound={() => {
+              sound.unlock();
+              sound.play("chip");
+            }}
+          />
           <button
             type="button"
             onClick={() => setShowSetup(true)}
