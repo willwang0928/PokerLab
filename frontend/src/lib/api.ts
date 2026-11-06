@@ -1,4 +1,4 @@
-import type { ActionType, GameConfig, PlayResponse } from "../types";
+import type { ActionType, GameConfig, GameState, PlayResponse } from "../types";
 
 const BASE = (import.meta.env.VITE_API_BASE_URL ?? "").replace(/\/$/, "");
 
@@ -37,6 +37,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 export const api = {
   createSession: (config: GameConfig) =>
     request<PlayResponse>("/api/sessions", { method: "POST", body: JSON.stringify(config) }),
+  getSession: (sessionId: string) => request<GameState>(`/api/sessions/${sessionId}`),
   startHand: (sessionId: string) =>
     request<PlayResponse>(`/api/sessions/${sessionId}/hands`, { method: "POST" }),
   act: (sessionId: string, action: ActionType, amount?: number) =>

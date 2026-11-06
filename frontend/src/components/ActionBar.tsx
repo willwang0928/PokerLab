@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { clamp, formatChips, potSizedRaiseTo } from "../lib/betting";
+import { shortcutBlocked } from "../lib/keys";
 import type { ActionType, LegalView } from "../types";
 
 interface Props {
@@ -50,8 +51,7 @@ export function ActionBar({ legal, pot, currentBet, bigBlind, disabled, onAction
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (disabled || e.metaKey || e.ctrlKey || e.altKey) return;
-      if (e.target instanceof HTMLInputElement && e.target.type === "number") return;
+      if (disabled || shortcutBlocked(e)) return;
       const k = e.key.toLowerCase();
       if (k === "f" && legal.can_fold) onAction("fold");
       else if (k === "c") doPassive();

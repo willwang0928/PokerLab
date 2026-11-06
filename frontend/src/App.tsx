@@ -7,10 +7,11 @@ import { MuteButton, SettingsMenu } from "./components/SettingsMenu";
 import { StartScreen } from "./components/StartScreen";
 import { SuitIcon } from "./components/SuitIcon";
 import { Table } from "./components/Table";
-import { AI, usePokerGame } from "./hooks/usePokerGame";
+import { AI, type GameError, usePokerGame } from "./hooks/usePokerGame";
 import { useGameSounds } from "./hooks/useGameSounds";
 import { SPEED_SCALE, useSettings } from "./hooks/useSettings";
 import { type MotionPrefs, MotionPrefsContext } from "./lib/motion";
+import { shortcutBlocked } from "./lib/keys";
 import { sound } from "./lib/sound";
 import type { GameConfig } from "./types";
 
@@ -24,7 +25,10 @@ const DEFAULT_CONFIG: GameConfig = {
 export default function App() {
   const [settings, updateSettings] = useSettings();
   const reducedMotion = Boolean(useReducedMotion());
-  const game = usePokerGame(settings);
+  const [showSetup, setShowSetup] = useState(true);
+  const [gameOver, setGameOver] = useState(false);
+  // No automatic dealing while a dialog covers the table.
+  const game = usePokerGame(settings, showSetup || gameOver);
   const motionPrefs = useMemo<MotionPrefs>(
     () => ({ scale: SPEED_SCALE[settings.speed], reduced: reducedMotion }),
     [settings.speed, reducedMotion],
@@ -37,7 +41,6 @@ export default function App() {
     document.documentElement.dataset.tableTheme = settings.theme;
   }, [settings.theme]);
   const [config, setConfig] = useState<GameConfig>(DEFAULT_CONFIG);
-  const [showSetup, setShowSetup] = useState(true);
 
   const start = async (c: GameConfig) => {
     setConfig(c);
@@ -50,11 +53,18 @@ export default function App() {
     if (game.error && !state) setShowSetup(true);
   }, [game.error, state]);
 
+  // A "table refreshed" notice clears itself; real problems stay until handled.
+  const { error, clearError } = game;
+  useEffect(() => {
+    if (error?.kind !== "resynced") return;
+    const t = setTimeout(clearError, 5000);
+    return () => clearTimeout(t);
+  }, [error, clearError]);
+
   const busy = game.animating || game.pending;
   const humanTurn = Boolean(state?.legal) && !busy;
   const matchEnded = state?.status === "game_over" && !busy;
   // Let the final showdown sink in before covering the table.
-  const [gameOver, setGameOver] = useState(false);
   useEffect(() => {
     if (!matchEnded) {
       setGameOver(false);
@@ -174,13 +184,13 @@ export default function App() {
         )}
       </main>
 
-      {game.error && state && (
-        <div role="alert" className="fixed bottom-4 left-1/2 z-40 flex -translate-x-1/2 items-center gap-3 rounded-xl bg-rose-600 px-4 py-2.5 text-sm font-medium text-white shadow-2xl">
-          {game.error}
-          <button type="button" onClick={game.clearError} className="rounded bg-black/20 px-2 py-0.5 text-xs">
-            Dismiss
-          </button>
-        </div>
+      {game.error && state && !showSetup && (
+        <ErrorToast
+          error={game.error}
+          onDismiss={game.clearError}
+          onRetry={() => void game.retry()}
+          onNewGame={() => setShowSetup(true)}
+        />
       )}
 
       <AnimatePresence>
@@ -189,9 +199,10 @@ export default function App() {
             key="setup"
             initial={config}
             busy={game.pending}
-            error={state ? null : game.error}
+            error={state ? null : (game.error?.message ?? null)}
             onStart={(c) => void start(c)}
-            onCancel={state ? () => setShowSetup(false) : undefined}
+            // There is nothing to go back to once the server has lost the game.
+            onCancel={state && game.error?.kind !== "expired" ? () => setShowSetup(false) : undefined}
           />
         )}
         {gameOver && !showSetup && state && (
@@ -235,7 +246,8 @@ function StatusBar({
     if (!waiting) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === " " || e.key.toLowerCase() === "n") {
-        if (e.target instanceof HTMLInputElement || e.target instanceof HTMLButtonElement) return;
+        // Space on a focused button should press that button, not deal.
+        if (shortcutBlocked(e) || e.target instanceof HTMLButtonElement) return;
         e.preventDefault();
         onDeal();
       }
@@ -264,6 +276,44 @@ function StatusBar({
       ) : (
         <span className="truncate text-slate-400">{latest || "Dealing…"}</span>
       )}
+    </div>
+  );
+}
+
+function ErrorToast({
+  error,
+  onDismiss,
+  onRetry,
+  onNewGame,
+}: {
+  error: GameError;
+  onDismiss: () => void;
+  onRetry: () => void;
+  onNewGame: () => void;
+}) {
+  const notice = error.kind === "resynced";
+  const action =
+    error.kind === "network"
+      ? { label: "Retry", run: onRetry }
+      : error.kind === "expired"
+        ? { label: "New game", run: onNewGame }
+        : null;
+  return (
+    <div
+      role={notice ? "status" : "alert"}
+      className={`fixed bottom-4 left-1/2 z-40 flex w-[min(92vw,34rem)] -translate-x-1/2 items-center gap-3 rounded-xl px-4 py-2.5 text-sm font-medium text-white shadow-2xl ${
+        notice ? "bg-slate-700 ring-1 ring-white/10" : "bg-rose-600"
+      }`}
+    >
+      <span className="min-w-0 flex-1">{error.message}</span>
+      {action && (
+        <button type="button" onClick={action.run} className="shrink-0 rounded-lg bg-white px-3 py-1.5 text-xs font-bold text-rose-700">
+          {action.label}
+        </button>
+      )}
+      <button type="button" onClick={onDismiss} className="shrink-0 rounded-lg bg-black/20 px-3 py-1.5 text-xs">
+        Dismiss
+      </button>
     </div>
   );
 }
