@@ -56,6 +56,14 @@ The first release, **v0.1**, is a fully playable game of **heads-up No-Limit Tex
 - Three table themes: classic green, midnight blue and burgundy.
 - Sound, volume, theme, animation speed and auto-deal are saved in the browser and survive a refresh. Invalid saved values fall back to the defaults.
 
+**v0.2.4 — Stability, accessibility and UX**
+- Keyboard shortcuts no longer fire while you type in a field or while a dialog is open, and auto-deal waits while a dialog covers the table.
+- If a request fails, the table re-syncs with the server. A lost game (for example after a server restart) offers a new game, and an unreachable server offers Retry.
+- API hardening: per-session locking, client seeds disabled by default (`POKERLAB_ALLOW_SEED`), idle games expire, and finished games are evicted before live ones.
+- The whole game can be played from the keyboard. Dialogs trap and restore focus, focus returns to the betting controls each turn, and every control shows a visible focus ring.
+- Screen readers: your turn and options are announced, and cards in the hand history, stacks, bets and the dealer button all have text.
+- Touch: larger tap targets on phones, no zoom when tapping inputs or tapping buttons quickly, and higher-contrast small text.
+
 ## Quick start
 
 Requirements: **Python 3.11+** and **Node.js 20.19+** (CI uses Node 24).
@@ -93,8 +101,8 @@ make test      # pytest + vitest
 make lint      # ruff + TypeScript
 ```
 
-- **Backend (pytest, 90+ tests):** deck and evaluator correctness, betting rules, illegal actions, side pots and odd chips, short-stack edge cases, AI legality, sessions, and full games played over HTTP. Randomized fuzz tests play thousands of 2–6 player hands and check chip conservation after every action.
-- **Frontend (Vitest + Testing Library):** betting controls, seats and hidden cards, sizing helpers, animations, the sound engine (against a fake AudioContext) and event-to-sound timing, saved settings, and app flows with a mocked API (deal → act → showdown → next hand, errors, game over).
+- **Backend (pytest, 100+ tests):** deck and evaluator correctness, betting rules, illegal actions, side pots and odd chips, short-stack edge cases, AI legality, sessions, API robustness (locking, seeds, eviction), and full games played over HTTP. Randomized fuzz tests play thousands of 2–6 player hands and check chip conservation after every action.
+- **Frontend (Vitest + Testing Library):** betting controls, seats and hidden cards, sizing helpers, animations, accessibility (focus, dialogs, announcements), connection failures and keyboard shortcuts, the sound engine (against a fake AudioContext) and event-to-sound timing, saved settings, and app flows with a mocked API (deal → act → showdown → next hand, errors, game over).
 - **CI:** GitHub Actions runs lint, tests and a production build on every push and pull request (Python 3.11–3.13).
 
 ## Architecture
@@ -134,7 +142,7 @@ frontend/src/
 | Method | Path | Description |
 | --- | --- | --- |
 | `GET` | `/api/health` | Health check |
-| `POST` | `/api/sessions` | Create a match (`starting_stack`, `small_blind`, `big_blind`, `player_name`, optional `seed`) |
+| `POST` | `/api/sessions` | Create a match (`starting_stack`, `small_blind`, `big_blind`, `player_name`; `seed` only when the server sets `POKERLAB_ALLOW_SEED`) |
 | `GET` | `/api/sessions/{id}` | Current state (from the human's point of view) |
 | `POST` | `/api/sessions/{id}/hands` | Deal the next hand |
 | `POST` | `/api/sessions/{id}/actions` | `{"action": "fold"\|"check"\|"call"\|"bet"\|"raise"\|"all_in", "amount"?: raise-to total}` |
@@ -146,7 +154,7 @@ Illegal actions return `400` with an explanation. Out-of-turn or out-of-state re
 
 ## Roadmap
 
-- **v0.2 — Visual polish:** v0.2.1 visual redesign, v0.2.2 animations and v0.2.3 sound and themes (done). Next: an accessibility pass.
+- **v0.2 — Visual polish:** v0.2.1 visual redesign, v0.2.2 animations, v0.2.3 sound and themes, and v0.2.4 stability and accessibility (done).
 - **v0.3 — Smarter AI:** Monte Carlo equity, better bet sizing, difficulty levels, basic opponent modeling.
 - **v0.4 — Analytics:** persistent hand history (SQLite), replays, performance stats, AI-vs-AI simulations.
 - **Later:** multiplayer, tournaments, Omaha / Stud / Draw, CFR agents, reinforcement learning, strategy dashboards.
