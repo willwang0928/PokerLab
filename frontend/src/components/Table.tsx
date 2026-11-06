@@ -4,7 +4,7 @@ import { AI, HUMAN } from "../hooks/usePokerGame";
 import { formatChips } from "../lib/betting";
 import type { GameEvent, GameState } from "../types";
 import { ChipStack } from "./ChipStack";
-import { canTravel, DeckContext, durationScale, TIMING, useMotionPrefs } from "../lib/motion";
+import { boardTiming, canTravel, DeckContext, durationScale, TIMING, useMotionPrefs } from "../lib/motion";
 import { type Anchor, ChipFlights, useLanding } from "./ChipFlights";
 import { CardBack, CardSlot, PlayingCard } from "./PlayingCard";
 import { Seat } from "./Seat";
@@ -41,17 +41,6 @@ export function winningCards(state: GameState, lastEvent: GameEvent | null): Set
     return cards.length ? new Set(cards) : null;
   }
   return null;
-}
-
-/** Delay before a board card leaves the deck, and how long after that it turns over. */
-function boardTiming(i: number): { delay: number; revealAfter: number } {
-  if (i < 3) {
-    // Flop: three cards land face down, then turn over left to right.
-    const delay = i * TIMING.boardGap;
-    const flipStart = 2 * TIMING.boardGap + TIMING.dealTravel + 0.06 + i * TIMING.flipGap;
-    return { delay, revealAfter: flipStart - delay };
-  }
-  return { delay: 0, revealAfter: TIMING.dealTravel + 0.04 };
 }
 
 /** Events after which the betting round is over, so last-action tags are stale. */

@@ -43,6 +43,17 @@ export const TIMING = {
   exit: 0.3,
 };
 
+/** Delay before a board card leaves the deck, and how long after that it turns over. */
+export function boardTiming(i: number): { delay: number; revealAfter: number } {
+  if (i < 3) {
+    // Flop: three cards land face down, then turn over left to right.
+    const delay = i * TIMING.boardGap;
+    const flipStart = 2 * TIMING.boardGap + TIMING.dealTravel + 0.06 + i * TIMING.flipGap;
+    return { delay, revealAfter: flipStart - delay };
+  }
+  return { delay: 0, revealAfter: TIMING.dealTravel + 0.04 };
+}
+
 /** Centre of ``el`` relative to ``origin``'s top-left corner. */
 export function centerIn(el: Element, origin: Element): { x: number; y: number } {
   const a = el.getBoundingClientRect();
