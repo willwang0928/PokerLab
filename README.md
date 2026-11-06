@@ -48,6 +48,14 @@ The first release, **v0.1**, is a fully playable game of **heads-up No-Limit Tex
 - Cards are collected between hands, and stale action tags clear when a betting round ends.
 - Animation speed follows the speed setting. Instant speed and the OS "reduce motion" preference skip movement.
 
+**v0.2.3 — Sound effects and customization**
+- Subtle sounds for dealing, card turns, chips, checks, bets and raises, all-ins, folds, collecting bets and pushing the pot. Each sound is timed to its animation.
+- Every sound is synthesised in the browser with the Web Audio API, so there are no audio files or licences involved. Small random variations and rate limits keep repeats from sounding mechanical or piling up.
+- Audio starts only after your first click, tap or key press, as browsers require.
+- Mute button in the header, plus a volume slider (with a preview sample) in the settings menu.
+- Three table themes: classic green, midnight blue and burgundy.
+- Sound, volume, theme, animation speed and auto-deal are saved in the browser and survive a refresh. Invalid saved values fall back to the defaults.
+
 ## Quick start
 
 Requirements: **Python 3.11+** and **Node.js 20.19+** (CI uses Node 24).
@@ -86,7 +94,7 @@ make lint      # ruff + TypeScript
 ```
 
 - **Backend (pytest, 90+ tests):** deck and evaluator correctness, betting rules, illegal actions, side pots and odd chips, short-stack edge cases, AI legality, sessions, and full games played over HTTP. Randomized fuzz tests play thousands of 2–6 player hands and check chip conservation after every action.
-- **Frontend (Vitest + Testing Library):** betting controls, seats and hidden cards, sizing helpers, and app flows with a mocked API (deal → act → showdown → next hand, errors, game over).
+- **Frontend (Vitest + Testing Library):** betting controls, seats and hidden cards, sizing helpers, animations, the sound engine (against a fake AudioContext) and event-to-sound timing, saved settings, and app flows with a mocked API (deal → act → showdown → next hand, errors, game over).
 - **CI:** GitHub Actions runs lint, tests and a production build on every push and pull request (Python 3.11–3.13).
 
 ## Architecture
@@ -109,8 +117,9 @@ backend/pokerlab/
 
 frontend/src/
 ├── hooks/usePokerGame.ts   API calls + step-by-step animation playback
-├── components/             Table, Seat, PlayingCard, ChipStack, ActionBar, HandLog, modals
-└── lib/                    API client, betting and card helpers
+├── hooks/useGameSounds.ts  plays table sounds from the same event stream
+├── components/             Table, Seat, PlayingCard, ChipStack, ChipFlights, ActionBar, HandLog, SettingsMenu, modals
+└── lib/                    API client, betting and card helpers, motion timing, sound engine and cues
 ```
 
 **How a turn works.** The server holds all game state. Each request (`POST /api/sessions/{id}/actions`) applies the human's action, then lets the AI act until it is the human's turn again or the hand ends. The response contains the final state plus a list of `steps`. Each step is an engine event paired with a state snapshot taken right after it, so the UI can replay the AI's moves, new streets and showdowns one at a time. Opponent hole cards are left out of every snapshot until they are shown down.
@@ -137,7 +146,7 @@ Illegal actions return `400` with an explanation. Out-of-turn or out-of-state re
 
 ## Roadmap
 
-- **v0.2 — Visual polish:** v0.2.1 visual redesign and v0.2.2 animations (done). Next: sound and an accessibility pass.
+- **v0.2 — Visual polish:** v0.2.1 visual redesign, v0.2.2 animations and v0.2.3 sound and themes (done). Next: an accessibility pass.
 - **v0.3 — Smarter AI:** Monte Carlo equity, better bet sizing, difficulty levels, basic opponent modeling.
 - **v0.4 — Analytics:** persistent hand history (SQLite), replays, performance stats, AI-vs-AI simulations.
 - **Later:** multiplayer, tournaments, Omaha / Stud / Draw, CFR agents, reinforcement learning, strategy dashboards.
