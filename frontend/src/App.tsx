@@ -5,6 +5,7 @@ import { GameOverModal } from "./components/GameOverModal";
 import { HandLog } from "./components/HandLog";
 import { SettingsMenu } from "./components/SettingsMenu";
 import { StartScreen } from "./components/StartScreen";
+import { SuitIcon } from "./components/SuitIcon";
 import { Table } from "./components/Table";
 import { AI, usePokerGame } from "./hooks/usePokerGame";
 import { useSettings } from "./hooks/useSettings";
@@ -51,26 +52,33 @@ export default function App() {
 
   return (
     <div className="flex min-h-screen flex-col">
-      <header className="flex items-center justify-between gap-3 px-4 py-2.5 sm:px-6">
+      <header className="flex items-center justify-between gap-3 px-4 py-3 sm:px-6">
         <div className="flex items-center gap-3">
-          <div className="grid h-9 w-9 place-items-center rounded-xl bg-gradient-to-br from-emerald-500 to-teal-800 text-lg shadow-lg ring-1 ring-white/10" aria-hidden>
-            ♠
+          <div
+            className="grid h-9 w-9 place-items-center rounded-[11px] bg-gradient-to-br from-emerald-400 via-emerald-600 to-teal-900 text-white shadow-lg ring-1 ring-white/15"
+            style={{ boxShadow: "inset 0 1px 0 rgba(255,255,255,.3), 0 6px 16px -6px rgba(16,185,129,.6)" }}
+            aria-hidden
+          >
+            <SuitIcon suit="s" className="h-[18px] w-[18px] drop-shadow" />
           </div>
-          <div className="leading-tight">
-            <div className="font-display text-lg font-bold text-amber-100">PokerLab</div>
-            <div className="hidden text-xs text-slate-400 sm:block">Heads-Up No-Limit Hold'em</div>
+          <div className="hidden leading-tight min-[420px]:block">
+            <div className="font-display text-[19px] font-bold tracking-wide text-amber-50">PokerLab</div>
+            <div className="hidden text-[11px] font-medium uppercase tracking-[0.14em] text-slate-500 sm:block">
+              Heads-up No-Limit Hold'em
+            </div>
           </div>
         </div>
-        <div className="flex items-center gap-2 sm:gap-3">
+        <div className="flex items-center gap-2 sm:gap-2.5">
           {state && (
-            <div className="hidden items-center gap-3 rounded-xl bg-slate-900/70 px-3 py-1.5 text-xs text-slate-300 ring-1 ring-white/5 sm:flex">
+            <div className="surface flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs text-slate-400 sm:gap-3">
               <span>
-                Hand <b className="tabular-nums text-slate-100">#{state.hand_number}</b>
+                <span className="hidden sm:inline">Hand </span>
+                <b className="tabular-nums font-semibold text-slate-100">#{state.hand_number}</b>
               </span>
               <span className="h-3 w-px bg-white/10" />
               <span>
-                Blinds{" "}
-                <b className="tabular-nums text-slate-100">
+                <span className="hidden sm:inline">Blinds </span>
+                <b className="tabular-nums font-semibold text-slate-100">
                   {state.config.small_blind}/{state.config.big_blind}
                 </b>
               </span>
@@ -80,15 +88,15 @@ export default function App() {
           <button
             type="button"
             onClick={() => setShowSetup(true)}
-            className="rounded-xl bg-slate-800/80 px-3 py-2 text-sm font-semibold text-slate-200 ring-1 ring-white/5 hover:bg-slate-700"
+            className="btn-dark whitespace-nowrap rounded-xl px-3 py-2 text-sm font-semibold"
           >
             New game
           </button>
         </div>
       </header>
 
-      <main className="mx-auto flex w-full max-w-[1400px] flex-1 flex-col gap-4 px-3 pb-4 sm:px-6 lg:flex-row lg:items-start">
-        <div className="flex min-w-0 flex-1 flex-col items-center gap-3">
+      <main className="mx-auto flex w-full max-w-[1440px] flex-1 flex-col gap-5 px-3 pb-5 sm:px-6 lg:flex-row lg:items-start">
+        <div className="flex min-w-0 flex-col items-center gap-4 lg:flex-1">
           {state ? (
             <>
               <Table
@@ -97,7 +105,7 @@ export default function App() {
                 thinkingSeat={game.thinkingSeat}
                 humanTurn={humanTurn}
               />
-              <div className="w-full max-w-[760px]">
+              <div className="w-full max-w-[780px]">
                 {state.legal && state.status === "in_hand" && !game.animating ? (
                   <ActionBar
                     legal={state.legal}
@@ -120,14 +128,14 @@ export default function App() {
               </div>
             </>
           ) : (
-            <div className="grid flex-1 place-items-center text-slate-500">
+            <div className="grid min-h-[50vh] w-full place-items-center text-slate-500">
               {game.pending ? "Shuffling…" : ""}
             </div>
           )}
         </div>
 
         {state && (
-          <aside className="w-full lg:sticky lg:top-4 lg:flex lg:h-[calc(100vh-6rem)] lg:w-80 lg:flex-col">
+          <aside className="w-full lg:sticky lg:top-4 lg:flex lg:max-h-[calc(100vh-6rem)] lg:w-80 lg:shrink-0 lg:flex-col">
             <HandLog lines={state.log} />
           </aside>
         )}
@@ -204,14 +212,14 @@ function StatusBar({
   const seconds = autoDealAt ? Math.max(0, Math.ceil((autoDealAt - now) / 1000)) : null;
 
   return (
-    <div className="flex min-h-[3.25rem] items-center justify-center gap-3 rounded-2xl bg-slate-900/60 px-4 py-2.5 text-sm text-slate-300 ring-1 ring-white/5">
+    <div className="surface flex min-h-[3.5rem] items-center justify-center gap-3 rounded-2xl px-4 py-2.5 text-sm text-slate-300">
       {waiting ? (
         <>
-          <span>{seconds !== null ? `Next hand in ${seconds}s` : "Hand complete"}</span>
+          <span className="tabular-nums">{seconds !== null ? `Next hand in ${seconds}s` : "Hand complete"}</span>
           <button
             type="button"
             onClick={onDeal}
-            className="rounded-xl bg-gradient-to-b from-amber-300 to-amber-500 px-4 py-2 text-sm font-bold text-slate-950 shadow hover:from-amber-200 hover:to-amber-400"
+            className="btn-gold rounded-xl px-4 py-2 text-sm font-bold"
           >
             Deal next hand
           </button>

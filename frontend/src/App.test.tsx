@@ -61,7 +61,9 @@ describe("App", () => {
     await waitFor(() => expect(within(board).getAllByRole("img")).toHaveLength(3));
     expect(screen.getByTestId("hand-desc-0")).toHaveTextContent("High Card, Ace");
     expect(screen.getByRole("button", { name: /^Check/ })).toBeInTheDocument();
-    expect(screen.getByText("Flop: 2c 7h 9d")).toBeInTheDocument();
+    const history = screen.getByRole("region", { name: "Hand history" });
+    expect(within(history).getByText("Flop")).toBeInTheDocument();
+    expect(within(history).getByLabelText("7 of hearts")).toBeInTheDocument();
     expect(fetchMock).toHaveBeenCalledTimes(3);
   });
 

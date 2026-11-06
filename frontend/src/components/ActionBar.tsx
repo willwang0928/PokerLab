@@ -64,13 +64,13 @@ export function ActionBar({ legal, pot, currentBet, bigBlind, disabled, onAction
   });
 
   const btn =
-    "relative flex-1 rounded-xl px-4 py-2.5 text-sm font-bold tracking-wide shadow-lg transition active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-40 sm:text-base";
-  const kbd = "ml-2 hidden rounded bg-black/25 px-1.5 py-0.5 text-[10px] font-semibold opacity-70 sm:inline";
+    "relative flex flex-1 items-center justify-center rounded-xl px-3 py-3 text-[15px] font-bold tracking-wide transition active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-35 disabled:saturate-50 sm:text-base";
+  const kbd = "ml-2 hidden rounded-[5px] bg-black/20 px-1.5 py-0.5 text-[10px] font-semibold leading-none opacity-70 ring-1 ring-black/10 sm:inline";
 
   return (
-    <div className="flex w-full flex-col gap-2" aria-label="Betting controls">
+    <div className="surface flex w-full flex-col gap-2.5 rounded-2xl p-2.5 sm:p-3" aria-label="Betting controls">
       {legal.can_raise && (
-        <div className="flex flex-col gap-2 rounded-2xl bg-slate-900/70 p-2.5 ring-1 ring-white/5 md:flex-row md:items-center md:gap-3">
+        <div className="flex flex-col gap-2.5 md:flex-row md:items-center md:gap-3">
           <div className="flex flex-wrap gap-1.5">
             <Preset label="Min" onClick={() => setBoth(min)} disabled={disabled} active={amount === min} />
             {presets.map((p) => (
@@ -106,7 +106,7 @@ export function ActionBar({ legal, pot, currentBet, bigBlind, disabled, onAction
             <input
               type="number"
               inputMode="numeric"
-              className="w-20 rounded-lg bg-slate-950 px-2 py-1.5 text-right font-semibold tabular-nums text-amber-100 ring-1 ring-white/10 focus:outline-none focus:ring-amber-300/60"
+              className="w-[5.5rem] rounded-lg bg-black/40 px-2.5 py-1.5 text-right text-[15px] font-bold tabular-nums text-amber-100 ring-1 ring-white/10 focus:outline-none focus:ring-2 focus:ring-amber-300/60"
               min={min}
               max={max}
               value={draft}
@@ -126,10 +126,10 @@ export function ActionBar({ legal, pot, currentBet, bigBlind, disabled, onAction
         </div>
       )}
 
-      <div className="flex gap-2 sm:gap-3">
+      <div className="flex gap-2 sm:gap-2.5">
         <button
           type="button"
-          className={`${btn} bg-slate-700 text-slate-100 hover:bg-slate-600`}
+          className={`${btn} btn-dark`}
           onClick={() => onAction("fold")}
           disabled={disabled || !legal.can_fold}
         >
@@ -137,7 +137,7 @@ export function ActionBar({ legal, pot, currentBet, bigBlind, disabled, onAction
         </button>
         <button
           type="button"
-          className={`${btn} bg-emerald-600 text-white hover:bg-emerald-500`}
+          className={`${btn} btn-green`}
           onClick={doPassive}
           disabled={disabled}
         >
@@ -147,7 +147,7 @@ export function ActionBar({ legal, pot, currentBet, bigBlind, disabled, onAction
         {legal.can_raise && (
           <button
             type="button"
-            className={`${btn} bg-gradient-to-b from-amber-300 to-amber-500 text-slate-950 hover:from-amber-200 hover:to-amber-400`}
+            className={`${btn} btn-gold`}
             onClick={doRaise}
             disabled={disabled}
           >
@@ -176,10 +176,10 @@ function Preset({
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition disabled:opacity-35 ${
+      className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition disabled:opacity-30 ${
         active
-          ? "bg-amber-300 text-slate-950"
-          : "bg-slate-800 text-slate-200 hover:bg-slate-700"
+          ? "bg-amber-300 text-slate-950 shadow-[inset_0_1px_0_rgba(255,255,255,.5)]"
+          : "bg-white/[0.06] text-slate-200 ring-1 ring-white/[0.06] hover:bg-white/10"
       }`}
     >
       {label}
@@ -205,7 +205,7 @@ function Nudge({
       aria-label={`Adjust raise ${title}`}
       onClick={onClick}
       disabled={disabled}
-      className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-slate-800 text-lg font-bold text-slate-200 transition hover:bg-slate-700 disabled:opacity-35"
+      className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-white/[0.06] text-lg font-bold text-slate-200 ring-1 ring-white/[0.06] transition hover:bg-white/10 disabled:opacity-30"
     >
       {label}
     </button>
