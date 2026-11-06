@@ -35,8 +35,8 @@ export function Table({ state, lastEvent, thinkingSeat, humanTurn }: Props) {
   const winners = Object.keys(payouts).map(Number);
 
   return (
-    <div className="mx-auto flex w-full max-w-[min(980px,max(340px,calc((100vh-370px)*2.15)))] flex-col items-center">
-      <div className="relative z-10 -mb-8">
+    <div className="mx-auto flex w-full max-w-[min(1000px,max(340px,calc((100vh-360px)*2.1)))] flex-col items-center">
+      <div className="relative z-10 -mb-[34px]">
         <Seat
           player={ai}
           position="top"
@@ -50,23 +50,19 @@ export function Table({ state, lastEvent, thinkingSeat, humanTurn }: Props) {
         />
       </div>
 
-      <div className="table-rail relative aspect-[1.55/1] w-full p-[10px] sm:aspect-[2.15/1] sm:p-[16px]">
-        <div className="table-felt relative flex h-full w-full flex-col items-center justify-center pb-[calc(var(--card-w-lg)*0.55+22px)]">
-          <div className="pointer-events-none absolute inset-0 grid place-items-center">
-            <span className="font-display text-[clamp(1.6rem,5vw,3.6rem)] italic tracking-wide text-black/15">
-              PokerLab
-            </span>
-          </div>
-
+      <div
+        className="table-rail relative aspect-[1.3/1] w-full p-[var(--rail)] [--rail:12px] min-[480px]:aspect-[1.7/1] sm:aspect-[2.1/1] sm:[--rail:18px]"
+      >
+        <div className="table-felt relative flex h-full w-full flex-col items-center justify-center pb-[calc(var(--card-w-lg)*0.95)] pt-[22px]">
           {/* opponent's bet */}
-          <div className="absolute right-[calc(50%+max(64px,var(--card-w)*1.3))] top-[14%] h-7">
+          <div className="absolute right-[calc(50%+var(--card-w)*0.35)] top-[calc(34px+4%)] h-9">
             <AnimatePresence>
-              {ai.bet > 0 && <ChipStack key="ai-bet" amount={ai.bet} />}
+              {ai.bet > 0 && <ChipStack key="ai-bet" amount={ai.bet} tagFirst />}
             </AnimatePresence>
           </div>
 
           <div className="relative flex flex-col items-center gap-2 sm:gap-3">
-            <div className="grid h-8 place-items-center">
+            <div className="grid min-h-9 place-items-center">
               <ResultBanner state={state} />
               <AnimatePresence mode="popLayout">
                 {state.collected_pot > 0 && !awarding && (
@@ -75,11 +71,14 @@ export function Table({ state, lastEvent, thinkingSeat, humanTurn }: Props) {
                     initial={{ opacity: 0, y: 6 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0 }}
-                    className="flex items-center gap-2 rounded-full bg-black/45 px-3 py-1 text-sm font-semibold text-amber-100 ring-1 ring-amber-200/20"
+                    className="flex items-center gap-2"
                     data-testid="pot"
                   >
-                    <span className="text-[11px] uppercase tracking-widest text-amber-200/70">Pot</span>
-                    <span className="tabular-nums">{formatChips(state.collected_pot)}</span>
+                    <ChipStack amount={state.collected_pot} columns={3} hideTag />
+                    <span className="amount-tag flex items-baseline gap-1.5 px-3 py-1 text-sm font-bold text-amber-50 sm:text-base">
+                      <span className="eyebrow text-amber-200/70">Pot</span>
+                      <span className="tabular-nums">{formatChips(state.collected_pot)}</span>
+                    </span>
                   </motion.div>
                 )}
                 {awarding && (
@@ -92,13 +91,13 @@ export function Table({ state, lastEvent, thinkingSeat, humanTurn }: Props) {
                     }}
                     transition={{ duration: 0.9, ease: "easeIn" }}
                   >
-                    <ChipStack amount={Number(lastEvent?.amount ?? 0)} />
+                    <ChipStack amount={Number(lastEvent?.amount ?? 0)} columns={3} />
                   </motion.div>
                 )}
               </AnimatePresence>
             </div>
 
-            <div className="flex gap-1.5 sm:gap-2.5" data-testid="board">
+            <div className="flex gap-[calc(var(--card-w)*0.09)]" data-testid="board">
               {Array.from({ length: 5 }, (_, i) => {
                 const code = state.board[i];
                 return code ? (
@@ -108,11 +107,10 @@ export function Table({ state, lastEvent, thinkingSeat, humanTurn }: Props) {
                 );
               })}
             </div>
-
           </div>
 
           {/* player's bet */}
-          <div className="absolute bottom-[14%] left-[calc(50%+max(64px,var(--card-w-lg)*1.15))] h-7">
+          <div className="absolute bottom-[calc(var(--card-w-lg)*0.7)] left-[calc(50%+var(--card-w-lg)*1.05)] h-9">
             <AnimatePresence>
               {human.bet > 0 && <ChipStack key="human-bet" amount={human.bet} />}
             </AnimatePresence>
@@ -120,7 +118,7 @@ export function Table({ state, lastEvent, thinkingSeat, humanTurn }: Props) {
         </div>
       </div>
 
-      <div className="relative z-10 -mt-[calc(var(--card-w-lg)*0.9+22px)]">
+      <div className="relative z-10 -mt-[calc(var(--card-w-lg)*0.98+30px)]">
         <Seat
           player={human}
           position="bottom"
@@ -165,12 +163,12 @@ function ResultBanner({ state }: { state: GameState }) {
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.9 }}
           transition={{ type: "spring", stiffness: 300, damping: 22 }}
-          className="flex items-center gap-2 whitespace-nowrap rounded-full bg-gradient-to-r from-amber-300 via-amber-200 to-amber-400 px-4 py-1.5 text-slate-950 shadow-[0_8px_30px_-6px_rgba(242,200,107,0.6)]"
+          className="flex max-w-[calc(100vw-56px)] items-center gap-2 overflow-hidden whitespace-nowrap rounded-full bg-gradient-to-b from-[#fbe3a1] via-[#f0c96a] to-[#d9a23c] px-4 py-1.5 text-[#1b1405] shadow-[inset_0_1px_0_rgba(255,255,255,.6),0_10px_30px_-8px_rgba(240,201,106,0.7)]"
           role="status"
           data-testid="result-banner"
         >
           <span className="text-sm font-extrabold sm:text-base">{title}</span>
-          {subtitle && <span className="text-xs font-medium opacity-75 sm:text-sm">· {subtitle}</span>}
+          {subtitle && <span className="truncate text-xs font-medium opacity-75 sm:text-sm">· {subtitle}</span>}
         </motion.div>
       )}
     </AnimatePresence>

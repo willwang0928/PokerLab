@@ -43,6 +43,11 @@ describe("Seat", () => {
     expect(screen.getAllByText(/All-in/i).length).toBeGreaterThan(0);
   });
 
+  it("drops the amount from bet labels once chips are swept into the pot", () => {
+    render(<Seat {...base} player={player({ last_action: "raise", bet: 0 })} />);
+    expect(screen.getByText("Raise")).toBeInTheDocument();
+  });
+
   it("hides action labels once the hand is over and shows winnings", () => {
     render(<Seat {...base} handOver isWinner winAmount={240} player={player({ last_action: "check" })} />);
     expect(screen.queryByText("Check")).not.toBeInTheDocument();
