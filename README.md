@@ -32,6 +32,14 @@ The first release, **v0.1**, is a fully playable game of **heads-up No-Limit Tex
 - Game-over screen when a player busts, plus restart and new-game setup (name, stack depth, blinds).
 - Responsive layout from phone to desktop, in a dark theme.
 
+**v0.2.1 — Visual redesign**
+- Redesigned cards with vector suit glyphs (no emoji or font substitution), framed court cards and a bordered card back.
+- Casino-style chips with edge inserts, stacked in columns for larger pots.
+- Seats rebuilt as nameplates over fanned hole cards. The action tag and made hand sit in a tag row under each nameplate.
+- Textured felt with a betting line, a brass rail inlay, and a portrait-friendly table shape on phones.
+- Hand history shows board and shown cards as mini cards.
+- Bundled Inter and Playfair Display fonts, a unified dark surface system, and a reworked betting dock.
+
 ## Quick start
 
 Requirements: **Python 3.11+** and **Node.js 20.19+** (CI uses Node 24).
@@ -119,7 +127,7 @@ Illegal actions return `400` with an explanation. Out-of-turn or out-of-state re
 
 ## Roadmap
 
-- **v0.2 — Visual polish:** richer animations, sound, refined responsive layout, accessibility pass.
+- **v0.2 — Visual polish:** v0.2.1 visual redesign (done). Next: richer animations, sound and an accessibility pass.
 - **v0.3 — Smarter AI:** Monte Carlo equity, better bet sizing, difficulty levels, basic opponent modeling.
 - **v0.4 — Analytics:** persistent hand history (SQLite), replays, performance stats, AI-vs-AI simulations.
 - **Later:** multiplayer, tournaments, Omaha / Stud / Draw, CFR agents, reinforcement learning, strategy dashboards.
