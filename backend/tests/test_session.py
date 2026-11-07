@@ -130,3 +130,49 @@ def test_showdown_exposes_the_winning_cards():
         if s.status.value == "game_over":
             break
     assert seen > 0
+
+
+def _play_until(session, rng, predicate, max_hands=300):
+    while session.status.value != "game_over" and session.hand_number < max_hands:
+        session.start_hand()
+        while session.status.value == "in_hand":
+            legal = session.view()["legal"]
+            # Never fold, so most hands reach a showdown.
+            action = Action.check() if legal["can_check"] else Action.call()
+            session.act(action)
+        if predicate(session.result):
+            return session.result
+    raise AssertionError("no matching hand")
+
+
+def test_showdown_result_includes_equity_by_street():
+    s = HeadsUpSession(seed=21)
+    result = _play_until(s, random.Random(0), lambda r: r["showdown"] is not None)
+    rows = result["equity"]
+    assert [row["street"] for row in rows] == ["preflop", "flop", "turn"]
+    assert rows[0]["method"] == "monte_carlo" and rows[1]["method"] == "exact"
+    for row in rows:
+        assert set(row["equity"]) == {HUMAN, AI}
+        assert sum(row["equity"].values()) == pytest.approx(1.0)
+    assert all(v == 0.0 for row in rows[1:] for v in row["std_error"].values())
+    assert rows[0]["std_error"][HUMAN] > 0
+
+
+def test_equity_summary_is_reproducible_in_seeded_sessions():
+    def first_showdown_equity(seed):
+        s = HeadsUpSession(seed=seed)
+        return _play_until(s, random.Random(0), lambda r: r["showdown"] is not None)["equity"]
+
+    assert first_showdown_equity(33) == first_showdown_equity(33)
+
+
+def test_uncontested_hand_has_no_equity_summary():
+    s = HeadsUpSession(seed=5)
+    result = None
+    while result is None or not result["uncontested"]:
+        s.start_hand()
+        while s.status.value == "in_hand":
+            legal = s.view()["legal"]
+            s.act(Action.fold() if legal["can_fold"] else Action.check())
+        result = s.result
+    assert result["equity"] is None

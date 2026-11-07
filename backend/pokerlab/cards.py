@@ -129,6 +129,10 @@ class Deck:
         dealt, self._cards = self._cards[:n], self._cards[n:]
         return dealt
 
+    def remaining(self) -> list[Card]:
+        """The undealt cards in dealing order (a copy, e.g. to replay the same deal)."""
+        return list(self._cards)
+
     def burn(self) -> None:
         self.deal(1)
 

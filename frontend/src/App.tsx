@@ -2,6 +2,7 @@ import { AnimatePresence, MotionConfig, useReducedMotion } from "motion/react";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { ActionBar } from "./components/ActionBar";
 import { GameOverModal } from "./components/GameOverModal";
+import { EquityPanel } from "./components/EquityPanel";
 import { HandLog } from "./components/HandLog";
 import { MuteButton, SettingsMenu } from "./components/SettingsMenu";
 import { StartScreen } from "./components/StartScreen";
@@ -179,6 +180,7 @@ export default function App() {
 
         {state && (
           <aside className="w-full lg:sticky lg:top-4 lg:flex lg:max-h-[calc(100vh-6rem)] lg:w-80 lg:shrink-0 lg:flex-col">
+            <EquityPanel state={state} />
             <HandLog lines={state.log} />
           </aside>
         )}

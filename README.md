@@ -72,6 +72,13 @@ The first release, **v0.1**, is a fully playable game of **heads-up No-Limit Tex
 - Validated: exact results match an independent brute-force implementation. AhAs vs KhKs enumerates to the published 82.36% win, and AA vs a random hand gives about 85.2%.
 - Command line: `python -m pokerlab.equity AhKh "QQ+,AKs" --board Qs7d2c`.
 
+**v0.3.2 — Equity-driven opponent and equity review**
+- New default opponent. On every decision it estimates your range from your actions, computes its equity against that range (exact or Monte Carlo), and compares it with the pot odds. Facing an all-in, it calls exactly when that is +EV against the estimated range. Unopened preflop pots use a precomputed ranking of all 169 starting hands.
+- Opponent range model: preflop actions cap the range at "top X%" of hands, and postflop bets, raises and calls keep the stronger part of it while flush and open-ended straight draws stay in. The model is simple and explained in the code.
+- Measured with a duplicate-deal match harness (every deal played twice with seats swapped, which cancels most card luck). Over 6,000 hands it beats the v0.1 opponent by **+32.5 ± 9.2 big blinds per 100 hands** (z = 3.5) and a random player by +323 ± 32. A decision takes about 14 ms (95th percentile 20 ms).
+- **Equity review** after every showdown: both hands' equity before the flop, on the flop and on the turn. The preflop figure is a Monte Carlo estimate labelled with its 95% margin. Flop and turn figures are exact. Percentages never round a live chance to "0%" or "100%".
+- `POST /api/equity` exposes the equity engine (2–6 players, hands or ranges, board, dead cards, optional seed), with limits that cap the work per request.
+
 ## Quick start
 
 Requirements: **Python 3.11+** and **Node.js 20.19+** (CI uses Node 24).
@@ -109,7 +116,7 @@ make test      # pytest + vitest
 make lint      # ruff + TypeScript
 ```
 
-- **Backend (pytest, 170+ tests):** deck and evaluator correctness (including exhaustive five-card frequencies), equity (exact results against an independent brute force, Monte Carlo accuracy within its standard error, overlapping ranges, reproducible seeds), range parsing, betting rules, illegal actions, side pots and odd chips, short-stack edge cases, AI legality, sessions, API robustness (locking, seeds, eviction), and full games played over HTTP. Randomized fuzz tests play thousands of 2–6 player hands and check chip conservation after every action.
+- **Backend (pytest, 210+ tests):** deck and evaluator correctness (including exhaustive five-card frequencies), the equity agent (exact pot-odds boundaries, legality, range estimates, a duplicate match against a random player), equity (exact results against an independent brute force, Monte Carlo accuracy within its standard error, overlapping ranges, reproducible seeds), range parsing, betting rules, illegal actions, side pots and odd chips, short-stack edge cases, AI legality, sessions, API robustness (locking, seeds, eviction), and full games played over HTTP. Randomized fuzz tests play thousands of 2–6 player hands and check chip conservation after every action.
 - **Frontend (Vitest + Testing Library):** betting controls, seats and hidden cards, sizing helpers, animations, accessibility (focus, dialogs, announcements), connection failures and keyboard shortcuts, the sound engine (against a fake AudioContext) and event-to-sound timing, saved settings, and app flows with a mocked API (deal → act → showdown → next hand, errors, game over).
 - **CI:** GitHub Actions runs lint, tests and a production build on every push and pull request (Python 3.11–3.13).
 
@@ -129,7 +136,11 @@ backend/pokerlab/
 ├── ai/
 │   ├── base.py       Agent interface, Observation (no hidden info), legality guard
 │   ├── strength.py   preflop/postflop strength heuristics
-│   ├── heuristic.py  basic rule-based opponent
+│   ├── heuristic.py  basic rule-based opponent (v0.1)
+│   ├── preflop.py    169 hand classes, ranking, "top X%" ranges (+ preflop_data.py)
+│   ├── range_model.py  opponent range estimate from public actions
+│   ├── equity_agent.py default opponent: equity vs. range against pot odds
+│   ├── match.py      duplicate-deal agent-vs-agent evaluation
 │   └── random_agent.py
 ├── session.py        heads-up match: hand sequencing, AI turns, per-seat views, log
 └── api/              FastAPI app, schemas, session store
@@ -158,6 +169,7 @@ frontend/src/
 | `POST` | `/api/sessions/{id}/hands` | Deal the next hand |
 | `POST` | `/api/sessions/{id}/actions` | `{"action": "fold"\|"check"\|"call"\|"bet"\|"raise"\|"all_in", "amount"?: raise-to total}` |
 | `DELETE` | `/api/sessions/{id}` | End a match |
+| `POST` | `/api/equity` | `{"players": ["AhKh", "QQ+,AKs"], "board"?, "dead"?, "iterations"?, "seed"?}` → equity, win, tie and standard error per player |
 
 Each response includes `steps`: one event plus a state snapshot for every change, which the UI replays to drive its animations. Showdown events list each player's best five cards (`best`), and `pot_awarded` events list the winning cards (`cards`).
 
@@ -166,7 +178,7 @@ Illegal actions return `400` with an explanation. Out-of-turn or out-of-state re
 ## Roadmap
 
 - **v0.2 — Visual polish:** v0.2.1 visual redesign, v0.2.2 animations, v0.2.3 sound and themes, and v0.2.4 stability and accessibility (done).
-- **v0.3 — Smarter AI:** v0.3.1 equity engine (done); next, an equity-driven AI, better bet sizing, difficulty levels and basic opponent modeling.
+- **v0.3 — Smarter AI:** v0.3.1 equity engine and v0.3.2 equity-driven opponent with equity review (done); next, difficulty levels, better bet sizing and opponent modeling that adapts to the player.
 - **v0.4 — Analytics:** persistent hand history (SQLite), replays, performance stats, AI-vs-AI simulations.
 - **Later:** multiplayer, tournaments, Omaha / Stud / Draw, CFR agents, reinforcement learning, strategy dashboards.
 

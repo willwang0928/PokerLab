@@ -10,8 +10,9 @@ from dataclasses import dataclass, field
 from enum import StrEnum
 from typing import Any
 
-from .ai import Agent, HeuristicAgent, Observation
+from .ai import Agent, EquityAgent, Observation
 from .engine import Action, Event, HoldemHand, IllegalActionError
+from .equity import equity_by_street
 from .evaluator import best_five, evaluate
 
 HUMAN = 0
@@ -61,7 +62,7 @@ class HeadsUpSession:
     def __post_init__(self) -> None:
         self.rng = random.Random(self.seed)
         if self.agent is None:
-            self.agent = HeuristicAgent(random.Random(self.rng.random()))
+            self.agent = EquityAgent(random.Random(self.rng.random()))
         self.stacks = [self.config.starting_stack, self.config.starting_stack]
         self.button = self.rng.randrange(2)
         self.hand_number = 0
@@ -159,8 +160,30 @@ class HeadsUpSession:
                 if showdown
                 else None
             ),
+            "equity": self._equity_summary(showdown),
         }
         self.status = SessionStatus.GAME_OVER if min(self.stacks) == 0 else SessionStatus.WAITING
+
+    def _equity_summary(self, showdown: dict[Any, Any] | None) -> list[dict[str, Any]] | None:
+        """Each shown-down hand's all-in equity per street, for post-hand review.
+
+        Only computed once every remaining hand is face up, so it reveals nothing hidden.
+        Preflop is a Monte Carlo estimate (with a standard error). Later streets are exact.
+        """
+        if not showdown or self.hand is None:
+            return None
+        seats = sorted(int(s) for s in showdown)
+        hands = [self.hand.players[s].hole for s in seats]
+        seed = None if self.seed is None else self.seed * 10_000 + self.hand_number * 10
+        return [
+            {
+                "street": street,
+                "method": r.method,
+                "equity": {s: p.equity for s, p in zip(seats, r.players, strict=True)},
+                "std_error": {s: p.std_error for s, p in zip(seats, r.players, strict=True)},
+            }
+            for street, r in equity_by_street(hands, self.hand.board, seed=seed)
+        ]
 
     def _public_event(self, event: Event) -> dict[str, Any]:
         data = dict(event.data)

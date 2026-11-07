@@ -113,3 +113,33 @@ def test_delete_session(client):
     sid = new_session(client)
     assert client.delete(f"/api/sessions/{sid}").status_code == 204
     assert client.get(f"/api/sessions/{sid}").status_code == 404
+
+
+def test_equity_endpoint_exact_and_monte_carlo(client):
+    r = client.post("/api/equity", json={"players": ["AhKh", "QsQd"], "board": "Qh7h2c"})
+    assert r.status_code == 200
+    body = r.json()
+    assert body["method"] == "exact" and body["trials"] == 990 and body["seed"] is None
+    assert sum(p["equity"] for p in body["players"]) == pytest.approx(1.0)
+    req = {"players": ["AhKh", "QQ+, AKs"], "iterations": 2000, "seed": 5}
+    a, b = client.post("/api/equity", json=req).json(), client.post("/api/equity", json=req).json()
+    assert a == b and a["method"] == "monte_carlo" and a["players"][0]["std_error"] > 0
+
+
+@pytest.mark.parametrize(
+    "body,status",
+    [
+        ({"players": ["AhKh"]}, 422),
+        ({"players": ["AhKh"] * 7}, 422),
+        ({"players": ["AhKh", "QQ"], "iterations": 10**6}, 422),
+        ({"players": ["any"] * 6, "iterations": 100_000}, 422),  # too much total work
+        ({"players": ["AhKh", "QQ"], "iterations": "500"}, 422),
+        ({"players": ["AhKh", "ZZ"]}, 400),
+        ({"players": ["AhKh", "AhQd"]}, 400),
+        ({"players": ["AhKh", "QQ"], "board": "Qh7h"}, 400),
+        ({"players": ["AA", "AA", "AA"]}, 400),
+    ],
+)
+def test_equity_endpoint_validates_input(client, body, status):
+    r = client.post("/api/equity", json=body)
+    assert r.status_code == status, r.json()

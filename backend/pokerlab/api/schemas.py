@@ -41,3 +41,40 @@ class StepModel(BaseModel):
 class PlayResponse(BaseModel):
     state: dict[str, Any]
     steps: list[StepModel]
+
+
+MAX_EQUITY_PLAYERS = 6
+MAX_EQUITY_EVALUATIONS = 300_000  # iterations x players; keeps one request around a second
+
+
+class EquityRequest(BaseModel):
+    """All-in equity query. Each player is a hand (``"AhKh"``) or a range (``"QQ+,AKs"``)."""
+
+    players: list[Annotated[str, Field(min_length=1, max_length=200)]] = Field(
+        min_length=2, max_length=MAX_EQUITY_PLAYERS
+    )
+    board: str = Field("", max_length=20)
+    dead: str = Field("", max_length=60)
+    iterations: StrictInt = Field(20_000, ge=100, le=100_000)
+    seed: StrictInt | None = Field(None, ge=0, lt=2**63)
+
+    @model_validator(mode="after")
+    def _check_work(self) -> EquityRequest:
+        if self.iterations * len(self.players) > MAX_EQUITY_EVALUATIONS:
+            limit = MAX_EQUITY_EVALUATIONS // len(self.players)
+            raise ValueError(f"iterations must be at most {limit} for {len(self.players)} players")
+        return self
+
+
+class PlayerEquityModel(BaseModel):
+    equity: float
+    win: float
+    tie: float
+    std_error: float
+
+
+class EquityResponse(BaseModel):
+    method: str
+    trials: int
+    seed: int | None
+    players: list[PlayerEquityModel]

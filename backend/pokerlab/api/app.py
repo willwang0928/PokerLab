@@ -9,8 +9,15 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from .. import __version__
 from ..engine import Action, IllegalActionError
+from ..equity import calculate_equity
 from ..session import HeadsUpSession, SessionConfig, SessionStateError
-from .schemas import ActionRequest, CreateSessionRequest, PlayResponse
+from .schemas import (
+    ActionRequest,
+    CreateSessionRequest,
+    EquityRequest,
+    EquityResponse,
+    PlayResponse,
+)
 from .store import SessionStore
 
 
@@ -88,6 +95,28 @@ def create_app(store: SessionStore | None = None, allow_seed: bool | None = None
             except IllegalActionError as exc:
                 raise HTTPException(status_code=400, detail=str(exc)) from exc
             return PlayResponse(state=session.view(), steps=[s.__dict__ for s in steps])
+
+    @app.post("/api/equity", response_model=EquityResponse)
+    def equity(req: EquityRequest) -> EquityResponse:
+        try:
+            r = calculate_equity(
+                req.players,
+                board=req.board or None,
+                dead=req.dead or None,
+                iterations=req.iterations,
+                seed=req.seed,
+            )
+        except ValueError as exc:  # includes RangeError and bad card codes
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+        return EquityResponse(
+            method=r.method,
+            trials=r.trials,
+            seed=r.seed,
+            players=[
+                {"equity": p.equity, "win": p.win, "tie": p.tie, "std_error": p.std_error}
+                for p in r.players
+            ],
+        )
 
     return app
 

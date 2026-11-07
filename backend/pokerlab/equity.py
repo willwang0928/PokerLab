@@ -41,7 +41,11 @@ IndexCombo = tuple[int, int]  # a hole-card combo as card indices
 
 DEFAULT_ITERATIONS = 20_000
 DEFAULT_EXACT_LIMIT = 600_000
+# Rejection budget: a deal may be redrawn up to MAX_REJECTIONS_PER_TRIAL times, and a
+# whole run may redraw at most this many times per requested trial on average. Both
+# bound the work for ranges that almost never fit together.
 MAX_REJECTIONS_PER_TRIAL = 10_000
+MAX_REJECTIONS_PER_ITERATION = 100
 
 
 @dataclass(frozen=True, slots=True)
@@ -244,6 +248,8 @@ def _monte_carlo(problem: _Problem, iterations: int, seed: int) -> EquityResult:
     wins = [0] * n
     ties = [0] * n
     holes = [r[0] for r in ranges]
+    budget = MAX_REJECTIONS_PER_TRIAL + MAX_REJECTIONS_PER_ITERATION * iterations
+    too_rare = "The ranges overlap so heavily that valid deals are too rare to sample"
 
     for _ in range(iterations):
         # 1. Hole cards: draw every player independently, reject the deal on any clash.
@@ -253,10 +259,11 @@ def _monte_carlo(problem: _Problem, iterations: int, seed: int) -> EquityResult:
                 held = {c for h in holes for c in h}
                 if len(held) == 2 * n:
                     break
+                budget -= 1
+                if budget <= 0:
+                    raise ValueError(too_rare)
             else:
-                raise ValueError(
-                    "The ranges overlap so heavily that valid deals are too rare to sample"
-                )
+                raise ValueError(too_rare)
         held = {c for h in holes for c in h}
 
         # 2. Runout. Take a uniform random ordered sample of the unseen cards and keep the
@@ -349,6 +356,39 @@ def calculate_equity(
     if seed is None:
         seed = random.SystemRandom().randrange(2**63)
     return _monte_carlo(problem, iterations, seed)
+
+
+STREET_BOARD_SIZES = (("preflop", 0), ("flop", 3), ("turn", 4))
+
+
+def equity_by_street(
+    hands: Sequence[Sequence[Card]],
+    board: Sequence[Card],
+    *,
+    iterations: int = 10_000,
+    seed: int | None = None,
+) -> list[tuple[str, EquityResult]]:
+    """Equity of face-up ``hands`` before the flop, on the flop and on the turn.
+
+    ``board`` is the final board. Streets it does not reach are skipped. Flop and turn
+    results are exact. Preflop uses Monte Carlo (an exact preflop count takes seconds).
+    """
+    out = []
+    for i, (street, size) in enumerate(STREET_BOARD_SIZES):
+        if len(board) < size:
+            break
+        out.append(
+            (
+                street,
+                calculate_equity(
+                    [list(h) for h in hands],
+                    board=list(board[:size]),
+                    iterations=iterations,
+                    seed=None if seed is None else seed + i,
+                ),
+            )
+        )
+    return out
 
 
 # ---------------------------------------------------------------------- CLI

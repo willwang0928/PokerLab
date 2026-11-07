@@ -38,7 +38,8 @@ def preflop_strength(hole: Sequence[Card]) -> float:
     return min(1.0, 10 / 12 + (score - 10) / 10 * (2 / 12))
 
 
-def _draw_bonus(hole: Sequence[Card], board: Sequence[Card]) -> float:
+def draw_bonus(hole: Sequence[Card], board: Sequence[Card]) -> float:
+    """0.18 for a flush draw, 0.14 for an open-ended straight draw, 0.07 for a gutshot."""
     if len(board) >= 5:
         return 0.0
     cards = list(hole) + list(board)
@@ -72,7 +73,7 @@ def postflop_strength(hole: Sequence[Card], board: Sequence[Card]) -> float:
 
     # If the board alone is just as good, our cards are not helping.
     if len(board) == 5 and evaluate(board) == value:
-        return 0.15 + _draw_bonus(hole, board)
+        return 0.15 + draw_bonus(hole, board)
 
     if cat == HandCategory.HIGH_CARD:
         strength = 0.05 + 0.02 * sum(r > board_ranks[0] for r in hole_ranks)
@@ -104,4 +105,4 @@ def postflop_strength(hole: Sequence[Card], board: Sequence[Card]) -> float:
         strength = 0.95
     else:
         strength = 0.99
-    return min(1.0, strength + _draw_bonus(hole, board))
+    return min(1.0, strength + draw_bonus(hole, board))

@@ -10,6 +10,17 @@ from ..engine import Action, ActionType, HoldemHand, LegalActions, Street
 
 
 @dataclass(frozen=True, slots=True)
+class ActionRecord:
+    """One public betting action. ``amount`` is the call size or the raise-to total."""
+
+    street: Street
+    seat: int
+    action: str  # fold / check / call / bet / raise
+    amount: int
+    all_in: bool
+
+
+@dataclass(frozen=True, slots=True)
 class Observation:
     """Everything a seat may legally know when deciding (no opponent hole cards)."""
 
@@ -27,10 +38,23 @@ class Observation:
     num_in_hand: int
     opponent_stacks: tuple[int, ...]
     street_raises: int  # bets/raises made so far on this street
+    button: int = 0
+    opponents_in_hand: tuple[int, ...] = ()  # seats of opponents who have not folded
+    actions: tuple[ActionRecord, ...] = ()  # every action this hand, oldest first
 
     @classmethod
     def from_hand(cls, hand: HoldemHand, seat: int) -> Observation:
         p = hand.players[seat]
+        actions: list[ActionRecord] = []
+        street = Street.PREFLOP
+        for ev in hand.events:
+            if ev.type == "street":
+                street = Street(ev.data["street"])
+            elif ev.type == "action":
+                d = ev.data
+                actions.append(
+                    ActionRecord(street, d["seat"], d["action"], d["amount"], d["all_in"])
+                )
         raises = 0
         for ev in reversed(hand.events):
             if ev.type in ("street", "deal_hole"):
@@ -52,6 +76,11 @@ class Observation:
             num_in_hand=sum(not q.folded for q in hand.players),
             opponent_stacks=tuple(q.stack for q in hand.players if q.seat != seat),
             street_raises=raises,
+            button=hand.button,
+            opponents_in_hand=tuple(
+                q.seat for q in hand.players if q.seat != seat and not q.folded
+            ),
+            actions=tuple(actions),
         )
 
 
@@ -62,6 +91,22 @@ class Agent(ABC):
 
     @abstractmethod
     def decide(self, obs: Observation, legal: LegalActions) -> Action: ...
+
+
+def raise_to_pot_fraction(obs: Observation, legal: LegalActions, fraction: float) -> Action:
+    """Bet/raise to ``current bet + fraction × (pot after calling)``, clamped to legal sizes.
+
+    Moves all-in when the target is at least 80% of the maximum (a smaller bet would leave
+    an awkward, committed stack behind). Calls or checks when raising is not allowed.
+    """
+    if not legal.can_raise:
+        return Action.call() if legal.can_call else Action.check()
+    pot_after_call = obs.pot + legal.call_amount
+    target = legal.current_bet + int(round(fraction * pot_after_call))
+    target = max(legal.min_raise_to, min(legal.max_raise_to, target))
+    if target >= 0.8 * legal.max_raise_to:
+        target = legal.max_raise_to
+    return Action(legal.raise_type, target)
 
 
 def make_legal(action: Action, legal: LegalActions) -> Action:

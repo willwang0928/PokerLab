@@ -190,3 +190,24 @@ def test_cli(capsys):
     assert main(["AhKh", "QsQd", "--board", "Qh7h2c"]) == 0
     out = capsys.readouterr().out
     assert "exact, 990 deals" in out and "equity" in out
+
+
+def test_equity_by_street_skips_unreached_streets():
+    from pokerlab.equity import equity_by_street
+
+    hands = [parse_cards("AhKh"), parse_cards("QsQd")]
+    rows = equity_by_street(hands, parse_cards("Qh7h2c3d9s"), seed=1)
+    assert [s for s, _ in rows] == ["preflop", "flop", "turn"]
+    assert rows[1][1].equities == calculate_equity(hands, board="Qh7h2c").equities
+    assert equity_by_street(hands, [], seed=1)[0][0] == "preflop"
+    assert len(equity_by_street(hands, [], seed=1)) == 1
+
+
+def test_rejection_budget_stops_hopeless_sampling(monkeypatch):
+    import pokerlab.equity as eq
+
+    monkeypatch.setattr(eq, "MAX_REJECTIONS_PER_TRIAL", 5)
+    monkeypatch.setattr(eq, "MAX_REJECTIONS_PER_ITERATION", 0)
+    # Valid deals exist (so the up-front check passes) but most draws clash.
+    with pytest.raises(ValueError, match="too rare"):
+        calculate_equity(["AA", "AA", "AsAh, KK"], iterations=1000, seed=1)

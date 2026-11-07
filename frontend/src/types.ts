@@ -36,6 +36,14 @@ export interface PotResult {
   cards?: string[];
 }
 
+/** All-in equity of the shown-down hands at one street (keys are seat numbers). */
+export interface StreetEquity {
+  street: "preflop" | "flop" | "turn";
+  method: "exact" | "monte_carlo";
+  equity: Record<string, number>;
+  std_error: Record<string, number>;
+}
+
 export interface HandResult {
   winnings: Record<string, number>;
   uncontested: boolean;
@@ -44,6 +52,8 @@ export interface HandResult {
     string,
     { cards: string[]; category: string; description: string; best?: string[] }
   > | null;
+  /** Present only when the hand reached a showdown. */
+  equity?: StreetEquity[] | null;
 }
 
 export interface GameState {

@@ -5,7 +5,7 @@ from __future__ import annotations
 import random
 
 from ..engine import Action, LegalActions, Street
-from .base import Agent, Observation, make_legal
+from .base import Agent, Observation, make_legal, raise_to_pot_fraction
 from .strength import postflop_strength, preflop_strength
 
 
@@ -28,15 +28,7 @@ class HeuristicAgent(Agent):
     # ------------------------------------------------------------------ helpers
 
     def _raise_to(self, obs: Observation, legal: LegalActions, pot_fraction: float) -> Action:
-        """Raise to ``current bet + fraction × (pot after calling)``; shove when nearly all-in."""
-        if not legal.can_raise:
-            return Action.call() if legal.can_call else Action.check()
-        pot_after_call = obs.pot + legal.call_amount
-        target = legal.current_bet + int(round(pot_fraction * pot_after_call))
-        target = max(legal.min_raise_to, min(legal.max_raise_to, target))
-        if target >= 0.8 * legal.max_raise_to:
-            target = legal.max_raise_to
-        return Action(legal.raise_type, target)
+        return raise_to_pot_fraction(obs, legal, pot_fraction)
 
     def _continue(self, legal: LegalActions) -> Action:
         return Action.call() if legal.can_call else Action.check()
