@@ -82,6 +82,11 @@ class Card:
     def code(self) -> str:
         return self.rank.char + self.suit.char
 
+    @property
+    def index(self) -> int:
+        """Dense integer id 0..51: ``(rank - 2) * 4 + suit`` (used by fast evaluators)."""
+        return (self.rank - 2) * 4 + self.suit
+
     def __str__(self) -> str:
         return self.code
 

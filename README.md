@@ -64,6 +64,14 @@ The first release, **v0.1**, is a fully playable game of **heads-up No-Limit Tex
 - Screen readers: your turn and options are announced, and cards in the hand history, stacks, bets and the dealer button all have text.
 - Touch: larger tap targets on phones, no zoom when tapping inputs or tapping buttons quickly, and higher-contrast small text.
 
+**v0.3.1 — Equity engine**
+- All-in equity for 2+ players from known hands, **ranges** (`QQ+, AKs, T9s-65s, A5s-A2s, any`), any partial board, and dead cards. Split pots give each tied player an equal share, and results report win, tie and equity separately.
+- **Exact enumeration** when the deal space is small (for example any flop or turn with known hands). Otherwise **seeded Monte Carlo**, which reports a standard error, a 95% interval and the seed that reproduces the run.
+- Card removal is handled jointly. When ranges compete for the same cards, the whole deal is redrawn rather than drawing players one at a time, which keeps the estimate unbiased. A test shows that one-at-a-time drawing would miss by about 13 percentage points.
+- A table-driven 5–7 card scorer, about 15× faster than the reference evaluator (≈1 µs per 7-card hand). It is checked against the reference evaluator and against the textbook counts for all 2,598,960 five-card hands (7,462 distinct hand values).
+- Validated: exact results match an independent brute-force implementation. AhAs vs KhKs enumerates to the published 82.36% win, and AA vs a random hand gives about 85.2%.
+- Command line: `python -m pokerlab.equity AhKh "QQ+,AKs" --board Qs7d2c`.
+
 ## Quick start
 
 Requirements: **Python 3.11+** and **Node.js 20.19+** (CI uses Node 24).
@@ -101,7 +109,7 @@ make test      # pytest + vitest
 make lint      # ruff + TypeScript
 ```
 
-- **Backend (pytest, 100+ tests):** deck and evaluator correctness, betting rules, illegal actions, side pots and odd chips, short-stack edge cases, AI legality, sessions, API robustness (locking, seeds, eviction), and full games played over HTTP. Randomized fuzz tests play thousands of 2–6 player hands and check chip conservation after every action.
+- **Backend (pytest, 170+ tests):** deck and evaluator correctness (including exhaustive five-card frequencies), equity (exact results against an independent brute force, Monte Carlo accuracy within its standard error, overlapping ranges, reproducible seeds), range parsing, betting rules, illegal actions, side pots and odd chips, short-stack edge cases, AI legality, sessions, API robustness (locking, seeds, eviction), and full games played over HTTP. Randomized fuzz tests play thousands of 2–6 player hands and check chip conservation after every action.
 - **Frontend (Vitest + Testing Library):** betting controls, seats and hidden cards, sizing helpers, animations, accessibility (focus, dialogs, announcements), connection failures and keyboard shortcuts, the sound engine (against a fake AudioContext) and event-to-sound timing, saved settings, and app flows with a mocked API (deal → act → showdown → next hand, errors, game over).
 - **CI:** GitHub Actions runs lint, tests and a production build on every push and pull request (Python 3.11–3.13).
 
@@ -110,7 +118,10 @@ make lint      # ruff + TypeScript
 ```
 backend/pokerlab/
 ├── cards.py          Card, Rank, Suit, Deck            ← shared by every variant
-├── evaluator.py      5–7 card hand ranking             ← shared by every variant
+├── evaluator.py      5–7 card hand ranking (reference) ← shared by every variant
+├── fasteval.py       table-driven integer hand scores  ← hot loops (equity)
+├── ranges.py         starting-hand range notation      ← hold'em
+├── equity.py         exact / Monte Carlo all-in equity, CLI
 ├── engine/
 │   ├── actions.py    Action, LegalActions, errors      ← generic betting vocabulary
 │   ├── pots.py       side-pot layering, pot splitting  ← generic
@@ -155,7 +166,7 @@ Illegal actions return `400` with an explanation. Out-of-turn or out-of-state re
 ## Roadmap
 
 - **v0.2 — Visual polish:** v0.2.1 visual redesign, v0.2.2 animations, v0.2.3 sound and themes, and v0.2.4 stability and accessibility (done).
-- **v0.3 — Smarter AI:** Monte Carlo equity, better bet sizing, difficulty levels, basic opponent modeling.
+- **v0.3 — Smarter AI:** v0.3.1 equity engine (done); next, an equity-driven AI, better bet sizing, difficulty levels and basic opponent modeling.
 - **v0.4 — Analytics:** persistent hand history (SQLite), replays, performance stats, AI-vs-AI simulations.
 - **Later:** multiplayer, tournaments, Omaha / Stud / Draw, CFR agents, reinforcement learning, strategy dashboards.
 
