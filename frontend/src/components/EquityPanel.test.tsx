@@ -1,8 +1,8 @@
-import { render, screen, within } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { act, render, renderHook, screen, within } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { gameState, player } from "../test/fixtures";
 import type { GameState, HandResult } from "../types";
-import { EquityPanel, formatMargin, formatPercent } from "./EquityPanel";
+import { EquityPanel, formatMargin, formatPercent, useRevealed } from "./EquityPanel";
 
 function finished(result: Partial<HandResult>): GameState {
   return gameState({
@@ -50,5 +50,59 @@ describe("EquityPanel", () => {
     expect(screen.queryByTestId("equity-panel")).not.toBeInTheDocument();
     rerender(<EquityPanel state={{ ...finished({ equity: EQUITY }), status: "in_hand" }} />);
     expect(screen.queryByTestId("equity-panel")).not.toBeInTheDocument();
+  });
+});
+
+describe("EquityPanel live mode", () => {
+  it("titles an all-in runout as live equity", () => {
+    const state = { ...finished({ equity: null }), status: "in_hand" as const, live_equity: EQUITY!.slice(0, 2) };
+    render(<EquityPanel state={state} />);
+    const panel = screen.getByTestId("equity-panel");
+    expect(panel).toHaveTextContent("All-in equity");
+    expect(within(panel).getAllByRole("row")).toHaveLength(3); // header + preflop + flop
+  });
+});
+
+describe("useRevealed", () => {
+  beforeEach(() => vi.useFakeTimers());
+  afterEach(() => vi.useRealTimers());
+
+  it("holds each new row back until its cards are face up", () => {
+    const { result, rerender } = renderHook(({ rows, delay }) => useRevealed(rows, delay), {
+      initialProps: { rows: EQUITY!.slice(0, 1), delay: 0 },
+    });
+    expect(result.current).toHaveLength(1);
+    rerender({ rows: EQUITY!.slice(0, 2), delay: 1000 });
+    expect(result.current).toHaveLength(1); // flop row hidden while the flop turns over
+    act(() => vi.advanceTimersByTime(999));
+    expect(result.current).toHaveLength(1);
+    act(() => vi.advanceTimersByTime(1));
+    expect(result.current).toHaveLength(2);
+  });
+
+  it("reveals rows one by one even when they arrive faster than the delay", () => {
+    const { result, rerender } = renderHook(({ rows, delay }) => useRevealed(rows, delay), {
+      initialProps: { rows: EQUITY!.slice(0, 1), delay: 0 },
+    });
+    rerender({ rows: EQUITY!.slice(0, 2), delay: 1000 });
+    act(() => vi.advanceTimersByTime(600));
+    rerender({ rows: EQUITY!.slice(0, 3), delay: 1000 }); // turn arrives before the flop row shows
+    rerender({ rows: EQUITY!.slice(0, 3), delay: 0 }); // a later event with no delay must not cut in
+    expect(result.current).toHaveLength(1);
+    act(() => vi.advanceTimersByTime(400));
+    expect(result.current).toHaveLength(2);
+    act(() => vi.advanceTimersByTime(599));
+    expect(result.current).toHaveLength(2);
+    act(() => vi.advanceTimersByTime(1));
+    expect(result.current).toHaveLength(3);
+  });
+
+  it("hides immediately for a new hand", () => {
+    const { result, rerender } = renderHook(({ rows, delay }) => useRevealed(rows, delay), {
+      initialProps: { rows: EQUITY! as typeof EQUITY | null, delay: 0 },
+    });
+    expect(result.current).toHaveLength(3);
+    rerender({ rows: null, delay: 1000 });
+    expect(result.current).toBeNull();
   });
 });

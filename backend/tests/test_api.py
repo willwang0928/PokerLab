@@ -143,3 +143,14 @@ def test_equity_endpoint_exact_and_monte_carlo(client):
 def test_equity_endpoint_validates_input(client, body, status):
     r = client.post("/api/equity", json=body)
     assert r.status_code == status, r.json()
+
+
+def test_create_session_accepts_difficulty(client):
+    for level in ("beginner", "intermediate", "advanced"):
+        r = client.post("/api/sessions", json={"difficulty": level})
+        assert r.status_code == 201
+        assert r.json()["state"]["config"]["difficulty"] == level
+    assert client.post("/api/sessions", json={}).json()["state"]["config"]["difficulty"] == (
+        "intermediate"
+    )
+    assert client.post("/api/sessions", json={"difficulty": "expert"}).status_code == 422

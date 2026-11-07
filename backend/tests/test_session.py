@@ -176,3 +176,53 @@ def test_uncontested_hand_has_no_equity_summary():
             s.act(Action.fold() if legal["can_fold"] else Action.check())
         result = s.result
     assert result["equity"] is None
+
+
+def test_difficulty_selects_the_opponent_profile():
+    from pokerlab.ai.difficulty import PROFILES, Difficulty
+
+    for level in Difficulty:
+        s = HeadsUpSession(config=SessionConfig(difficulty=level), seed=1)
+        assert s.agent.profile is PROFILES[level]
+        assert s.view()["config"]["difficulty"] == level.value
+    assert HeadsUpSession(seed=1).view()["config"]["difficulty"] == "intermediate"
+    with pytest.raises(ValueError):
+        SessionConfig(difficulty="expert")
+
+
+def _shove_until_called(session, max_hands=200):
+    """Shove every hand until the opponent calls; returns that hand's steps."""
+    while session.hand_number < max_hands and session.status.value != "game_over":
+        steps = session.start_hand()
+        while session.status.value == "in_hand" and session.view()["legal"]:
+            steps = steps + session.act(Action("all_in"))
+        if any(st.event["type"] == "reveal" for st in steps):
+            return steps
+    raise AssertionError("the opponent never called a shove")
+
+
+def test_live_equity_appears_only_after_an_all_in_reveal_and_grows_by_street():
+    s = HeadsUpSession(config=SessionConfig(difficulty="beginner"), seed=8)
+    steps = _shove_until_called(s)
+    reveal = next(i for i, st in enumerate(steps) if st.event["type"] == "reveal")
+    assert all(st.state["live_equity"] is None for st in steps[:reveal])
+    live = [st.state["live_equity"] for st in steps[reveal:] if st.state["status"] == "in_hand"]
+    counts = [len(rows) for rows in live]
+    assert counts[0] >= 1 and counts == sorted(counts) and counts[-1] == 3
+    final = steps[-1].state
+    assert final["live_equity"] is None and final["status"] != "in_hand"
+    # The review shows exactly the numbers the live display showed (shared cache).
+    assert final["result"]["equity"] == live[-1]
+
+
+def test_no_live_equity_at_an_ordinary_showdown():
+    s = HeadsUpSession(seed=21)
+    for _ in range(100):
+        steps = s.start_hand()
+        while s.status.value == "in_hand":
+            legal = s.view()["legal"]
+            steps = steps + s.act(Action.check() if legal["can_check"] else Action.call())
+        if s.result["showdown"] and not any(st.event["type"] == "reveal" for st in steps):
+            break
+    assert s.result["equity"] is not None
+    assert all(st.state["live_equity"] is None for st in steps)

@@ -5,13 +5,13 @@ import { GameOverModal } from "./components/GameOverModal";
 import { EquityPanel } from "./components/EquityPanel";
 import { HandLog } from "./components/HandLog";
 import { MuteButton, SettingsMenu } from "./components/SettingsMenu";
-import { StartScreen } from "./components/StartScreen";
+import { DIFFICULTY_LABEL, StartScreen } from "./components/StartScreen";
 import { SuitIcon } from "./components/SuitIcon";
 import { Table } from "./components/Table";
 import { AI, type GameError, usePokerGame } from "./hooks/usePokerGame";
 import { useGameSounds } from "./hooks/useGameSounds";
 import { SPEED_SCALE, useSettings } from "./hooks/useSettings";
-import { type MotionPrefs, MotionPrefsContext } from "./lib/motion";
+import { canTravel, durationScale, type MotionPrefs, MotionPrefsContext, revealLag } from "./lib/motion";
 import { restoreFocus, shortcutBlocked } from "./lib/keys";
 import { sound } from "./lib/sound";
 import type { GameConfig, GameState } from "./types";
@@ -21,6 +21,7 @@ const DEFAULT_CONFIG: GameConfig = {
   starting_stack: 1000,
   small_blind: 5,
   big_blind: 10,
+  difficulty: "intermediate",
 };
 
 export default function App() {
@@ -109,6 +110,15 @@ export default function App() {
                   {state.config.small_blind}/{state.config.big_blind}
                 </b>
               </span>
+              {state.config.difficulty && (
+                <>
+                  <span className="h-3 w-px bg-white/10" />
+                  <span data-testid="difficulty-badge">
+                    <span className="hidden sm:inline">Opponent </span>
+                    <b className="font-semibold text-slate-100">{DIFFICULTY_LABEL[state.config.difficulty]}</b>
+                  </span>
+                </>
+              )}
             </div>
           )}
           <MuteButton
@@ -180,7 +190,10 @@ export default function App() {
 
         {state && (
           <aside className="w-full lg:sticky lg:top-4 lg:flex lg:max-h-[calc(100vh-6rem)] lg:w-80 lg:shrink-0 lg:flex-col">
-            <EquityPanel state={state} />
+            <EquityPanel
+              state={state}
+              revealDelayMs={canTravel(motionPrefs) ? revealLag(game.lastEvent) * durationScale(motionPrefs) * 1000 : 0}
+            />
             <HandLog lines={state.log} />
           </aside>
         )}

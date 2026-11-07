@@ -6,6 +6,7 @@ import pytest
 
 from pokerlab.ai import ActionRecord, EquityAgent, HeuristicAgent, Observation, RandomAgent
 from pokerlab.ai.base import Agent
+from pokerlab.ai.difficulty import INTERMEDIATE
 from pokerlab.ai.match import duplicate_match, play_hand
 from pokerlab.ai.preflop import (
     PREFLOP_EQUITY,
@@ -152,7 +153,7 @@ def test_smaller_calls_need_a_realisation_margin():
     assert legal.call_amount < legal.player_stack
     need = legal.call_amount / (obs.pot + legal.call_amount)
     assert FixedEquity(need + 0.01).decide(obs, legal).type == ActionType.FOLD
-    assert FixedEquity(need + EquityAgent.CALL_MARGIN + 0.01).decide(obs, legal).type in (
+    assert FixedEquity(need + INTERMEDIATE.call_margin + 0.01).decide(obs, legal).type in (
         ActionType.CALL,
         ActionType.RAISE,
     )
@@ -222,3 +223,21 @@ def test_equity_agent_beats_random_agent():
 def test_match_rejects_tiny_samples():
     with pytest.raises(ValueError):
         duplicate_match(AlwaysCall, AlwaysCall, 1)
+
+
+def test_pooling_matches_combines_deals_and_errors():
+    from pokerlab.ai.match import MatchResult, pool
+
+    a = MatchResult(deals=100, big_blind=10, net_chips=500, bb_per_100=25.0, std_error=10.0)
+    b = MatchResult(deals=300, big_blind=10, net_chips=-300, bb_per_100=-5.0, std_error=6.0)
+    p = pool([a, b])
+    assert p.deals == 400 and p.net_chips == 200
+    assert p.bb_per_100 == pytest.approx((25 * 100 - 5 * 300) / 400)
+    assert p.std_error == pytest.approx(((10 * 100) ** 2 + (6 * 300) ** 2) ** 0.5 / 400)
+
+
+def test_match_cli(capsys):
+    from pokerlab.ai.match import main
+
+    assert main(["basic", "basic", "--deals", "4", "--seed", "1"]) == 0
+    assert "basic vs basic" in capsys.readouterr().out

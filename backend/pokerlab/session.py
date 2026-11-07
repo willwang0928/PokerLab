@@ -10,9 +10,10 @@ from dataclasses import dataclass, field
 from enum import StrEnum
 from typing import Any
 
-from .ai import Agent, EquityAgent, Observation
+from .ai import Agent, Observation
+from .ai.difficulty import DEFAULT_DIFFICULTY, Difficulty, make_agent
 from .engine import Action, Event, HoldemHand, IllegalActionError
-from .equity import equity_by_street
+from .equity import STREET_BOARD_SIZES, EquityResult, calculate_equity
 from .evaluator import best_five, evaluate
 
 HUMAN = 0
@@ -32,8 +33,10 @@ class SessionConfig:
     big_blind: int = 10
     player_name: str = "You"
     ai_name: str = "Dealer Bot"
+    difficulty: Difficulty = DEFAULT_DIFFICULTY
 
     def __post_init__(self) -> None:
+        object.__setattr__(self, "difficulty", Difficulty(self.difficulty))
         if not 0 < self.small_blind <= self.big_blind:
             raise ValueError("Blinds must satisfy 0 < small blind <= big blind")
         if self.starting_stack < self.big_blind:
@@ -62,7 +65,7 @@ class HeadsUpSession:
     def __post_init__(self) -> None:
         self.rng = random.Random(self.seed)
         if self.agent is None:
-            self.agent = EquityAgent(random.Random(self.rng.random()))
+            self.agent = make_agent(self.config.difficulty, random.Random(self.rng.random()))
         self.stacks = [self.config.starting_stack, self.config.starting_stack]
         self.button = self.rng.randrange(2)
         self.hand_number = 0
@@ -72,6 +75,8 @@ class HeadsUpSession:
         self.log: list[str] = []
         self.result: dict[str, Any] | None = None
         self._steps: list[Step] = []
+        self._equity_cache: dict[int, EquityResult] = {}  # board size -> face-up equity
+        self._runout = False
         # Serialises requests for this session (the API runs handlers on a threadpool).
         self.lock = threading.RLock()
         self.last_active = time.monotonic()
@@ -88,6 +93,8 @@ class HeadsUpSession:
         if self.hand_number > 1:
             self.button ^= 1
         self.revealed = set()
+        self._equity_cache = {}
+        self._runout = False  # True once hands are turned up for an all-in runout
         self.log = []
         self.result = None
         self.status = SessionStatus.IN_HAND
@@ -131,6 +138,8 @@ class HeadsUpSession:
     def _on_event(self, event: Event) -> None:
         if event.type in ("reveal", "showdown"):
             self.revealed |= {int(s) for s in event.data["hands"]}
+        if event.type == "reveal":  # hands turned up before the board is complete (all-in)
+            self._runout = True
         if event.type == "hand_complete":
             self._finish_hand(event)
         line = self._describe(event)
@@ -164,26 +173,67 @@ class HeadsUpSession:
         }
         self.status = SessionStatus.GAME_OVER if min(self.stacks) == 0 else SessionStatus.WAITING
 
-    def _equity_summary(self, showdown: dict[Any, Any] | None) -> list[dict[str, Any]] | None:
-        """Each shown-down hand's all-in equity per street, for post-hand review.
+    def _equity_rows(self, board_size: int) -> list[dict[str, Any]]:
+        """Face-up equity of every hand still in, at each street the board has reached.
 
-        Only computed once every remaining hand is face up, so it reveals nothing hidden.
-        Preflop is a Monte Carlo estimate (with a standard error). Later streets are exact.
+        Preflop is a Monte Carlo estimate (with a standard error). Flop and turn are exact.
+        Results are cached per hand, so the live all-in display and the post-hand review
+        always show the same numbers.
         """
+        assert self.hand is not None
+        seats = [p.seat for p in self.hand.players if not p.folded]
+        rows = []
+        for i, (street, size) in enumerate(STREET_BOARD_SIZES):
+            if size > board_size:
+                break
+            r = self._equity_cache.get(size)
+            if r is None:
+                seed = None if self.seed is None else self.seed * 10_000 + self.hand_number * 10
+                r = calculate_equity(
+                    [self.hand.players[s].hole for s in seats],
+                    board=self.hand.board[:size],
+                    iterations=10_000,
+                    seed=None if seed is None else seed + i,
+                )
+                self._equity_cache[size] = r
+            rows.append(
+                {
+                    "street": street,
+                    "method": r.method,
+                    "equity": {s: p.equity for s, p in zip(seats, r.players, strict=True)},
+                    "std_error": {s: p.std_error for s, p in zip(seats, r.players, strict=True)},
+                }
+            )
+        return rows
+
+    def _equity_summary(self, showdown: dict[Any, Any] | None) -> list[dict[str, Any]] | None:
+        """Per-street equity for post-hand review, only once every remaining hand is shown."""
         if not showdown or self.hand is None:
             return None
-        seats = sorted(int(s) for s in showdown)
-        hands = [self.hand.players[s].hole for s in seats]
-        seed = None if self.seed is None else self.seed * 10_000 + self.hand_number * 10
-        return [
-            {
-                "street": street,
-                "method": r.method,
-                "equity": {s: p.equity for s, p in zip(seats, r.players, strict=True)},
-                "std_error": {s: p.std_error for s, p in zip(seats, r.players, strict=True)},
-            }
-            for street, r in equity_by_street(hands, self.hand.board, seed=seed)
-        ]
+        return self._equity_rows(len(self.hand.board))
+
+    def _live_equity(self) -> list[dict[str, Any]] | None:
+        """During an all-in runout with every hand face up: equity so far, street by street.
+
+        Not shown at an ordinary showdown: the post-hand review covers that.
+
+        It is shown only when every remaining hand has been revealed, so it never uses a
+        card the human cannot see. Rows stop at the turn. After the river there is nothing
+        left to estimate, but the rows stay up until the showdown review replaces them,
+        so the panel does not flicker away while the river is dealt.
+        """
+        hand = self.hand
+        if (
+            hand is None
+            or not self._runout
+            or hand.is_complete
+            or self.status != SessionStatus.IN_HAND
+        ):
+            return None
+        live = {p.seat for p in hand.players if not p.folded}
+        if len(live) < 2 or not live <= self.revealed:
+            return None
+        return self._equity_rows(len(hand.board))
 
     def _public_event(self, event: Event) -> dict[str, Any]:
         data = dict(event.data)
@@ -314,10 +364,12 @@ class HeadsUpSession:
             "legal": legal,
             "result": self.result,
             "log": list(self.log),
+            "live_equity": self._live_equity(),
             "winner": winner,
             "config": {
                 "starting_stack": cfg.starting_stack,
                 "small_blind": cfg.small_blind,
                 "big_blind": cfg.big_blind,
+                "difficulty": cfg.difficulty.value,
             },
         }

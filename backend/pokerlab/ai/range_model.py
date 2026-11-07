@@ -6,7 +6,9 @@ Heads-up ranges are wide, so an opening raise from the button is about 70% of ha
 
 **Postflop.** Every bet, raise or call keeps the strongest part of the current range,
 ranked by made-hand strength on the board at that moment. Flush draws and open-ended
-straight draws are always kept, because players bet and call with them.
+straight draws are always kept, because players bet and call with them. With
+``cap_checks``, a check removes the strongest part of the range, since most players bet
+their best hands. Some strong hands stay in, because players also trap.
 
 The model has no weights and does not adapt to the opponent. Every surviving combo is
 equally likely. That is a deliberate first step. Opponent modelling (adjusting these
@@ -34,6 +36,7 @@ SHORT_SHOVE_RANGE = 0.40
 
 # Postflop: fraction of the current range kept after each action.
 POSTFLOP_KEEP = {"bet": 0.65, "raise": 0.35, "call": 0.80}
+CHECK_CAP = 0.15  # share of the strongest hands removed by a check (cap_checks only)
 MIN_COMBOS = 12
 
 _BOARD_SIZE = {Street.FLOP: 3, Street.TURN: 4, Street.RIVER: 5}
@@ -77,6 +80,18 @@ def _narrow(combos: list[Combo], board: list[Card], keep: float) -> list[Combo]:
     return kept
 
 
+def _cap(combos: list[Combo], board: list[Card], drop: float) -> list[Combo]:
+    """Remove the strongest ``drop`` share of ``combos`` on ``board``."""
+    if len(combos) <= MIN_COMBOS:
+        return combos
+    board_idx = [c.index for c in board]
+    ranked = sorted(
+        combos, key=lambda h: fasteval.score((h[0].index, h[1].index, *board_idx)), reverse=True
+    )
+    cut = min(round(drop * len(ranked)), len(ranked) - MIN_COMBOS)
+    return ranked[cut:]
+
+
 def estimate_range(
     actions: Sequence[ActionRecord],
     seat: int,
@@ -84,6 +99,7 @@ def estimate_range(
     big_blind: int,
     board: Sequence[Card],
     known: Sequence[Card] = (),
+    cap_checks: bool = False,
 ) -> HandRange:
     """``seat``'s plausible holdings given the public actions, the board and our cards."""
     blocked = set(board) | set(known)
@@ -91,7 +107,39 @@ def estimate_range(
     combos = [h for h in base if h[0] not in blocked and h[1] not in blocked]
     board = list(board)
     for a in actions:
-        if a.seat != seat or a.street == Street.PREFLOP or a.action not in POSTFLOP_KEEP:
+        if a.seat != seat or a.street == Street.PREFLOP:
             continue
-        combos = _narrow(combos, board[: _BOARD_SIZE[a.street]], POSTFLOP_KEEP[a.action])
+        street_board = board[: _BOARD_SIZE[a.street]]
+        if a.action in POSTFLOP_KEEP:
+            combos = _narrow(combos, street_board, POSTFLOP_KEEP[a.action])
+        elif a.action == "check" and cap_checks:
+            combos = _cap(combos, street_board, CHECK_CAP)
     return HandRange.of(combos, "estimated")
+
+
+def defending_ranges(
+    rng: HandRange, board: Sequence[Card], defends: Sequence[float]
+) -> list[HandRange]:
+    """For each defence frequency, the part of ``rng`` that continues against a bet: its
+    strongest share by made-hand strength on ``board``, plus strong draws.
+
+    The range is ranked once and sliced for every frequency (this runs on every bet
+    decision of the expected-value agent).
+    """
+    combos = list(rng)
+    board = list(board)
+    if len(combos) <= MIN_COMBOS:
+        return [HandRange.of(combos, "defending") for _ in defends]
+    board_idx = [c.index for c in board]
+    ranked = sorted(
+        combos, key=lambda h: fasteval.score((h[0].index, h[1].index, *board_idx)), reverse=True
+    )
+    draws = [draw_bonus(h, board) >= 0.14 for h in ranked] if len(board) < 5 else None
+    out = []
+    for defend in defends:
+        n = max(MIN_COMBOS, round(defend * len(ranked)))
+        kept = ranked[:n]
+        if draws is not None:
+            kept += [h for h, d in zip(ranked[n:], draws[n:], strict=True) if d]
+        out.append(HandRange.of(kept, "defending"))
+    return out

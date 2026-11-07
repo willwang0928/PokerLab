@@ -66,3 +66,10 @@ def test_membership_is_order_independent():
 def test_rejects_bad_tokens(bad):
     with pytest.raises(RangeError):
         HandRange.parse(bad)
+
+
+def test_iteration_order_is_strongest_card_first_and_stable():
+    r = parse_range("AKs, 22, T9o")
+    combos = list(r)
+    assert combos == sorted(r.combos, reverse=True)  # same order as comparing cards
+    assert list(HandRange.of(reversed(combos))) == combos

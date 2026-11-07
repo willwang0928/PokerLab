@@ -4,7 +4,7 @@ import { AI, HUMAN } from "../hooks/usePokerGame";
 import { formatChips } from "../lib/betting";
 import type { GameEvent, GameState } from "../types";
 import { ChipStack } from "./ChipStack";
-import { boardTiming, canTravel, DeckContext, durationScale, TIMING, useMotionPrefs } from "../lib/motion";
+import { boardTiming, canTravel, DeckContext, durationScale, revealLag, TIMING, useMotionPrefs } from "../lib/motion";
 import { type Anchor, ChipFlights, useLanding } from "./ChipFlights";
 import { CardBack, CardSlot, PlayingCard } from "./PlayingCard";
 import { Seat } from "./Seat";
@@ -47,16 +47,6 @@ export function winningCards(state: GameState, lastEvent: GameEvent | null): Set
 const ROUND_OVER = new Set(["bets_collected", "street", "reveal", "showdown", "pot_awarded"]);
 
 /** Seconds until newly dealt cards have turned over (so a made-hand tag doesn't spoil them). */
-function revealLag(lastEvent: GameEvent | null): number {
-  if (lastEvent?.type === "street") {
-    const last = lastEvent.street === "flop" ? 2 : 3;
-    const t = boardTiming(last);
-    return t.delay + t.revealAfter + TIMING.flipDuration * 0.7;
-  }
-  if (lastEvent?.type === "reveal" || lastEvent?.type === "showdown") return TIMING.flipDuration;
-  return 0;
-}
-
 export function Table({ state, lastEvent, thinkingSeat, humanTurn }: Props) {
   const human = state.players[HUMAN];
   const ai = state.players[AI];

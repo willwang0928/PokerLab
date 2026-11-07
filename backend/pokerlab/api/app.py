@@ -56,6 +56,7 @@ def create_app(store: SessionStore | None = None, allow_seed: bool | None = None
             small_blind=req.small_blind,
             big_blind=req.big_blind,
             player_name=req.player_name.strip() or "You",
+            difficulty=req.difficulty,
         )
         session = HeadsUpSession(config=config, seed=req.seed)
         sessions.add(session)

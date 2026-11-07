@@ -24,7 +24,7 @@ from __future__ import annotations
 
 import re
 from collections.abc import Iterable, Iterator
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from itertools import combinations
 
 from .cards import FULL_DECK, RANK_CHARS, Card, Rank, Suit
@@ -123,12 +123,24 @@ def _expand_token(token: str) -> list[Combo]:
     raise RangeError(f"Unrecognised range token {token!r}")
 
 
+def _combo_key(combo: Combo) -> int:
+    """Integer sort key with the same order as comparing the cards (rank, then suit)."""
+    return combo[0].index * 52 + combo[1].index
+
+
 @dataclass(frozen=True, slots=True)
 class HandRange:
     """An immutable set of two-card combos."""
 
     combos: frozenset[Combo]
     text: str = ""
+    # Strongest-first order, computed once (iteration is on hot paths in the AI).
+    _ordered: tuple[Combo, ...] = field(default=(), init=False, repr=False, compare=False)
+
+    def __post_init__(self) -> None:
+        object.__setattr__(
+            self, "_ordered", tuple(sorted(self.combos, key=_combo_key, reverse=True))
+        )
 
     @classmethod
     def parse(cls, text: str) -> HandRange:
@@ -155,7 +167,7 @@ class HandRange:
         return len(self.combos)
 
     def __iter__(self) -> Iterator[Combo]:
-        return iter(sorted(self.combos, reverse=True))
+        return iter(self._ordered)
 
     def __contains__(self, combo: object) -> bool:
         return isinstance(combo, tuple) and len(combo) == 2 and canonical(*combo) in self.combos

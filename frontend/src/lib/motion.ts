@@ -1,4 +1,5 @@
 import { createContext, useContext, type RefObject } from "react";
+import type { GameEvent } from "../types";
 
 /**
  * Shared animation preferences.
@@ -59,4 +60,19 @@ export function centerIn(el: Element, origin: Element): { x: number; y: number }
   const a = el.getBoundingClientRect();
   const o = origin.getBoundingClientRect();
   return { x: a.left - o.left + a.width / 2, y: a.top - o.top + a.height / 2 };
+}
+
+/**
+ * Seconds until the cards revealed by ``lastEvent`` are face up: the last board card of a
+ * new street, or the hole cards at a reveal or showdown. Text that describes those cards
+ * (hand names, equity) waits this long so it never gives away a card still face down.
+ */
+export function revealLag(lastEvent: GameEvent | null): number {
+  if (lastEvent?.type === "street") {
+    const last = lastEvent.street === "flop" ? 2 : 3;
+    const t = boardTiming(last);
+    return t.delay + t.revealAfter + TIMING.flipDuration * 0.7;
+  }
+  if (lastEvent?.type === "reveal" || lastEvent?.type === "showdown") return TIMING.flipDuration;
+  return 0;
 }

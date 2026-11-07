@@ -6,6 +6,7 @@ from typing import Annotated, Any
 
 from pydantic import BaseModel, Field, StrictInt, model_validator
 
+from ..ai.difficulty import DEFAULT_DIFFICULTY, Difficulty
 from ..engine import ActionType
 
 
@@ -14,6 +15,7 @@ class CreateSessionRequest(BaseModel):
     small_blind: int = Field(5, ge=1, le=100_000)
     big_blind: int = Field(10, ge=1, le=200_000)
     player_name: str = Field("You", min_length=1, max_length=24)
+    difficulty: Difficulty = DEFAULT_DIFFICULTY
     # Only honoured when the server allows seeded games (tests and debugging); a known
     # seed would let a client work out the opponent's cards.
     seed: int | None = None

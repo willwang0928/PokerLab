@@ -93,3 +93,63 @@ def duplicate_match(
         bb_per_100=mean * to_bb100,
         std_error=math.sqrt(var / n) * to_bb100,
     )
+
+
+def _level_factory(level: str) -> AgentFactory:
+    from .difficulty import make_agent
+    from .heuristic import HeuristicAgent
+
+    if level == "basic":
+        return lambda rng: HeuristicAgent(rng)
+    return lambda rng: make_agent(level, rng)
+
+
+def _run_chunk(args: tuple[str, str, int, int]) -> MatchResult:
+    a, b, deals, seed = args
+    return duplicate_match(_level_factory(a), _level_factory(b), deals, seed=seed)
+
+
+def pool(results: list[MatchResult]) -> MatchResult:
+    """Combine independent matches (different seeds) into one estimate."""
+    deals = sum(r.deals for r in results)
+    bb100 = sum(r.bb_per_100 * r.deals for r in results) / deals
+    se = math.sqrt(sum((r.std_error * r.deals) ** 2 for r in results)) / deals
+    return MatchResult(
+        deals=deals,
+        big_blind=results[0].big_blind,
+        net_chips=sum(r.net_chips for r in results),
+        bb_per_100=bb100,
+        std_error=se,
+    )
+
+
+def main(argv: list[str] | None = None) -> int:
+    """``python -m pokerlab.ai.match advanced intermediate --deals 2000 --jobs 4``"""
+    import argparse
+    from concurrent.futures import ProcessPoolExecutor
+
+    levels = ["beginner", "intermediate", "advanced", "basic"]
+    parser = argparse.ArgumentParser(prog="python -m pokerlab.ai.match")
+    parser.add_argument("a", choices=levels)
+    parser.add_argument("b", choices=levels)
+    parser.add_argument("--deals", type=int, default=1000, help="duplicate deals (2 hands each)")
+    parser.add_argument("--seed", type=int, default=0)
+    parser.add_argument("--jobs", type=int, default=1, help="parallel processes (one seed each)")
+    args = parser.parse_args(argv)
+    jobs = max(1, min(args.jobs, args.deals // 2))
+    chunks = [(args.a, args.b, args.deals // jobs, args.seed + i) for i in range(jobs)]
+    if jobs == 1:
+        results = [_run_chunk(chunks[0])]
+    else:
+        with ProcessPoolExecutor(jobs) as ex:
+            results = list(ex.map(_run_chunk, chunks))
+    r = pool(results)
+    print(
+        f"{args.a} vs {args.b}: {r.bb_per_100:+.1f} ± {r.std_error:.1f} bb/100 "
+        f"(z = {r.z_score:+.1f}) over {r.deals} deals / {2 * r.deals} hands"
+    )
+    return 0
+
+
+if __name__ == "__main__":  # pragma: no cover
+    raise SystemExit(main())

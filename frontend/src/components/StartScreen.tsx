@@ -1,5 +1,5 @@
 import { useState } from "react";
-import type { GameConfig } from "../types";
+import type { Difficulty, GameConfig } from "../types";
 import { Modal } from "./Modal";
 import { SuitIcon } from "./SuitIcon";
 
@@ -9,6 +9,19 @@ const BLINDS: [number, number][] = [
   [10, 20],
   [25, 50],
 ];
+
+export const DIFFICULTY_LABEL: Record<Difficulty, string> = {
+  beginner: "Beginner",
+  intermediate: "Intermediate",
+  advanced: "Advanced",
+};
+
+const DIFFICULTY_HINT: Record<Difficulty, string> = {
+  beginner: "Plays its own cards: overrates top pair, pays off big bets, chases draws, rarely bluffs.",
+  intermediate: "Reads your likely hands from your betting and weighs its equity against the pot odds.",
+  advanced:
+    "Picks bets by expected value against the hands you would call with, and reads checks and position. Strong, but not a solver.",
+};
 
 interface Props {
   initial: GameConfig;
@@ -22,6 +35,7 @@ export function StartScreen({ initial, busy, error, onStart, onCancel }: Props) 
   const [name, setName] = useState(initial.player_name);
   const [stack, setStack] = useState(initial.starting_stack);
   const [blinds, setBlinds] = useState<[number, number]>([initial.small_blind, initial.big_blind]);
+  const [difficulty, setDifficulty] = useState<Difficulty>(initial.difficulty);
 
   return (
     <Modal labelledBy="start-title" onClose={busy ? undefined : onCancel}>
@@ -33,6 +47,7 @@ export function StartScreen({ initial, busy, error, onStart, onCancel }: Props) 
             starting_stack: stack,
             small_blind: blinds[0],
             big_blind: blinds[1],
+            difficulty,
           });
         }}
         className="flex flex-col gap-5"
@@ -89,6 +104,20 @@ export function StartScreen({ initial, busy, error, onStart, onCancel }: Props) 
             ))}
           </div>
           <p className="text-xs text-slate-400">{Math.floor(stack / blinds[1])} big blinds deep</p>
+        </fieldset>
+
+        <fieldset className="flex flex-col gap-1.5">
+          <legend className="mb-1.5 text-[13px] font-medium text-slate-300">Opponent</legend>
+          <div className="grid grid-cols-3 gap-2">
+            {(Object.keys(DIFFICULTY_LABEL) as Difficulty[]).map((d) => (
+              <Choice key={d} active={difficulty === d} onClick={() => setDifficulty(d)}>
+                {DIFFICULTY_LABEL[d]}
+              </Choice>
+            ))}
+          </div>
+          <p className="min-h-[2lh] text-xs leading-snug text-slate-400" data-testid="difficulty-hint">
+            {DIFFICULTY_HINT[difficulty]}
+          </p>
         </fieldset>
 
         {error && (

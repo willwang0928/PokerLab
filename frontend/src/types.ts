@@ -71,8 +71,10 @@ export interface GameState {
   legal: LegalView | null;
   result: HandResult | null;
   log: string[];
+  /** During an all-in with every hand face up: equity at each street reached so far. */
+  live_equity?: StreetEquity[] | null;
   winner: number | null;
-  config: { starting_stack: number; small_blind: number; big_blind: number };
+  config: { starting_stack: number; small_blind: number; big_blind: number; difficulty?: Difficulty };
 }
 
 export interface GameEvent {
@@ -90,9 +92,12 @@ export interface PlayResponse {
   steps: Step[];
 }
 
+export type Difficulty = "beginner" | "intermediate" | "advanced";
+
 export interface GameConfig {
   starting_stack: number;
   small_blind: number;
   big_blind: number;
   player_name: string;
+  difficulty: Difficulty;
 }
