@@ -17,6 +17,8 @@ FAST = [
     ("intermediate", "draws"),
     ("advanced", "bet_sizing"),
     ("advanced", "reads"),
+    ("beginner", "bluffing"),
+    ("intermediate", "bluffing"),
 ]
 
 
@@ -45,9 +47,18 @@ def test_generated_scenarios_teach_their_concept(difficulty, concept):
         assert s.spot.villain_stats and a.reads
     if concept in ("value_betting", "bet_sizing"):
         assert a.spot == "unbet"
-    # The best offered choice beats the next one by the difficulty's margin.
-    evs = sorted((a.option(k).ev for k in s.choices), reverse=True)
-    assert (evs[0] - evs[1]) / max(a.pot, 10) >= T.MARGIN[difficulty] - 1e-9
+    if concept == "bluffing":
+        assert a.concept == "bluffing" and a.spot == "unbet" and a.equity < 0.5
+    pot = max(a.pot, 10)
+    if concept in ("value_betting", "bluffing"):
+        # The question is bet or check: the best bet and checking differ by the margin.
+        bets = [a.option(k).ev for k in s.choices if a.option(k).action == "bet"]
+        check = a.option("check").ev
+        assert abs(max(bets) - check) / pot >= T.margin(concept, difficulty) - 1e-9
+    else:
+        # The best offered choice beats the next one by the difficulty's margin.
+        evs = sorted((a.option(k).ev for k in s.choices), reverse=True)
+        assert (evs[0] - evs[1]) / pot >= T.margin(concept, difficulty) - 1e-9
 
 
 def test_beginner_choices_are_simple():
@@ -117,3 +128,37 @@ def test_practice_from_a_real_spot_round_trips_through_its_id():
         T.load("spot.not-base64!!")
     with pytest.raises(T.ScenarioError):
         T.load("v1.expert.pot_odds.1")
+
+
+def test_practising_a_reviewed_decision_gives_the_reviews_verdict():
+    """Training feedback and the post-hand review use one engine and agree exactly."""
+    from pokerlab.ai.base import Observation
+    from pokerlab.coach.review import HandCoach
+    from pokerlab.engine import Action, HoldemHand
+
+    from .helpers import stacked_deck
+
+    coach = HandCoach(0, 1, 5, 10)
+    hand = HoldemHand([1000, 1000], 1, 5, 10, deck=stacked_deck(["Ah9h", "KsKd"], "Th7c2h4s9d", 1))
+    coach.start_hand(1, [1000, 1000], 1)
+    hand.apply(Action.raise_to(25))
+    for act in (Action.call(), Action.check()):
+        coach.record(Observation.from_hand(hand, 0), hand.legal_actions(), act)
+        hand.apply(act)
+    hand.apply(Action.bet(30))
+    odd_raise = Action.raise_to(97)  # a size that is not one of the standard options
+    coach.record(Observation.from_hand(hand, 0), hand.legal_actions(), odd_raise)
+    hand.apply(odd_raise)
+    hand.apply(Action.fold())
+    coach.finish_hand(hand.events, hand.players[0].stack - 1000)
+    review = coach.review(1)
+    for d in review["decisions"]:
+        spot = Spot.from_dict(d["spot_data"])
+        s = T.from_spot(spot, "intermediate", d["chosen"])
+        assert d["chosen"] in s.choices  # the exact size played is offered
+        got = T.answer(s.id, d["chosen"])["analysis"]
+        assert got["grade"] == d["grade"]
+        assert got["equity"] == d["equity"]
+        assert {o["key"]: o["ev"] for o in got["options"]} == {
+            o["key"]: o["ev"] for o in d["options"] if o["key"] in s.choices
+        }

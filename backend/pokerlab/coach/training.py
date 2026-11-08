@@ -40,11 +40,20 @@ from .analysis import DecisionAnalysis, analyze, grade_option, with_chosen
 from .spot import Spot, SpotError, villain_reads
 
 DIFFICULTIES = ("beginner", "intermediate", "advanced")
-CONCEPTS = ("pot_odds", "draws", "value_betting", "bet_sizing", "preflop", "reads")
+CONCEPTS = (
+    "pot_odds",
+    "draws",
+    "value_betting",
+    "bluffing",
+    "bet_sizing",
+    "preflop",
+    "reads",
+)
 CONCEPT_LABEL = {
     "pot_odds": "Pot odds",
     "draws": "Drawing hands",
     "value_betting": "Value betting",
+    "bluffing": "Semi-bluffing",
     "bet_sizing": "Bet sizing",
     "preflop": "Preflop defence",
     "reads": "Opponent tendencies",
@@ -53,12 +62,21 @@ CONCEPT_BLURB = {
     "pot_odds": "Facing a bet: compare the equity you need with the equity you have.",
     "draws": "Facing a bet with a draw: are the odds good enough to chase it?",
     "value_betting": "Checked to you: does betting earn more than checking?",
+    "bluffing": "Checked to you with a draw: is a semi-bluff worth more than a free card?",
     "bet_sizing": "You want to bet: which size earns the most?",
     "preflop": "Facing a preflop raise: fold, call or re-raise?",
     "reads": "Same maths, but the opponent has shown tendencies that change their range.",
 }
 # Minimum EV gap (share of the pot) between the best choice and the next one.
 MARGIN = {"beginner": 0.20, "intermediate": 0.08, "advanced": 0.03}
+# Semi-bluffs gain modestly even when clearly right, so Beginner uses a smaller margin.
+CONCEPT_MARGIN = {("bluffing", "beginner"): 0.10}
+
+
+def margin(concept: str, difficulty: str) -> float:
+    return CONCEPT_MARGIN.get((concept, difficulty), MARGIN[difficulty])
+
+
 ITERATIONS = 2500
 FILTER_ITERATIONS = 600  # quick screening of candidate spots
 MAX_ATTEMPTS = 60
@@ -114,19 +132,25 @@ class Scenario:
 # --------------------------------------------------------------------------- ids
 
 
-def _encode_spot(spot: Spot, difficulty: str, concept: str) -> str:
+def _encode_spot(spot: Spot, difficulty: str, concept: str, chosen: str | None = None) -> str:
     raw = json.dumps(
-        {"s": spot.to_dict(), "d": difficulty, "c": concept}, separators=(",", ":")
+        {"s": spot.to_dict(), "d": difficulty, "c": concept, "k": chosen}, separators=(",", ":")
     ).encode()
     return "spot." + base64.urlsafe_b64encode(raw).decode().rstrip("=")
 
 
-def _decode_spot(sid: str) -> tuple[Spot, str, str]:
+def _decode_spot(sid: str) -> tuple[Spot, str, str, str | None]:
     try:
         payload = sid.split(".", 1)[1]
         raw = base64.urlsafe_b64decode(payload + "=" * (-len(payload) % 4))
         d = json.loads(raw)
-        return Spot.from_dict(d["s"]), str(d["d"]), str(d["c"])
+        chosen = d.get("k")
+        return (
+            Spot.from_dict(d["s"]),
+            str(d["d"]),
+            str(d["c"]),
+            None if chosen is None else str(chosen),
+        )
     except (IndexError, ValueError, KeyError, TypeError) as exc:
         raise ScenarioError("Unknown scenario") from exc
 
@@ -182,6 +206,8 @@ def _cards_fit(concept: str, hero: tuple[Card, Card], board: tuple[Card, ...]) -
         return bonus < 0.14 and made >= HandCategory.ONE_PAIR
     if concept == "bet_sizing":
         return made >= HandCategory.TWO_PAIR
+    if concept == "bluffing":
+        return bonus >= 0.14 and made <= HandCategory.ONE_PAIR
     return True
 
 
@@ -208,6 +234,9 @@ def _make_spot(rng: random.Random, concept: str, difficulty: str, profile: str |
     elif concept in ("value_betting", "bet_sizing"):
         facing = False
         target_street = rng.choice((3, 4, 5)) if difficulty != "beginner" else rng.choice((4, 5))
+    elif concept == "bluffing":  # a draw needs cards to come
+        facing = False
+        target_street = rng.choice((3, 4))
     else:  # reads
         facing = rng.random() < 0.6
         target_street = rng.choice((3, 4, 5))
@@ -323,16 +352,27 @@ def _acceptable(
 ) -> bool:
     if len(keys) < 2:
         return False
-    evs = sorted((_ev(a, k) for k in keys), reverse=True)
     pot = max(a.pot, BIG_BLIND)
-    if (evs[0] - evs[1]) / pot < MARGIN[difficulty]:
-        return False
+    if concept in ("value_betting", "bluffing"):
+        # The question is bet or check: the margin is between the best bet and checking.
+        bets = [_ev(a, k) for k in keys if a.option(k).action in ("bet", "raise")]
+        checks = [_ev(a, k) for k in keys if a.option(k).action == "check"]
+        if not bets or not checks:
+            return False
+        if abs(max(bets) - max(checks)) / pot < margin(concept, difficulty):
+            return False
+    else:
+        evs = sorted((_ev(a, k) for k in keys), reverse=True)
+        if (evs[0] - evs[1]) / pot < margin(concept, difficulty):
+            return False
     best = max(keys, key=lambda k: _ev(a, k))
     best_opt = a.option(best)
     if concept == "draws":
         return a.concept == "draws"
     if concept == "pot_odds":
         return a.concept == "pot_odds" and a.spot == "facing_bet"
+    if concept == "bluffing":
+        return a.concept == "bluffing" and a.spot == "unbet" and (a.equity or 0) < 0.5
     if concept == "bet_sizing":
         sizes = [k for k in keys if a.option(k).action in ("bet", "raise")]
         if best_opt.action not in ("bet", "raise") or len(sizes) < 2:
@@ -405,13 +445,34 @@ def _analyse(spot: Spot, iterations: int = ITERATIONS) -> DecisionAnalysis:
     )
 
 
-def from_spot(spot: Spot, difficulty: str = "intermediate") -> Scenario:
-    """A practice scenario from a decision in a real hand (any spot the review produced)."""
-    a = _analyse(spot)
+def _parse_choice(key: str) -> Action | None:
+    """The table action behind an option key ("fold", "raise-120", "all-in", ...)."""
+    if key in ("fold", "check", "call"):
+        return Action(ActionType(key))
+    if key == "all-in":
+        return Action.all_in()
+    kind, _, amount = key.partition("-")
+    if kind in ("bet", "raise") and amount.isdigit():
+        return Action(ActionType(kind), int(amount))
+    return None
+
+
+def from_spot(spot: Spot, difficulty: str = "intermediate", chosen: str | None = None) -> Scenario:
+    """A practice scenario from a decision in a real hand (any spot the review produced).
+
+    It is analysed exactly as the post-hand review analysed it (same seed, the same
+    number of samples, and the size the player chose among the options), so practising
+    the decision gives the same verdict the review gave.
+    """
+    action = _parse_choice(chosen) if chosen else None
+    _, obs, legal = spot.replay()
+    reads = villain_reads(spot.villain_model()) if spot.villain_stats else []
+    a = analyze(obs, legal, action, adjust=spot.villain_adjustments(), reads=reads,
+                seed=spot.seed())  # fmt: skip
     keys = [o.key for o in a.options if a.spot == "unopened" or o.ev is not None]
     if len(keys) < 2:
         raise ScenarioError("This decision has nothing to compare")
-    sid = _encode_spot(spot, difficulty, a.concept)
+    sid = _encode_spot(spot, difficulty, a.concept, chosen)
     return Scenario(sid, difficulty, a.concept, spot, keys, None, a)
 
 
@@ -431,8 +492,8 @@ def load(sid: str) -> Scenario:
 
 @lru_cache(maxsize=128)
 def _from_spot_cached(sid: str) -> Scenario:
-    spot, difficulty, _ = _decode_spot(sid)
-    return from_spot(spot, difficulty)
+    spot, difficulty, _, chosen = _decode_spot(sid)
+    return from_spot(spot, difficulty, chosen)
 
 
 # --------------------------------------------------------------------------- views

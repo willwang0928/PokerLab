@@ -222,3 +222,70 @@ describe("training mode", () => {
     expect(await screen.findByRole("button", { name: /Call 5/ })).toBeInTheDocument();
   });
 });
+
+describe("personalised learning", () => {
+  const scenario = {
+    id: "v1.beginner.pot_odds.1",
+    difficulty: "beginner",
+    concept: "pot_odds",
+    concept_label: "Pot odds",
+    concept_blurb: "",
+    hero: ["As", "Kd"],
+    board: [],
+    street: "river",
+    position: "button",
+    pot: 100,
+    to_call: 50,
+    stack: 900,
+    opponent_stack: 900,
+    big_blind: 10,
+    history: [],
+    hand: "AKo",
+    choices: [
+      { key: "fold", label: "Fold" },
+      { key: "call", label: "Call 50" },
+    ],
+    opponent: null,
+    hints: [],
+  };
+  const answer = {
+    id: scenario.id,
+    concept: "pot_odds",
+    choice: "call",
+    correct: false,
+    acceptable: false,
+    analysis: {
+      street: "river", hole: [], board: [], hand: "", position: "", pot: 100, to_call: 50, stack: 900, big_blind: 10,
+      history: [], spot: "facing_bet", concept: "pot_odds", equity: 0.2, equity_se: 0, equity_method: "exact",
+      required_equity: 0.33, range_size: 50, range_steps: [], reads: [], options: [], best: ["fold"], chosen: "call",
+      grade: "mistake", grade_label: "Likely mistake", confidence: "high", ev_loss: 20, tags: [], headline: "",
+      explanation: "", details: [], caveats: [],
+    },
+    alternatives: [],
+  };
+
+  it("persists a missed answer, schedules a review, and survives a reload", async () => {
+    const fetchMock = mockFetch((url) => {
+      if (url.includes("/api/training/scenario")) return scenario;
+      if (url.includes("/api/training/answer")) return answer;
+      throw new Error(`unexpected ${url}`);
+    });
+    const { unmount } = render(<App />);
+    await userEvent.click(screen.getByRole("button", { name: /training mode/ }));
+    await userEvent.click(await screen.findByRole("button", { name: "Call 50" }));
+    await screen.findByTestId("training-feedback");
+    const stored = JSON.parse(localStorage.getItem("pokerlab.progress.v1")!);
+    expect(stored.answers).toHaveLength(1);
+    expect(stored.reviews[0]).toMatchObject({ key: "pot_odds|beginner", box: 0 });
+    // Auto difficulty asked the server for the adaptive level (Beginner for a new player).
+    expect(fetchMock.mock.calls.some(([u]) => String(u).includes("difficulty=beginner"))).toBe(true);
+    unmount();
+
+    render(<App />);
+    await userEvent.click(screen.getByRole("button", { name: /training mode/ }));
+    await userEvent.click(screen.getByRole("tab", { name: "Progress" }));
+    expect(screen.getByTestId("dashboard-reviews")).toHaveTextContent(/Pot odds/);
+    expect(screen.getByTestId("dashboard-history")).toHaveTextContent(/Likely mistake/);
+    expect(screen.getByTestId("dash-skill-pot_odds")).toHaveTextContent(/Training: 0 of 1 good/);
+  });
+});

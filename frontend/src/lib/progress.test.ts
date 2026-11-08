@@ -10,7 +10,6 @@ import {
   loadProgress,
   PROGRESS_KEY,
   type Progress,
-  recommendConcept,
   recurringLeaks,
   sanitizeProgress,
   saveProgress,
@@ -90,12 +89,12 @@ describe("progress store", () => {
 
   it("survives malformed storage and round-trips valid data", () => {
     localStorage.setItem(PROGRESS_KEY, "{not json");
-    expect(loadProgress()).toEqual({ decisions: [], answers: [] });
+    expect(loadProgress()).toEqual({ decisions: [], answers: [], reviews: [] });
     const bad = sanitizeProgress({
       decisions: [{ t: 1, hand: "a", grade: "great", concept: "pot_odds", tags: [], evLossBb: 0 }, null],
       answers: [{ t: 1, id: "a", concept: "nope", difficulty: "x", grade: "good" }],
     });
-    expect(bad).toEqual({ decisions: [], answers: [] });
+    expect(bad).toEqual({ decisions: [], answers: [], reviews: [] });
     const p = addReview(EMPTY_PROGRESS, "s", review(1, [decision("good")]), 5);
     saveProgress(p);
     expect(loadProgress()).toEqual(p);
@@ -121,21 +120,4 @@ describe("progress store", () => {
     expect(credit("close")).toBe(0.5);
   });
 
-  it("recommends practice for recurring leaks and untried or weak concepts", () => {
-    let p: Progress = EMPTY_PROGRESS;
-    for (let i = 0; i < 6; i++) p = addReview(p, "s", review(i, [decision("mistake", ["preflop_tight"], "preflop")]));
-    // Count how often each concept is picked across the whole random range.
-    const picks: Record<string, number> = {};
-    for (let i = 0; i < 100; i++) {
-      const r = recommendConcept(p, i / 100);
-      picks[r.concept] = (picks[r.concept] ?? 0) + 1;
-    }
-    const top = Object.entries(picks).sort((a, b) => b[1] - a[1])[0][0];
-    expect(top).toBe("preflop");
-    expect(recommendConcept(p, 0.5).reason).toBeTruthy();
-    const leakPick = Object.keys(picks).length;
-    expect(leakPick).toBe(6); // every concept still gets some practice
-    const r = recommendConcept(EMPTY_PROGRESS, 0);
-    expect(r.reason).toMatch(/not practised/);
-  });
 });

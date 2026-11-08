@@ -134,7 +134,7 @@ def create_app(store: SessionStore | None = None, allow_seed: bool | None = None
     def training_practice(req: PracticeRequest) -> dict:
         try:
             spot = Spot.from_dict(req.spot)
-            return training.scenario_view(training.from_spot(spot, req.difficulty))
+            return training.scenario_view(training.from_spot(spot, req.difficulty, req.chosen))
         except (SpotError, training.ScenarioError) as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
 

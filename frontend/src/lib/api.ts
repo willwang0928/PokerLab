@@ -64,10 +64,10 @@ export const coachApi = {
     request<TrainingScenario>(
       `/api/training/scenario?difficulty=${difficulty}&concept=${concept}` + (seed === undefined ? "" : `&seed=${seed}`),
     ),
-  practice: (spot: Record<string, unknown>, difficulty: TrainingDifficulty) =>
+  practice: (spot: Record<string, unknown>, difficulty: TrainingDifficulty, chosen?: string | null) =>
     request<TrainingScenario>("/api/training/practice", {
       method: "POST",
-      body: JSON.stringify({ spot, difficulty }),
+      body: JSON.stringify({ spot, difficulty, chosen: chosen ?? null }),
     }),
   answer: (id: string, choice: string) =>
     request<TrainingAnswer>("/api/training/answer", { method: "POST", body: JSON.stringify({ id, choice }) }),

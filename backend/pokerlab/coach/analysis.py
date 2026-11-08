@@ -57,7 +57,7 @@ from ..ai.strength import draw_bonus
 from ..cards import Card
 from ..engine import Action, ActionType, LegalActions, Street
 from ..equity import calculate_equity
-from ..evaluator import evaluate
+from ..evaluator import HandCategory, evaluate
 from ..ranges import HandRange
 
 if TYPE_CHECKING:
@@ -350,13 +350,15 @@ def analyze(
     unopened = preflop and legal.current_bet <= obs.big_blind
     spot = "unopened" if unopened else ("facing_bet" if legal.can_call else "unbet")
     drawing = not preflop and obs.street != Street.RIVER and draw_bonus(obs.hole, obs.board) >= 0.14
-    concept = (
-        "preflop"
-        if preflop
-        else ("draws" if drawing else "pot_odds")
-        if spot == "facing_bet"
-        else "value_betting"
+    weak = (
+        not preflop and evaluate(list(obs.hole) + list(obs.board)).category <= HandCategory.ONE_PAIR
     )
+    if preflop:
+        concept = "preflop"
+    elif spot == "facing_bet":
+        concept = "draws" if drawing else "pot_odds"
+    else:  # checked to: betting a draw with a weak made hand is a semi-bluff
+        concept = "bluffing" if drawing and weak else "value_betting"
     base = DecisionAnalysis(
         street=obs.street.value,
         hole=[c.code for c in obs.hole],
@@ -467,6 +469,8 @@ def _ev_options(
     a.range_steps = describe_range(obs, villain, adjust)
     eq, se, method = _equity(obs.hole, villain_range, obs.board, rng.randrange(2**63), iterations)
     a.equity, a.equity_se, a.equity_method = eq, se, method
+    if a.concept == "bluffing" and eq >= 0.5:
+        a.concept = "value_betting"  # ahead already: betting is for value, not a semi-bluff
     pot, call = obs.pot, legal.call_amount
     bb = obs.big_blind
     opts: list[Option] = []

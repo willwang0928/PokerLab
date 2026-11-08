@@ -11,12 +11,13 @@ export const PROGRESS_KEY = "pokerlab.progress.v1";
 const MAX_DECISIONS = 600;
 const MAX_ANSWERS = 1000;
 
-export const CONCEPTS: Concept[] = ["pot_odds", "draws", "value_betting", "bet_sizing", "preflop", "reads"];
+export const CONCEPTS: Concept[] = ["pot_odds", "draws", "value_betting", "bluffing", "bet_sizing", "preflop", "reads"];
 
 export const CONCEPT_LABEL: Record<Concept, string> = {
   pot_odds: "Pot odds",
   draws: "Drawing hands",
   value_betting: "Value betting",
+  bluffing: "Semi-bluffing",
   bet_sizing: "Bet sizing",
   preflop: "Preflop defence",
   reads: "Opponent tendencies",
@@ -37,7 +38,7 @@ export const TAG_CONCEPT: Record<string, Concept> = {
   called_without_odds: "pot_odds",
   folded_with_odds: "pot_odds",
   missed_value: "value_betting",
-  overaggressive: "value_betting",
+  overaggressive: "bluffing",
   bet_sizing: "bet_sizing",
   preflop_loose: "preflop",
   preflop_tight: "preflop",
@@ -52,6 +53,11 @@ export interface DecisionRecord {
   concept: Concept;
   tags: string[];
   evLossBb: number;
+  /** How far the coach trusts the grade (older records lack it). */
+  confidence?: "low" | "medium" | "high";
+  /** Equity you had and equity a call needed, when facing a bet. */
+  equity?: number;
+  required?: number;
 }
 
 export interface AnswerRecord {
@@ -60,21 +66,35 @@ export interface AnswerRecord {
   concept: Concept;
   difficulty: string;
   grade: Grade;
+  /** True when the scenario was a scheduled spaced-repetition review. */
+  review?: boolean;
+}
+
+/** A concept due to come back (spaced repetition), at a level or "auto". */
+export interface ReviewItem {
+  key: string; // concept|difficulty
+  concept: Concept;
+  difficulty: string; // a training difficulty, or "auto" (use the adaptive level)
+  box: number; // Leitner box: 0 = just missed
+  due: number; // timestamp
+  lapses: number;
+  source: "training" | "table";
 }
 
 export interface Progress {
   decisions: DecisionRecord[];
   answers: AnswerRecord[];
+  reviews: ReviewItem[];
 }
 
-export const EMPTY_PROGRESS: Progress = { decisions: [], answers: [] };
+export const EMPTY_PROGRESS: Progress = { decisions: [], answers: [], reviews: [] };
 
 const isConcept = (c: unknown): c is Concept => typeof c === "string" && (CONCEPTS as string[]).includes(c);
 const isGrade = (g: unknown): g is Grade => typeof g === "string" && (GRADES as string[]).includes(g);
 
 /** Drop anything malformed (old versions, hand-edited storage) instead of crashing. */
 export function sanitizeProgress(raw: unknown): Progress {
-  if (!raw || typeof raw !== "object") return { decisions: [], answers: [] };
+  if (!raw || typeof raw !== "object") return { decisions: [], answers: [], reviews: [] };
   const r = raw as Record<string, unknown>;
   const decisions = (Array.isArray(r.decisions) ? r.decisions : [])
     .filter(
@@ -88,7 +108,10 @@ export function sanitizeProgress(raw: unknown): Progress {
         Array.isArray(d.tags) &&
         d.tags.every((t: unknown) => typeof t === "string") &&
         typeof d.evLossBb === "number" &&
-        Number.isFinite(d.evLossBb),
+        Number.isFinite(d.evLossBb) &&
+        (d.confidence === undefined || ["low", "medium", "high"].includes(d.confidence)) &&
+        (d.equity === undefined || (typeof d.equity === "number" && d.equity >= 0 && d.equity <= 1)) &&
+        (d.required === undefined || (typeof d.required === "number" && d.required >= 0 && d.required <= 1)),
     )
     .slice(-MAX_DECISIONS);
   const answers = (Array.isArray(r.answers) ? r.answers : [])
@@ -100,18 +123,37 @@ export function sanitizeProgress(raw: unknown): Progress {
         typeof a.id === "string" &&
         isConcept(a.concept) &&
         typeof a.difficulty === "string" &&
-        isGrade(a.grade),
+        isGrade(a.grade) &&
+        (a.review === undefined || typeof a.review === "boolean"),
     )
     .slice(-MAX_ANSWERS);
-  return { decisions, answers };
+  const seen = new Set<string>();
+  const reviews = (Array.isArray(r.reviews) ? r.reviews : []).filter((x): x is ReviewItem => {
+    const ok =
+      !!x &&
+      typeof x === "object" &&
+      typeof x.key === "string" &&
+      isConcept(x.concept) &&
+      typeof x.difficulty === "string" &&
+      Number.isInteger(x.box) &&
+      x.box >= 0 &&
+      typeof x.due === "number" &&
+      Number.isFinite(x.due) &&
+      Number.isInteger(x.lapses) &&
+      (x.source === "training" || x.source === "table") &&
+      !seen.has(x.key);
+    if (ok) seen.add(x.key);
+    return ok;
+  });
+  return { decisions, answers, reviews };
 }
 
 export function loadProgress(): Progress {
   try {
     const raw = localStorage.getItem(PROGRESS_KEY);
-    return raw ? sanitizeProgress(JSON.parse(raw)) : { decisions: [], answers: [] };
+    return raw ? sanitizeProgress(JSON.parse(raw)) : { ...EMPTY_PROGRESS };
   } catch {
-    return { decisions: [], answers: [] };
+    return { ...EMPTY_PROGRESS };
   }
 }
 
@@ -136,6 +178,8 @@ export function addReview(p: Progress, sessionId: string, review: HandReview, no
       concept: d.concept,
       tags: d.tags,
       evLossBb: d.ev_loss / d.big_blind,
+      confidence: d.confidence,
+      ...(d.equity !== null && d.required_equity !== null ? { equity: d.equity, required: d.required_equity } : {}),
     }));
   return { ...p, decisions: [...p.decisions, ...added].slice(-MAX_DECISIONS) };
 }
@@ -227,41 +271,4 @@ export function conceptStats(p: Progress): ConceptStats[] {
       flagged: played.filter((d) => d.grade === "questionable" || d.grade === "mistake").length,
     };
   });
-}
-
-export interface Recommendation {
-  concept: Concept;
-  reason: string;
-}
-
-/**
- * The concept to practise next: weighted towards recurring leaks at the table, low
- * training accuracy and concepts not tried yet. ``rand`` (0..1) picks among the
- * weighted options so practice does not repeat one concept forever.
- */
-export function recommendConcept(p: Progress, rand: number = Math.random()): Recommendation {
-  const stats = conceptStats(p);
-  const leaks = recurringLeaks(p);
-  const weights = stats.map((s) => {
-    let w = 1;
-    const leak = leaks.filter((l) => l.concept === s.concept).reduce((n, l) => n + l.count, 0);
-    w += Math.min(4, leak * 0.75);
-    if (s.attempts === 0) w += 1.5;
-    else if (s.recent !== null) w += 3 * (1 - s.recent);
-    return w;
-  });
-  const total = weights.reduce((a, b) => a + b, 0);
-  let x = Math.min(Math.max(rand, 0), 0.999999) * total;
-  let i = 0;
-  while (i < weights.length - 1 && x >= weights[i]) x -= weights[i++];
-  const s = stats[i];
-  const leak = leaks.find((l) => l.concept === s.concept);
-  const reason = leak
-    ? `Recent hands: "${leak.label}" came up ${leak.count} times.`
-    : s.attempts === 0
-      ? "You have not practised this yet."
-      : s.recent !== null && s.recent < 0.7
-        ? `Your recent accuracy here is ${Math.round(s.recent * 100)}%.`
-        : "Keeping this skill sharp.";
-  return { concept: s.concept, reason };
 }

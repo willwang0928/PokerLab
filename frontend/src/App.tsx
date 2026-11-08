@@ -6,7 +6,8 @@ import { EquityPanel } from "./components/EquityPanel";
 import { HandLog } from "./components/HandLog";
 import { TendenciesPanel } from "./components/TendenciesPanel";
 import { CoachPanel } from "./components/CoachPanel";
-import { TrainingView } from "./components/TrainingView";
+import { type Plan, TrainingView } from "./components/TrainingView";
+import { ProgressDashboard } from "./components/ProgressDashboard";
 import { MuteButton, SettingsMenu } from "./components/SettingsMenu";
 import { DIFFICULTY_LABEL, StartScreen } from "./components/StartScreen";
 import { SuitIcon } from "./components/SuitIcon";
@@ -18,10 +19,11 @@ import { canTravel, durationScale, type MotionPrefs, MotionPrefsContext, revealL
 import { restoreFocus, shortcutBlocked } from "./lib/keys";
 import { sound } from "./lib/sound";
 import { ApiError, coachApi } from "./lib/api";
-import { addAnswer, addReview, loadProgress, type Progress, saveProgress } from "./lib/progress";
+import { EMPTY_PROGRESS, loadProgress, type Progress, saveProgress } from "./lib/progress";
+import { recordAnswer, recordHandReview } from "./lib/skills";
 import type { DecisionReview, GameConfig, GameState, HandReview, TrainingScenario } from "./types";
 
-type Mode = "play" | "train";
+type Mode = "play" | "train" | "progress";
 const COACH_DETAIL_KEY = "pokerlab.coach.detailed";
 
 const DEFAULT_CONFIG: GameConfig = {
@@ -39,8 +41,8 @@ export default function App() {
   const [showSetup, setShowSetup] = useState(true);
   const [gameOver, setGameOver] = useState(false);
   const [mode, setMode] = useState<Mode>("play");
-  // No automatic dealing while a dialog covers the table or while training.
-  const game = usePokerGame(settings, showSetup || gameOver || mode === "train");
+  // No automatic dealing while a dialog covers the table or another tab is open.
+  const game = usePokerGame(settings, showSetup || gameOver || mode !== "play");
   const motionPrefs = useMemo<MotionPrefs>(
     () => ({ scale: SPEED_SCALE[settings.speed], reduced: reducedMotion }),
     [settings.speed, reducedMotion],
@@ -121,7 +123,7 @@ export default function App() {
         if (cancelled) return;
         setReview(r);
         setReviewState({ key: reviewKey, loading: false, error: null });
-        updateProgress((p) => addReview(p, sessionId, r));
+        updateProgress((p) => recordHandReview(p, sessionId, r));
       })
       .catch((e) => {
         if (cancelled) return;
@@ -139,10 +141,12 @@ export default function App() {
 
   // ---- practising a decision from a reviewed hand
   const [practice, setPractice] = useState<TrainingScenario | null>(null);
+  const [startPlan, setStartPlan] = useState<Plan | null>(null);
   const practise = async (d: DecisionReview) => {
     if (!d.spot_data) return;
     try {
-      const s = await coachApi.practice(d.spot_data, "intermediate");
+      const s = await coachApi.practice(d.spot_data, "intermediate", d.chosen);
+      setStartPlan(null);
       setPractice(s);
       setMode("train");
     } catch {
@@ -185,18 +189,25 @@ export default function App() {
         </div>
         <div className="flex items-center gap-2 sm:gap-2.5">
           <div className="surface flex rounded-xl p-0.5" role="tablist" aria-label="Mode">
-            {(["play", "train"] as const).map((m) => (
+            {(["play", "train", "progress"] as const).map((m) => (
               <button
                 key={m}
                 type="button"
                 role="tab"
                 aria-selected={mode === m}
-                onClick={() => setMode(m)}
+                onClick={() => {
+                  if (m !== "train") {
+                    // A practice spot or dashboard plan is used once, not on every return.
+                    setPractice(null);
+                    setStartPlan(null);
+                  }
+                  setMode(m);
+                }}
                 className={`rounded-[10px] px-2.5 py-1.5 text-xs font-semibold sm:px-3 ${
                   mode === m ? "bg-amber-300 text-slate-950" : "text-slate-300 hover:text-white"
                 }`}
               >
-                {m === "play" ? "Play" : "Train"}
+                {m === "play" ? "Play" : m === "train" ? "Train" : "Progress"}
               </button>
             ))}
           </div>
@@ -259,11 +270,31 @@ export default function App() {
           <TrainingView
             progress={progress}
             initial={practice}
-            onAnswered={(sc, a) =>
+            startPlan={startPlan}
+            onAnswered={(sc, a, plan) =>
               updateProgress((p) =>
-                addAnswer(p, { id: sc.id, concept: sc.concept, difficulty: sc.difficulty, grade: a.analysis.grade }),
+                recordAnswer(p, {
+                  id: sc.id,
+                  concept: sc.concept,
+                  difficulty: sc.difficulty,
+                  grade: a.analysis.grade,
+                  ...(plan?.review ? { review: true } : {}),
+                }),
               )
             }
+          />
+        </main>
+      )}
+      {mode === "progress" && (
+        <main className="mx-auto flex w-full max-w-[1440px] flex-1 flex-col px-3 pb-5 sm:px-6">
+          <ProgressDashboard
+            progress={progress}
+            onStart={(plan) => {
+              setPractice(null);
+              setStartPlan({ ...plan });
+              setMode("train");
+            }}
+            onReset={() => updateProgress(() => ({ ...EMPTY_PROGRESS }))}
           />
         </main>
       )}
@@ -282,7 +313,7 @@ export default function App() {
                 humanTurn={humanTurn}
               />
               <div className="w-full max-w-[780px]">
-                {mode === "train" ? null : state.legal && state.status === "in_hand" && !game.animating ? (
+                {mode !== "play" ? null : state.legal && state.status === "in_hand" && !game.animating ? (
                   <ActionBar
                     legal={state.legal}
                     pot={state.pot}

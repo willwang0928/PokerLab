@@ -140,7 +140,14 @@ export interface OpponentModelView {
 // ------------------------------------------------------------------ coaching (v0.3.5)
 
 export type Grade = "good" | "close" | "questionable" | "mistake" | "ungraded";
-export type Concept = "pot_odds" | "draws" | "value_betting" | "bet_sizing" | "preflop" | "reads";
+export type Concept =
+  | "pot_odds"
+  | "draws"
+  | "value_betting"
+  | "bluffing"
+  | "bet_sizing"
+  | "preflop"
+  | "reads";
 export type TrainingDifficulty = "beginner" | "intermediate" | "advanced";
 
 export interface CoachOption {

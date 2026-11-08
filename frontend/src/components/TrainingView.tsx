@@ -1,20 +1,21 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { coachApi } from "../lib/api";
-import {
-  CONCEPT_LABEL,
-  CONCEPTS,
-  conceptStats,
-  recommendConcept,
-  type Progress,
-  type Recommendation,
-} from "../lib/progress";
+import { CONCEPT_LABEL, CONCEPTS, type Progress } from "../lib/progress";
+import { conceptSkills, LEVEL_LABEL, nextPractice, type NextPractice } from "../lib/skills";
 import type { Concept, TrainingAnswer, TrainingDifficulty, TrainingScenario } from "../types";
 import { DecisionDetail, formatBb, GradeChip } from "./DecisionDetail";
 import { formatPercent } from "./EquityPanel";
 import { PlayingCard } from "./PlayingCard";
+import { measuredText, SkillMeter } from "./SkillMeter";
 
 export const TRAINING_KEY = "pokerlab.training.v1";
-const DIFFICULTIES: { id: TrainingDifficulty; label: string; hint: string }[] = [
+type DifficultyChoice = TrainingDifficulty | "auto";
+const DIFFICULTIES: { id: DifficultyChoice; label: string; hint: string }[] = [
+  {
+    id: "auto",
+    label: "Auto",
+    hint: "Picks the level per concept from your estimated skill: it moves up only when the evidence is solid, and back down after misses.",
+  },
   { id: "beginner", label: "Beginner", hint: "Clear-cut spots, two or three choices, pot-odds hints." },
   { id: "intermediate", label: "Intermediate", hint: "Closer spots, draws, raises and bet sizes." },
   { id: "advanced", label: "Advanced", hint: "Thin margins and opponents with tendencies." },
@@ -22,8 +23,16 @@ const DIFFICULTIES: { id: TrainingDifficulty; label: string; hint: string }[] = 
 
 type ConceptChoice = Concept | "recommended";
 
-function loadPrefs(): { difficulty: TrainingDifficulty; concept: ConceptChoice; detailed: boolean } {
-  const fallback = { difficulty: "beginner" as TrainingDifficulty, concept: "recommended" as ConceptChoice, detailed: false };
+/** What to deal next: a concept at a level, and why. */
+export interface Plan {
+  concept: Concept;
+  difficulty: TrainingDifficulty;
+  reason: string | null;
+  review: boolean;
+}
+
+function loadPrefs(): { difficulty: DifficultyChoice; concept: ConceptChoice; detailed: boolean } {
+  const fallback = { difficulty: "auto" as DifficultyChoice, concept: "recommended" as ConceptChoice, detailed: false };
   try {
     const raw = JSON.parse(localStorage.getItem(TRAINING_KEY) ?? "null");
     if (!raw || typeof raw !== "object") return fallback;
@@ -41,11 +50,28 @@ function randomSeed(): number {
   return Math.floor(Math.random() * 1_000_000_000);
 }
 
+/** Resolve the controls into a concrete concept and level, using the learning model. */
+export function planFor(progress: Progress, difficulty: DifficultyChoice, choice: ConceptChoice, rand = Math.random()): Plan {
+  if (choice === "recommended") {
+    const rec: NextPractice = nextPractice(progress, Date.now(), rand);
+    return {
+      concept: rec.concept,
+      difficulty: difficulty === "auto" ? rec.difficulty : difficulty,
+      reason: rec.reason,
+      review: rec.kind === "review",
+    };
+  }
+  const level = conceptSkills(progress).find((s) => s.concept === choice)!.level;
+  return { concept: choice, difficulty: difficulty === "auto" ? level : difficulty, reason: null, review: false };
+}
+
 interface Props {
   progress: Progress;
-  onAnswered: (scenario: TrainingScenario, answer: TrainingAnswer) => void;
+  onAnswered: (scenario: TrainingScenario, answer: TrainingAnswer, plan: Plan | null) => void;
   /** A scenario to start with (for example, a decision from a real hand). */
   initial?: TrainingScenario | null;
+  /** A plan to start with (the dashboard's "Start" button). */
+  startPlan?: Plan | null;
 }
 
 /**
@@ -53,10 +79,10 @@ interface Props {
  * feedback comparing every choice. Scenarios target your weakest concepts unless you pick
  * one. Retries are allowed, but only the first answer counts towards progress.
  */
-export function TrainingView({ progress, onAnswered, initial = null }: Props) {
+export function TrainingView({ progress, onAnswered, initial = null, startPlan = null }: Props) {
   const [prefs, setPrefs] = useState(loadPrefs);
   const [scenario, setScenario] = useState<TrainingScenario | null>(initial);
-  const [recommendation, setRecommendation] = useState<Recommendation | null>(null);
+  const [plan, setPlan] = useState<Plan | null>(null);
   const [answer, setAnswer] = useState<TrainingAnswer | null>(null);
   const [attempts, setAttempts] = useState(0);
   const [busy, setBusy] = useState(false);
@@ -74,35 +100,29 @@ export function TrainingView({ progress, onAnswered, initial = null }: Props) {
   }, [prefs]);
 
   // The next scenario is fetched while the player reads the feedback, so "Next" is quick.
-  const prefetched = useRef<{ key: string; rec: Recommendation | null; promise: Promise<TrainingScenario> } | null>(null);
-  const request = (difficulty: TrainingDifficulty, choice: ConceptChoice) => {
-    const rec = choice === "recommended" ? recommendConcept(progressRef.current) : null;
-    const concept = rec?.concept ?? (choice as Concept);
-    const promise = coachApi.scenario(difficulty, concept, randomSeed());
+  const prefetched = useRef<{ key: string; plan: Plan; promise: Promise<TrainingScenario> } | null>(null);
+  const request = (plan: Plan, key: string) => {
+    const promise = coachApi.scenario(plan.difficulty, plan.concept, randomSeed());
     promise.catch(() => {}); // a failed prefetch is retried when it is needed
-    return { key: `${difficulty}|${choice}`, rec, promise };
-  };
-  const prefetch = (difficulty: TrainingDifficulty, choice: ConceptChoice) => {
-    prefetched.current = request(difficulty, choice);
+    return { key, plan, promise };
   };
 
-  const load = useCallback(async (difficulty: TrainingDifficulty, choice: ConceptChoice) => {
+  const load = useCallback(async (difficulty: DifficultyChoice, choice: ConceptChoice, fixed?: Plan) => {
     const key = `${difficulty}|${choice}`;
-    let next = prefetched.current?.key === key ? prefetched.current : null;
+    let next = !fixed && prefetched.current?.key === key ? prefetched.current : null;
     prefetched.current = null;
     setBusy(true);
     setError(null);
     try {
       let s: TrainingScenario;
       try {
-        s = await (next ?? (next = request(difficulty, choice))).promise;
+        s = await (next ?? (next = request(fixed ?? planFor(progressRef.current, difficulty, choice), key))).promise;
       } catch {
-        next = request(difficulty, choice);
+        next = request(fixed ?? planFor(progressRef.current, difficulty, choice), key);
         s = await next.promise;
       }
-      const rec = next.rec;
       setScenario(s);
-      setRecommendation(rec);
+      setPlan(next.plan);
       setAnswer(null);
       setAttempts(0);
     } catch (e) {
@@ -113,18 +133,33 @@ export function TrainingView({ progress, onAnswered, initial = null }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Prefetch once the first answer is in, so the plan uses the updated progress (a miss
+  // may have scheduled a review, a streak may have moved the level).
+  useEffect(() => {
+    if (attempts !== 1 || prefetched.current) return;
+    const key = `${prefs.difficulty}|${prefs.concept}`;
+    prefetched.current = request(planFor(progress, prefs.difficulty, prefs.concept), key);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [attempts, progress]);
+
+  // The dashboard's recommendation replaces the current scenario.
+  useEffect(() => {
+    if (startPlan) void load(prefs.difficulty, prefs.concept, startPlan);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [startPlan]);
+
   // A practice spot replaces the current scenario.
   useEffect(() => {
     if (initial) {
       setScenario(initial);
-      setRecommendation(null);
+      setPlan(null);
       setAnswer(null);
       setAttempts(0);
     }
   }, [initial]);
 
   useEffect(() => {
-    if (!initial) void load(prefs.difficulty, prefs.concept);
+    if (!initial && !startPlan) void load(prefs.difficulty, prefs.concept);
     // Load once on mount; later loads come from the controls.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -136,10 +171,7 @@ export function TrainingView({ progress, onAnswered, initial = null }: Props) {
     try {
       const a = await coachApi.answer(scenario.id, key);
       setAnswer(a);
-      if (attempts === 0) {
-        onAnswered(scenario, a);
-        prefetch(prefs.difficulty, prefs.concept);
-      }
+      if (attempts === 0) onAnswered(scenario, a, plan);
       setAttempts((n) => n + 1);
       requestAnimationFrame(() => feedbackRef.current?.focus());
     } catch (e) {
@@ -149,7 +181,7 @@ export function TrainingView({ progress, onAnswered, initial = null }: Props) {
     }
   };
 
-  const stats = conceptStats(progress);
+  const skills = conceptSkills(progress);
 
   return (
     <div className="flex w-full flex-col gap-5 lg:flex-row lg:items-start" data-testid="training-view">
@@ -216,7 +248,7 @@ export function TrainingView({ progress, onAnswered, initial = null }: Props) {
         {scenario && (
           <ScenarioCard
             scenario={scenario}
-            recommendation={recommendation}
+            plan={plan}
             answer={answer}
             busy={busy}
             onChoose={(k) => void choose(k)}
@@ -298,36 +330,21 @@ export function TrainingView({ progress, onAnswered, initial = null }: Props) {
         <h2 id="skills-title" className="eyebrow text-slate-400">
           Skills
         </h2>
-        <ul className="mt-2 space-y-2.5">
-          {stats.map((s) => (
-            <li key={s.concept} data-testid={`skill-${s.concept}`}>
+        <ul className="mt-2 space-y-3">
+          {skills.map((sk) => (
+            <li key={sk.concept} data-testid={`skill-${sk.concept}`}>
               <div className="flex items-baseline justify-between text-[12.5px]">
-                <span className="font-medium text-slate-200">{CONCEPT_LABEL[s.concept]}</span>
-                <span className="tabular-nums text-slate-400">
-                  {s.accuracy === null ? "not tried" : `${Math.round(s.accuracy * 100)}% · ${s.attempts} tried`}
-                </span>
+                <span className="font-medium text-slate-200">{sk.label}</span>
+                <span className="tabular-nums text-slate-400">{measuredText(sk)}</span>
               </div>
-              <div
-                className="mt-1 h-1.5 overflow-hidden rounded-full bg-white/10"
-                role="meter"
-                aria-label={`${CONCEPT_LABEL[s.concept]} accuracy`}
-                aria-valuemin={0}
-                aria-valuemax={100}
-                aria-valuenow={s.accuracy === null ? 0 : Math.round(s.accuracy * 100)}
-              >
-                <div className="h-full rounded-full bg-amber-300/80" style={{ width: `${(s.accuracy ?? 0) * 100}%` }} />
-              </div>
-              {(s.recent !== null && s.attempts >= 10) || s.flagged > 0 ? (
-                <div className="mt-0.5 text-[11px] text-slate-400">
-                  {s.attempts >= 10 && s.recent !== null && <>Last 10: {Math.round(s.recent * 100)}%. </>}
-                  {s.flagged > 0 && <>At the table: {s.flagged} flagged of {s.played}.</>}
-                </div>
-              ) : null}
+              <SkillMeter skill={sk} />
             </li>
           ))}
         </ul>
         <p className="mt-3 text-[11px] leading-snug text-slate-500">
-          Accuracy counts your first answer to each scenario: a good choice scores 1, a close one ½.
+          Counts are your first answers (good, or close for half credit). The estimate is a model of those answers,
+          weighted by difficulty, with an 80% range: few answers mean a wide range. It measures agreement with
+          PokerLab's analysis, not winnings.
         </p>
       </aside>
     </div>
@@ -336,13 +353,13 @@ export function TrainingView({ progress, onAnswered, initial = null }: Props) {
 
 function ScenarioCard({
   scenario,
-  recommendation,
+  plan,
   answer,
   busy,
   onChoose,
 }: {
   scenario: TrainingScenario;
-  recommendation: Recommendation | null;
+  plan: Plan | null;
   answer: TrainingAnswer | null;
   busy: boolean;
   onChoose: (key: string) => void;
@@ -354,9 +371,15 @@ function ScenarioCard({
         <h2 className="font-display text-[18px] font-bold text-amber-50">{s.concept_label}</h2>
         <span className="text-[12px] text-slate-400">{s.concept_blurb}</span>
       </div>
-      {recommendation && (
-        <p className="mt-1 text-[11.5px] text-amber-200/80" data-testid="recommendation">
-          Recommended: {recommendation.reason}
+      {plan && (
+        <p className="mt-1 flex flex-wrap items-center gap-x-2 text-[11.5px] text-amber-200/80" data-testid="recommendation">
+          {plan.review && (
+            <span className="rounded-full bg-sky-500/15 px-2 py-0.5 text-[10.5px] font-semibold text-sky-200 ring-1 ring-sky-400/30">
+              Review
+            </span>
+          )}
+          <span>{LEVEL_LABEL[plan.difficulty]}</span>
+          {plan.reason && <span>· {plan.reason}</span>}
         </p>
       )}
 

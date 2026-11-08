@@ -10,7 +10,9 @@ from ..ai.difficulty import DEFAULT_DIFFICULTY, Difficulty
 from ..engine import ActionType
 
 TrainingDifficulty = Literal["beginner", "intermediate", "advanced"]
-TrainingConcept = Literal["pot_odds", "draws", "value_betting", "bet_sizing", "preflop", "reads"]
+TrainingConcept = Literal[
+    "pot_odds", "draws", "value_betting", "bluffing", "bet_sizing", "preflop", "reads"
+]
 
 
 class CreateSessionRequest(BaseModel):
@@ -91,6 +93,8 @@ class PracticeRequest(BaseModel):
 
     spot: dict[str, Any]
     difficulty: TrainingDifficulty = "intermediate"
+    # The option the player chose at the table, so practice includes that exact size.
+    chosen: str | None = Field(None, max_length=40)
 
 
 class AnswerRequest(BaseModel):
