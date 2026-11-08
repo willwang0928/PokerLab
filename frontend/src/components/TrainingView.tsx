@@ -56,7 +56,8 @@ export function planFor(progress: Progress, difficulty: DifficultyChoice, choice
     const rec: NextPractice = nextPractice(progress, Date.now(), rand);
     return {
       concept: rec.concept,
-      difficulty: difficulty === "auto" ? rec.difficulty : difficulty,
+      // A due review is practised at its own level: only an answer at that level clears it.
+      difficulty: difficulty === "auto" || rec.kind === "review" ? rec.difficulty : difficulty,
       reason: rec.reason,
       review: rec.kind === "review",
     };

@@ -25,6 +25,7 @@ range only, so nothing hidden can leak into the feedback.
 from __future__ import annotations
 
 import base64
+import dataclasses
 import json
 import random
 from dataclasses import dataclass
@@ -79,7 +80,10 @@ def margin(concept: str, difficulty: str) -> float:
 
 ITERATIONS = 2500
 FILTER_ITERATIONS = 600  # quick screening of candidate spots
-MAX_ATTEMPTS = 60
+MAX_ATTEMPTS = 80
+# v2 (0.4.1): scenarios must have a range-robust answer, so a seed can give another spot
+# than under v1. Old v1 ids still load, with the current generator.
+ID_VERSION = "v2"
 BIG_BLIND = 10
 SMALL_BLIND = 5
 
@@ -367,6 +371,10 @@ def _acceptable(
             return False
     best = max(keys, key=lambda k: _ev(a, k))
     best_opt = a.option(best)
+    # The answer taught as right must not depend on the range assumption: against the
+    # tighter and the looser range too, it must stay within noise of the best choice.
+    if grade_option(_restricted(a, keys), best).robust is False:
+        return False
     if concept == "draws":
         return a.concept == "draws"
     if concept == "pot_odds":
@@ -412,7 +420,7 @@ def _generate(difficulty: str, concept: str, seed: int) -> Scenario:
             continue
         ok, a, keys = _fits(spot, concept, difficulty, ITERATIONS)
         if ok:
-            sid = f"v1.{difficulty}.{concept}.{seed}"
+            sid = f"{ID_VERSION}.{difficulty}.{concept}.{seed}"
             return Scenario(sid, difficulty, concept, spot, keys, profile, a)
     raise ScenarioError("Could not generate a scenario; try another seed")
 
@@ -420,11 +428,13 @@ def _generate(difficulty: str, concept: str, seed: int) -> Scenario:
 def _fits(
     spot: Spot, concept: str, difficulty: str, iterations: int
 ) -> tuple[bool, DecisionAnalysis, list[str]]:
-    a = _analyse(spot, iterations)
+    # The range check (three times the work) only on the full pass, not the screening one.
+    a = _analyse(spot, iterations, range_check=iterations >= ITERATIONS)
     keys = _choices(a, concept, difficulty)
     neutral = None
     if concept == "reads":
-        neutral = _analyse(Spot(**{**_fields(spot), "villain_stats": {}}), iterations)
+        plain = Spot(**{**_fields(spot), "villain_stats": {}})
+        neutral = _analyse(plain, iterations, range_check=False)
     return _acceptable(a, concept, difficulty, keys, neutral), a, keys
 
 
@@ -432,7 +442,9 @@ def _fields(spot: Spot) -> dict[str, Any]:
     return {f: getattr(spot, f) for f in spot.__dataclass_fields__}
 
 
-def _analyse(spot: Spot, iterations: int = ITERATIONS) -> DecisionAnalysis:
+def _analyse(
+    spot: Spot, iterations: int = ITERATIONS, range_check: bool = True
+) -> DecisionAnalysis:
     _, obs, legal = spot.replay()
     reads = villain_reads(spot.villain_model()) if spot.villain_stats else []
     return analyze(
@@ -442,6 +454,7 @@ def _analyse(spot: Spot, iterations: int = ITERATIONS) -> DecisionAnalysis:
         reads=reads,
         seed=spot.seed(),
         iterations=iterations,
+        range_check=range_check,
     )
 
 
@@ -481,13 +494,14 @@ def load(sid: str) -> Scenario:
     if sid.startswith("spot."):
         return _from_spot_cached(sid)
     parts = sid.split(".")
-    if len(parts) != 4 or parts[0] != "v1":
+    if len(parts) != 4 or parts[0] not in ("v1", ID_VERSION):
         raise ScenarioError("Unknown scenario")
     try:
         seed = int(parts[3])
     except ValueError as exc:
         raise ScenarioError("Unknown scenario") from exc
-    return generate(parts[1], parts[2], seed)
+    s = generate(parts[1], parts[2], seed)
+    return s if s.id == sid else dataclasses.replace(s, id=sid)  # keep an old id stable
 
 
 @lru_cache(maxsize=128)

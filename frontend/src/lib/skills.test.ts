@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { DecisionReview, Grade, HandReview } from "../types";
+import { planFor } from "../components/TrainingView";
 import { EMPTY_PROGRESS, type Progress } from "./progress";
 import {
   adaptiveLevel,
@@ -182,3 +183,24 @@ describe("recommendation and guides", () => {
     expect(answerTrend(p).map((x) => x.score)).toEqual([0, 1]);
   });
 });
+
+describe("reviews with a fixed difficulty", () => {
+  it("practises a due review at its own level, so answering it clears the review", () => {
+    // Regression: with Beginner selected, an Intermediate review was offered at Beginner,
+    // and the Beginner answers never cleared it, so it stayed due forever.
+    let p: Progress = EMPTY_PROGRESS;
+    p = answer(p, "pot_odds", "intermediate", "mistake", T0, "miss");
+    let t = T0 + INTERVALS[0] + 1;
+    const plan = planFor(p, "beginner", "recommended", 0.5);
+    expect(plan).toMatchObject({ concept: "pot_odds", difficulty: "intermediate", review: true });
+    p = answer(p, plan.concept, plan.difficulty, "good", t, "fix");
+    t += 1;
+    expect(dueReviews(p, t)).toHaveLength(0);
+  });
+
+  it("does not claim a concept is one of the lowest without comparing", () => {
+    const next = nextPractice(EMPTY_PROGRESS, T0, 0.5);
+    expect(next.reason).not.toMatch(/one of your lowest/);
+  });
+});
+

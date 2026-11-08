@@ -163,6 +163,16 @@ export interface CoachOption {
   detail: string;
 }
 
+export interface RangeCheck {
+  name: "tighter" | "looser";
+  label: string;
+  description: string;
+  range_size: number;
+  equity: number;
+  /** Estimated EV of each modelled option (chips) against this range. */
+  evs: Record<string, number>;
+}
+
 export interface DecisionReview {
   street: string;
   hole: string[];
@@ -195,6 +205,10 @@ export interface DecisionReview {
   explanation: string;
   details: string[];
   caveats: string[];
+  /** The same comparison against a tighter and a looser opponent range (v0.4.1+). */
+  range_check?: RangeCheck[];
+  /** Whether the verdict holds against every range in ``range_check``. */
+  robust?: boolean | null;
   /** The decision point as public data, for "practise this spot". */
   spot_data?: Record<string, unknown>;
 }

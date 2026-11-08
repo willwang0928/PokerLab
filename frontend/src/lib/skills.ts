@@ -359,7 +359,7 @@ export function nextPractice(p: Progress, now = Date.now(), rand?: number): Next
       concept: s.concept,
       difficulty: s.level,
       kind: "weak",
-      reason: `Estimated skill here is one of your lowest (about ${Math.round(s.score.mean * 100)}% on Intermediate scenarios).`,
+      reason: `Estimated skill here is about ${Math.round(s.score.mean * 100)}% on Intermediate scenarios, below the 70% mark.`,
     };
   return { concept: s.concept, difficulty: s.level, kind: "maintain", reason: "Keeping this skill sharp." };
 }

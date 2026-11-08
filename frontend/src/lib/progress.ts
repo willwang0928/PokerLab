@@ -254,11 +254,26 @@ export function recurringLeaks(p: Progress, window = 100): Leak[] {
 }
 
 export interface Trend {
-  recent: number | null; // average credit of the latest block
+  recent: number | null; // share of the latest block graded good or close
+  recentCount: number;
+  previousCount: number;
   previous: number | null; // the block before it
   recentLoss: number | null; // estimated bb given up per decision, latest block
   previousLoss: number | null;
   total: number;
+}
+
+/**
+ * Whether two observed rates differ by more than chance alone would often produce: a
+ * two-sided two-proportion z-test at the 5% level, with the pooled rate. With 10 answers
+ * on each side this needs a gap of roughly 35 to 45 percentage points.
+ */
+export function clearChange(p1: number, n1: number, p2: number, n2: number): boolean {
+  if (n1 <= 0 || n2 <= 0) return false;
+  const pooled = (p1 * n1 + p2 * n2) / (n1 + n2);
+  const se = Math.sqrt(pooled * (1 - pooled) * (1 / n1 + 1 / n2));
+  if (se === 0) return p1 !== p2;
+  return Math.abs(p1 - p2) / se > 1.96;
 }
 
 /** Compare the latest ``block`` graded decisions with the ones before. */
@@ -268,9 +283,12 @@ export function decisionTrend(p: Progress, block = 20): Trend {
     xs.length ? xs.reduce((s, d) => s + f(d), 0) / xs.length : null;
   const recent = ds.slice(-block);
   const previous = ds.slice(-2 * block, -block);
+  const ok = (d: DecisionRecord) => (d.grade === "good" || d.grade === "close" ? 1 : 0);
   return {
-    recent: avg(recent, (d) => credit(d.grade)),
-    previous: previous.length >= Math.min(block, 10) ? avg(previous, (d) => credit(d.grade)) : null,
+    recent: avg(recent, ok),
+    recentCount: recent.length,
+    previousCount: previous.length,
+    previous: previous.length >= Math.min(block, 10) ? avg(previous, ok) : null,
     recentLoss: avg(recent, (d) => d.evLossBb),
     previousLoss: previous.length >= Math.min(block, 10) ? avg(previous, (d) => d.evLossBb) : null,
     total: ds.length,

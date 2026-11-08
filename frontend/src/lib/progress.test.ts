@@ -5,6 +5,7 @@ import {
   addReview,
   conceptStats,
   credit,
+  clearChange,
   decisionTrend,
   EMPTY_PROGRESS,
   type Progress,
@@ -121,6 +122,23 @@ describe("progress store", () => {
     const t = decisionTrend(p);
     expect(t).toMatchObject({ recent: 1, previous: 0, total: 40, recentLoss: 0, previousLoss: 2 });
     expect(credit("close")).toBe(0.5);
+  });
+
+  it("reports the share of good-or-close decisions and the real block sizes", () => {
+    // Regression: the "good or close" figure was the average credit (close = half), and
+    // a previous block of 10 was labelled "previous 20".
+    let p: Progress = EMPTY_PROGRESS;
+    for (let i = 0; i < 30; i++) p = addReview(p, "s", review(i, [decision("close")]));
+    const t = decisionTrend(p);
+    expect(t).toMatchObject({ recent: 1, recentCount: 20, previous: 1, previousCount: 10 });
+  });
+
+  it("only calls a change clear when chance alone rarely produces it", () => {
+    expect(clearChange(0.7, 10, 0.5, 10)).toBe(false); // 20 points on 10 answers: noise
+    expect(clearChange(0.8, 10, 0.5, 10)).toBe(false);
+    expect(clearChange(0.9, 10, 0.3, 10)).toBe(true);
+    expect(clearChange(0.8, 200, 0.6, 200)).toBe(true);
+    expect(clearChange(1, 10, 1, 10)).toBe(false);
   });
 
 });

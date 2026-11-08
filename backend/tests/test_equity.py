@@ -11,7 +11,8 @@ from pokerlab.ranges import parse_range
 
 
 def naive_equity(players, board="", dead=""):
-    """Slow, independent reference: the reference evaluator, plain itertools, no shortcuts."""
+    """Slow enumeration with plain itertools (uses the project evaluator; see
+    test_validation_equity.py for a fully independent reference)."""
     board_cards = parse_cards(board) if board else []
     known = set(board_cards) | set(parse_cards(dead) if dead else [])
     ranges = [list(parse_range(p)) for p in players]

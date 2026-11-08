@@ -172,6 +172,7 @@ def observe_hand(events: Iterable[Event], seat: int) -> list[tuple[str, bool]]:
     acted_preflop = vpip = pfr = False
     raised_preflop = False  # has anyone raised preflop (beyond the blinds)?
     folded = saw_flop = showdown = False
+    all_in: set[int] = set()  # seats with no chips left (they cannot be raised)
 
     for ev in events:
         if ev.type not in _PUBLIC_EVENTS:
@@ -179,6 +180,8 @@ def observe_hand(events: Iterable[Event], seat: int) -> list[tuple[str, bool]]:
         d = ev.data
         if ev.type == "post_blind":
             bets[d["seat"]] = d["amount"]
+            if d.get("all_in"):
+                all_in.add(d["seat"])
         elif ev.type == "street":
             street = Street(d["street"])
             bets = {}
@@ -201,11 +204,17 @@ def observe_hand(events: Iterable[Event], seat: int) -> list[tuple[str, bool]]:
                         out.append(("aggression", kind in ("bet", "raise")))
                     if facing:
                         out.append(("fold_to_bet", kind == "fold"))
-                        out.append(("raise_vs_bet", kind == "raise"))
+                        # Raising is only possible against someone with chips behind,
+                        # and not when calling already takes the whole stack.
+                        call_all_in = kind == "call" and d.get("all_in")
+                        if not call_all_in and any(s not in all_in for s in bets if s != seat):
+                            out.append(("raise_vs_bet", kind == "raise"))
                     elif kind in ("bet", "check"):
                         out.append(("bet_unopposed", kind == "bet"))
                 if kind == "fold":
                     folded = True
+            if d.get("all_in"):
+                all_in.add(actor)
             if street == Street.PREFLOP and kind in ("bet", "raise"):
                 raised_preflop = True
             bets[actor] = d["bet"]

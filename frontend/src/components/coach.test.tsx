@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { addReview, EMPTY_PROGRESS } from "../lib/progress";
 import type { DecisionReview, HandReview, TrainingAnswer, TrainingScenario } from "../types";
 import { CoachPanel } from "./CoachPanel";
-import { formatBb } from "./DecisionDetail";
+import { DecisionDetail, formatBb } from "./DecisionDetail";
 import { TrainingView } from "./TrainingView";
 
 function decision(overrides: Partial<DecisionReview> = {}): DecisionReview {
@@ -114,6 +114,43 @@ describe("CoachPanel", () => {
     expect(formatBb(12.3, 10)).toBe("+1.2 bb");
     expect(formatBb(0.2, 10)).toBe("0.0 bb");
     expect(formatBb(null, 10)).toBe("—");
+  });
+
+  it("shows how the verdict changes with a tighter or looser range", () => {
+    const d = decision({
+      equity: 0.432,
+      required_equity: 0.317,
+      chosen: "call",
+      grade: "good",
+      confidence: "low",
+      robust: false,
+      options: [
+        { key: "fold", action: "fold", amount: null, label: "Fold", ev: 0, basis: "pot odds", equity_when_called: null, fold_rate: null, detail: "" },
+        { key: "call", action: "call", amount: null, label: "Call 200", ev: 72, basis: "pot odds", equity_when_called: null, fold_rate: null, detail: "" },
+      ],
+      range_check: [
+        { name: "tighter", label: "Tighter range", description: "stronger hands only", range_size: 40, equity: 0, evs: { fold: 0, call: -200 } },
+        { name: "looser", label: "Looser range", description: "more hands", range_size: 300, equity: 0.735, evs: { fold: 0, call: 263 } },
+      ],
+    });
+    render(<DecisionDetail review={d} detailed />);
+    const table = screen.getByTestId("range-check");
+    const rows = within(table).getAllByRole("row").slice(1).map((r) => r.textContent);
+    expect(rows[0]).toMatch(/Estimated range.*43%.*Call 200/);
+    expect(rows[1]).toMatch(/Tighter range.*<1%|Tighter range.*0%/);
+    expect(rows[1]).toMatch(/Fold$/);
+    expect(rows[2]).toMatch(/Looser range.*74%.*Call 200/);
+    expect(screen.getByTestId("robustness").textContent).toMatch(/not a settled answer/);
+    expect(screen.getByText(/Low confidence: the verdict depends on assumptions/)).toBeTruthy();
+    expect(screen.getByTestId("number-kinds").textContent).toMatch(/None of this is\s+solver output/);
+  });
+
+  it("shows Monte Carlo uncertainty but none for exact equity", () => {
+    const { unmount } = render(<DecisionDetail review={decision({ equity: 0.4, equity_method: "monte_carlo", equity_se: 0.008 })} detailed={false} />);
+    expect(screen.getByTestId("key-numbers").textContent).toMatch(/40%\s*±2%/);
+    unmount();
+    render(<DecisionDetail review={decision({ equity: 0.4 })} detailed={false} />);
+    expect(screen.getByTestId("key-numbers").textContent).not.toMatch(/±/);
   });
 });
 

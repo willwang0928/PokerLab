@@ -100,6 +100,15 @@ class Agent(ABC):
         """
 
 
+def uncalled_excess(legal: LegalActions) -> int:
+    """Chips of the opponent's bet that the player cannot match (returned to them).
+
+    Bets are capped at what the other player can match, so this is only non-zero when a
+    forced blind is larger than the caller's whole stack.
+    """
+    return max(0, legal.current_bet - (legal.player_bet + legal.player_stack))
+
+
 def raise_to_pot_fraction(obs: Observation, legal: LegalActions, fraction: float) -> Action:
     """Bet/raise to ``current bet + fraction × (pot after calling)``, clamped to legal sizes.
 

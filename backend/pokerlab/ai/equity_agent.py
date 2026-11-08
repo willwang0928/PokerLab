@@ -30,7 +30,7 @@ from ..engine import Action, Event, LegalActions, Street
 from ..equity import calculate_equity
 from ..ranges import HandRange
 from .adaptation import NEUTRAL, Adjustments, compute_adjustments
-from .base import Agent, Observation, make_legal, raise_to_pot_fraction
+from .base import Agent, Observation, make_legal, raise_to_pot_fraction, uncalled_excess
 from .player_model import PlayerModel
 from .preflop import hand_class, percentile
 from .range_model import defending_ranges, estimate_range
@@ -136,7 +136,10 @@ class EquityAgent(Agent):
     # ------------------------------------------------------------------ public
 
     def decide(self, obs: Observation, legal: LegalActions) -> Action:
-        if obs.street == Street.PREFLOP and legal.current_bet <= obs.big_blind:
+        # An unopened pot, unless the big blind is already all-in: then there is nothing
+        # left to bet and calling is a pure pot-odds decision, handled by equity.
+        blind_all_in = legal.can_call and not legal.can_raise and self._opponents_all_in(obs)
+        if obs.street == Street.PREFLOP and legal.current_bet <= obs.big_blind and not blind_all_in:
             action = self._unopened_preflop(obs, legal)
         else:
             action = self._by_equity(obs, legal)
@@ -207,12 +210,20 @@ class EquityAgent(Agent):
     def required_equity(self, obs: Observation, legal: LegalActions) -> float:
         """Equity needed to call: pot odds, plus margins for calls that are not all-in."""
         call = legal.call_amount
-        need = call / (obs.pot + call)
-        if call >= legal.player_stack:
-            return need  # all-in: no future streets to under-realise
+        need = call / (obs.pot - uncalled_excess(legal) + call)
+        if call >= legal.player_stack or self._opponents_all_in(obs):
+            return need  # someone is all-in: no future streets to under-realise
         pr = self.profile
         position = -pr.position_margin if self._in_position(obs) else pr.position_margin
         return need + pr.call_margin + position
+
+    @staticmethod
+    def _opponents_all_in(obs: Observation) -> bool:
+        """Every opponent still in the hand has no chips behind."""
+        others = [s for s in range(obs.num_players) if s != obs.seat]
+        stacks = dict(zip(others, obs.opponent_stacks, strict=False))
+        live = obs.opponents_in_hand or tuple(others)
+        return all(stacks.get(s, 0) == 0 for s in live)
 
     def _facing_bet(self, obs: Observation, legal: LegalActions, eq: float, r: float) -> Action:
         pr = self.profile

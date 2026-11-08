@@ -47,10 +47,73 @@ const BASIS_NOTE: Record<CoachOption["basis"], string> = {
 };
 
 const CONFIDENCE_TEXT = {
-  high: "High confidence: the result rests on pot odds and exact or near-exact equity.",
+  high: "High confidence: pot odds and equity settle it, and the verdict holds against a tighter and a looser range.",
   medium: "Medium confidence: later streets or an assumed fold rate could change it.",
-  low: "Low confidence: treat this as a rough guide.",
+  low: "Low confidence: the verdict depends on assumptions (what they hold, or how often they fold). Treat it as a rough guide.",
 };
+
+/** "±2%" for a Monte Carlo estimate, nothing for an exact one. */
+function uncertainty(review: DecisionReview): string {
+  if (review.equity_method !== "monte_carlo" || !review.equity_se) return "";
+  return ` ±${Math.max(1, Math.round(1.96 * review.equity_se * 100))}%`;
+}
+
+/**
+ * The same comparison against a tighter and a looser range than the estimate. Shows how
+ * much the advice depends on what the opponent is assumed to hold.
+ */
+export function RangeCheckTable({ review }: { review: DecisionReview }) {
+  const rows = review.range_check ?? [];
+  if (!rows.length || review.equity === null) return null;
+  const labels = Object.fromEntries(review.options.map((o) => [o.key, o.label]));
+  const bestOf = (evs: Record<string, number>) => {
+    const keys = Object.keys(evs).filter((k) => k in labels);
+    return keys.length ? labels[keys.reduce((a, b) => (evs[b] > evs[a] ? b : a))] : "—";
+  };
+  const baseEvs = Object.fromEntries(review.options.filter((o) => o.ev !== null).map((o) => [o.key, o.ev as number]));
+  const all = [
+    { key: "estimated", label: "Estimated range", size: review.range_size ?? 0, equity: review.equity, evs: baseEvs, note: "" },
+    ...rows.map((r) => ({ key: r.name, label: r.label, size: r.range_size, equity: r.equity, evs: r.evs, note: r.description })),
+  ];
+  return (
+    <div className="mt-2" data-testid="range-check">
+      <div className="text-[10.5px] uppercase tracking-wide text-slate-400">If their range is different</div>
+      <table className="mt-1 w-full text-[12px]">
+        <thead>
+          <tr className="text-left text-[10px] uppercase tracking-wide text-slate-500">
+            <th scope="col" className="py-0.5 font-medium">
+              Range
+            </th>
+            <th scope="col" className="py-0.5 text-right font-medium">
+              Your equity
+            </th>
+            <th scope="col" className="py-0.5 pl-2 text-right font-medium">
+              Scores best
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          {all.map((r) => (
+            <tr key={r.key} className="border-t border-white/5" title={r.note || undefined}>
+              <th scope="row" className="py-1 text-left font-medium text-slate-300">
+                {r.label} <span className="font-normal text-slate-500">({r.size} combos)</span>
+              </th>
+              <td className="py-1 text-right tabular-nums text-slate-200">{formatPercent(r.equity)}</td>
+              <td className="py-1 pl-2 text-right text-slate-300">{bestOf(r.evs)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <p className="mt-1 text-[11.5px] text-slate-400" data-testid="robustness">
+        {review.robust === false
+          ? "The verdict changes with the range assumption, so it is not a settled answer: think about which range fits this opponent."
+          : review.robust
+            ? "The verdict is the same for all three ranges."
+            : "Tighter: they bet and call with stronger hands only. Looser: with more hands, including bluffs."}
+      </p>
+    </div>
+  );
+}
 
 /** The options compared side by side: estimated EV, what it rests on, and which is best. */
 export function OptionsTable({ review }: { review: DecisionReview }) {
@@ -101,7 +164,10 @@ export function KeyNumbers({ review }: { review: DecisionReview }) {
     <dl className="mt-2 grid grid-cols-3 gap-2 text-center" data-testid="key-numbers">
       <div className="rounded-lg bg-white/[0.04] px-2 py-1.5">
         <dt className="text-[10px] uppercase tracking-wide text-slate-400">Your equity</dt>
-        <dd className="text-[15px] font-semibold tabular-nums text-slate-100">{formatPercent(review.equity)}</dd>
+        <dd className="text-[15px] font-semibold tabular-nums text-slate-100">
+          {formatPercent(review.equity)}
+          <span className="text-[11px] font-normal text-slate-400">{uncertainty(review)}</span>
+        </dd>
       </div>
       <div className="rounded-lg bg-white/[0.04] px-2 py-1.5">
         <dt className="text-[10px] uppercase tracking-wide text-slate-400">Needed to call</dt>
@@ -127,6 +193,7 @@ export function DecisionDetail({ review, detailed }: { review: DecisionReview; d
       <p>{review.explanation}</p>
       <KeyNumbers review={review} />
       {review.options.length > 0 && <OptionsTable review={review} />}
+      <RangeCheckTable review={review} />
       {review.reads.length > 0 && (
         <ul className="mt-2 space-y-0.5 text-[12px] text-slate-300" data-testid="reads">
           {review.reads.map((r) => (
@@ -147,6 +214,26 @@ export function DecisionDetail({ review, detailed }: { review: DecisionReview; d
               <li key={d}>{d}</li>
             ))}
           </ul>
+          <div data-testid="number-kinds">
+            <div className="text-[10.5px] uppercase tracking-wide text-slate-400">What kind of numbers these are</div>
+            <ul className="mt-0.5 space-y-0.5 text-[11.5px] text-slate-300">
+              <li>
+                <b className="font-semibold">Exact:</b> pot odds and the chips at stake (arithmetic from the betting).
+              </li>
+              <li>
+                <b className="font-semibold">Estimate:</b> your equity, exact against the estimated range
+                {review.equity_method === "monte_carlo" ? " up to sampling error (shown as ±)" : ""}, but the range itself
+                is a model of what they might hold.
+              </li>
+              <li>
+                <b className="font-semibold">Model:</b> bet and raise values, which also assume how often they fold.
+              </li>
+              <li>
+                <b className="font-semibold">Guideline:</b> rules of thumb where no EV is computed. None of this is
+                solver output.
+              </li>
+            </ul>
+          </div>
           {review.range_steps.length > 0 && (
             <div>
               <div className="text-[10.5px] uppercase tracking-wide text-slate-400">How their range was estimated</div>

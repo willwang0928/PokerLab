@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import type { ProgressStore } from "../hooks/useProgressStore";
-import { CONCEPT_LABEL, decisionTrend, type Progress } from "../lib/progress";
+import { CONCEPT_LABEL, clearChange, decisionTrend, type Progress } from "../lib/progress";
 import {
   answerTrend,
   conceptSkills,
@@ -113,7 +113,7 @@ export function ProgressDashboard({ progress, onStart, store, now = Date.now() }
               {s.recent !== null && s.previous !== null && (
                 <div className="mt-0.5 text-[11px] text-slate-400">
                   Last 10 answers {Math.round(s.recent * 100)}% vs the 10 before {Math.round(s.previous * 100)}%
-                  {Math.abs(s.recent - s.previous) < 0.25 ? " (within normal variation for 10 answers)" : ""}
+                  {clearChange(s.recent, 10, s.previous, 10) ? "" : " (not a clear change: 10 answers is a small sample)"}
                 </div>
               )}
             </li>
@@ -142,9 +142,16 @@ export function ProgressDashboard({ progress, onStart, store, now = Date.now() }
           )}
           {table.recent !== null && (
             <p className="mt-2 text-[12px] text-slate-400">
-              At the table: {Math.round(table.recent * 100)}% of your last {Math.min(20, table.total)} graded decisions were
-              good or close
-              {table.previous !== null ? ` (previous 20: ${Math.round(table.previous * 100)}%)` : ""}.
+              At the table: {Math.round(table.recent * 100)}% of your last {table.recentCount} graded decisions were good
+              or close
+              {table.previous !== null
+                ? ` (the ${table.previousCount} before: ${Math.round(table.previous * 100)}%${
+                    clearChange(table.recent, table.recentCount, table.previous, table.previousCount)
+                      ? ""
+                      : ", not a clear change at this sample size"
+                  })`
+                : ""}
+              .
             </p>
           )}
         </section>
@@ -344,7 +351,8 @@ function TrendChart({ points }: { points: TrendPoint[] }) {
         </div>
       )}
       <p className="mt-1 text-[11px] text-slate-500">
-        Each point averages 10 first answers; swings of up to about 20 points between blocks are normal at that size.
+        Each point averages 10 first answers. At that size, two points can differ by up to about 40 percentage points by
+        chance alone, so read the overall direction rather than single steps.
       </p>
     </div>
   );

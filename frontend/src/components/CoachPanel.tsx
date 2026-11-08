@@ -118,11 +118,11 @@ export function CoachPanel({ review, loading, error, progress, detailed, onToggl
             <h3 className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">Your progress</h3>
             <p className="mt-1 text-[12px] text-slate-300">
               Good or close decisions: <b className="tabular-nums text-slate-100">{pct(trend.recent)}</b> of your last{" "}
-              {Math.min(trend.total, 20)}
+              {trend.recentCount}
               {trend.previous !== null && (
                 <>
                   {" "}
-                  (previous 20: <span className="tabular-nums">{pct(trend.previous)}</span>)
+                  (the {trend.previousCount} before: <span className="tabular-nums">{pct(trend.previous)}</span>)
                 </>
               )}
               . {trend.total} decisions reviewed in all.

@@ -44,7 +44,7 @@ import random
 from dataclasses import asdict, dataclass, field, fields, replace
 from typing import TYPE_CHECKING, Any
 
-from ..ai.base import Observation, raise_to_pot_fraction
+from ..ai.base import Observation, raise_to_pot_fraction, uncalled_excess
 from ..ai.preflop import hand_class, percentile
 from ..ai.range_model import (
     MIN_COMBOS,
@@ -135,6 +135,10 @@ class DecisionAnalysis:
     reads: list[str]
     options: list[Option]
     hand_percentile: float | None = None  # preflop hand ranking (0 = AA), unopened pots
+    # The same comparison against a tighter and a looser range (see RANGE_VARIANTS).
+    range_check: list[dict[str, Any]] = field(default_factory=list)
+    # Whether the verdict on the chosen option holds against every range in range_check.
+    robust: bool | None = None
     best: list[str] = field(default_factory=list)  # keys of options within noise of the top
     chosen: str | None = None
     grade: str = "ungraded"
@@ -171,7 +175,11 @@ def _pct(x: float) -> str:
 def _hand_name(hole: tuple[Card, ...], board: tuple[Card, ...]) -> str:
     if len(board) < 3:
         return hand_class(hole)
-    name = evaluate(list(hole) + list(board)).description
+    made = evaluate(list(hole) + list(board))
+    name = made.description
+    if len(board) == 5 and evaluate(list(board)).category == made.category:
+        # The made hand is on the board: everyone has it, only kickers can differ.
+        name += " (on the board)"
     if len(board) < 5:
         bonus = draw_bonus(hole, board)
         if bonus >= 0.18:
@@ -342,12 +350,21 @@ def analyze(
     seed: int | None = None,
     iterations: int = ANALYSIS_ITERATIONS,
     names: dict[int, str] | None = None,
+    range_check: bool = True,
 ) -> DecisionAnalysis:
-    """Analyse a decision. With ``chosen`` it is also graded (see :func:`grade_option`)."""
+    """Analyse a decision. With ``chosen`` it is also graded (see :func:`grade_option`).
+
+    ``range_check`` repeats the comparison against the tighter and looser ranges in
+    :data:`RANGE_VARIANTS` (switch it off only for quick screening).
+    """
     rng = random.Random(seed)
     villain = _villain(obs)
     preflop = obs.street == Street.PREFLOP
-    unopened = preflop and legal.current_bet <= obs.big_blind
+    # A short big blind that is already all-in leaves only call or fold: pot odds, not
+    # the opening guideline.
+    unopened = (
+        preflop and legal.current_bet <= obs.big_blind and (legal.can_raise or legal.can_check)
+    )
     spot = "unopened" if unopened else ("facing_bet" if legal.can_call else "unbet")
     drawing = not preflop and obs.street != Street.RIVER and draw_bonus(obs.hole, obs.board) >= 0.14
     weak = (
@@ -384,7 +401,7 @@ def analyze(
     if unopened:
         _guideline_options(base, obs, legal)
     else:
-        _ev_options(base, obs, legal, chosen, adjust, rng, iterations, villain, spot)
+        _ev_options(base, obs, legal, chosen, adjust, rng, iterations, villain, spot, range_check)
     if chosen is not None:
         grade_option(base, chosen_key(chosen, legal))
     return base
@@ -449,6 +466,114 @@ def _guideline_options(a: DecisionAnalysis, obs: Observation, legal: LegalAction
     a.hand_percentile = p
 
 
+@dataclass(frozen=True, slots=True)
+class RangeVariant:
+    """A plausible alternative to the estimated range, used to test how much a verdict
+    depends on the range assumption."""
+
+    name: str  # "tighter" / "looser"
+    label: str
+    postflop_scale: float  # multiplies the share of the range kept by each bet/raise/call
+    preflop_scale: float  # multiplies the preflop raising and calling range widths
+    description: str
+
+
+# Moderate alternatives, not extremes: narrowing compounds over streets, so a much tighter
+# setting quickly leaves only the nuts. Each one changes the share of hands the opponent
+# is assumed to bet, raise or call with on each action by about a quarter.
+RANGE_VARIANTS = (
+    RangeVariant(
+        "tighter",
+        "Tighter range",
+        0.75,
+        0.85,
+        "they bet, raise and call only with stronger hands (about a quarter fewer)",
+    ),
+    RangeVariant(
+        "looser",
+        "Looser range",
+        1.3,
+        1.2,
+        "they bet, raise and call with more hands, including weaker ones and bluffs "
+        "(about a third more)",
+    ),
+)
+
+
+def _scaled(adjust: Adjustments | None, v: RangeVariant) -> Adjustments:
+    from ..ai.adaptation import Adjustments as _Adj
+
+    a = adjust or _Adj()
+    return replace(
+        a,
+        bet_range_scale=a.bet_range_scale * v.postflop_scale,
+        raise_range_post_scale=a.raise_range_post_scale * v.postflop_scale,
+        call_range_scale=a.call_range_scale * v.postflop_scale,
+        raise_range_scale=a.raise_range_scale * v.preflop_scale,
+        vpip_range_scale=a.vpip_range_scale * v.preflop_scale,
+        reasons=dict(a.reasons),
+    )
+
+
+def _villain_range(obs: Observation, villain: int, adjust: Adjustments | None) -> HandRange:
+    r = estimate_range(
+        obs.actions, villain, obs.button, obs.big_blind, obs.board, known=obs.hole, adjust=adjust
+    )
+    if len(r) == 0:
+        r = ANY_HAND.without(set(obs.hole) | set(obs.board))
+    return r
+
+
+@dataclass(slots=True)
+class _Evaluation:
+    """Every modelled option's value against one opponent range."""
+
+    equity: float
+    se: float
+    method: str
+    evs: dict[str, float]
+    when_called: dict[str, float]
+
+
+def _evaluate(
+    obs: Observation,
+    legal: LegalActions,
+    villain_range: HandRange,
+    totals: list[int],
+    folds: list[float],
+    pot: int,
+    seed: int,
+    iterations: int,
+) -> _Evaluation:
+    """Expected values of fold/call/check and of each modelled bet size, in chips."""
+    sub = random.Random(seed)
+    eq, se, method = _equity(obs.hole, villain_range, obs.board, sub.randrange(2**63), iterations)
+    call = legal.call_amount
+    evs: dict[str, float] = {}
+    when_called: dict[str, float] = {}
+    if legal.can_call:
+        evs["fold"] = 0.0
+        evs["call"] = eq * (pot + call) - call
+    else:
+        evs["check"] = eq * pot
+    if totals:
+        villain_bet = legal.current_bet
+        villain_stack = obs.opponent_stacks[0] if obs.opponent_stacks else 0
+        bets = [t - legal.player_bet for t in totals]
+        if obs.board:
+            defenders = defending_ranges(villain_range, obs.board, [1 - f for f in folds])
+        else:
+            defenders = [_preflop_defenders(villain_range, 1 - f) for f in folds]
+        for total, b, fold, drange in zip(totals, bets, folds, defenders, strict=True):
+            key = _raise_key(total, legal)
+            v_call = min(total - villain_bet, villain_stack)
+            final_pot = pot + b + v_call
+            eq_d, _, _ = _equity(obs.hole, drange, obs.board, sub.randrange(2**63), iterations)
+            evs[key] = fold * pot + (1 - fold) * (eq_d * final_pot - b)
+            when_called[key] = eq_d
+    return _Evaluation(eq, se, method, evs, when_called)
+
+
 def _ev_options(
     a: DecisionAnalysis,
     obs: Observation,
@@ -459,27 +584,71 @@ def _ev_options(
     iterations: int,
     villain: int,
     spot: str,
+    range_check: bool = True,
 ) -> None:
-    villain_range = estimate_range(
-        obs.actions, villain, obs.button, obs.big_blind, obs.board, known=obs.hole, adjust=adjust
-    )
-    if len(villain_range) == 0:
-        villain_range = ANY_HAND.without(set(obs.hole) | set(obs.board))
+    villain_range = _villain_range(obs, villain, adjust)
     a.range_size = len(villain_range)
     a.range_steps = describe_range(obs, villain, adjust)
-    eq, se, method = _equity(obs.hole, villain_range, obs.board, rng.randrange(2**63), iterations)
+    excess = uncalled_excess(legal)
+    pot, call = obs.pot - excess, legal.call_amount
+    a.pot = pot
+    bb = obs.big_blind
+    if excess:
+        a.details.append(
+            f"{excess} chips of the opponent's blind are more than you can match; they go "
+            f"back to them, so the pot you can win is {pot}."
+        )
+
+    totals = _candidate_raises(obs, legal, chosen, spot)
+    guideline_raise: Option | None = None
+    if totals and obs.street == Street.PREFLOP:
+        # How often a preflop raiser folds to a re-raise cannot be read off the fold
+        # model (it would recommend re-raising junk as a bluff), so a preflop re-raise
+        # is judged by a guideline on equity instead.
+        total = _chosen_total(chosen, legal) if chosen is not None else None
+        total = total or raise_to_pot_fraction(obs, legal, 0.75).amount or legal.min_raise_to
+        key = _raise_key(total, legal)
+        guideline_raise = Option(
+            key,
+            legal.raise_type.value,
+            total,
+            _bet_label(legal.raise_type.value, total, pot, key == "all-in"),
+            None,
+            "guideline",
+            detail="preflop re-raise: judged by a guideline, not an EV",
+        )
+        totals = []
+    modelled = [t for t in totals if _modelled(t, obs, legal)]
+    folds = [fold_rate(t - legal.player_bet, pot, adjust) for t in modelled]
+
+    seed = rng.randrange(2**63)
+    base = _evaluate(obs, legal, villain_range, modelled, folds, pot, seed, iterations)
+    eq, se, method = base.equity, base.se, base.method
     a.equity, a.equity_se, a.equity_method = eq, se, method
     if a.concept == "bluffing" and eq >= 0.5:
         a.concept = "value_betting"  # ahead already: betting is for value, not a semi-bluff
-    pot, call = obs.pot, legal.call_amount
-    bb = obs.big_blind
-    opts: list[Option] = []
 
+    # The same comparison against plausible alternative ranges.
+    for v in RANGE_VARIANTS if range_check else ():
+        vr = _villain_range(obs, villain, _scaled(adjust, v))
+        ev = _evaluate(obs, legal, vr, modelled, folds, pot, rng.randrange(2**63), iterations)
+        a.range_check.append(
+            {
+                "name": v.name,
+                "label": v.label,
+                "description": v.description,
+                "range_size": len(vr),
+                "equity": ev.equity,
+                "evs": ev.evs,
+            }
+        )
+
+    opts: list[Option] = []
     if spot == "facing_bet":
         need = call / (pot + call)
         a.required_equity = need
         opts.append(Option("fold", "fold", None, "Fold", 0.0, "pot odds"))
-        ev_call = eq * (pot + call) - call
+        ev_call = base.evs["call"]
         opts.append(
             Option(
                 "call",
@@ -495,7 +664,7 @@ def _ev_options(
             f"Pot odds: call ÷ (pot + call) = {call} ÷ ({pot} + {call}) = {need:.1%} equity needed."
         )
     else:
-        ev_check = eq * pot
+        ev_check = base.evs["check"]
         opts.append(
             Option(
                 "check",
@@ -507,73 +676,47 @@ def _ev_options(
                 detail=f"{eq:.3f} × {pot} = {ev_check:+.1f} chips (if checked down)",
             )
         )
+    if guideline_raise is not None:
+        opts.append(guideline_raise)
 
-    totals = _candidate_raises(obs, legal, chosen, spot)
-    if totals and obs.street == Street.PREFLOP:
-        # How often a preflop raiser folds to a re-raise cannot be read off the fold
-        # model (it would recommend re-raising junk as a bluff), so a preflop re-raise
-        # is judged by a guideline on equity instead.
-        total = _chosen_total(chosen, legal) if chosen is not None else None
-        total = total or raise_to_pot_fraction(obs, legal, 0.75).amount or legal.min_raise_to
+    kind = legal.raise_type.value
+    fold_by_total = dict(zip(modelled, folds, strict=True))
+    for total in totals:
         key = _raise_key(total, legal)
-        opts.append(
-            Option(
-                key,
-                legal.raise_type.value,
-                total,
-                _bet_label(legal.raise_type.value, total, pot, key == "all-in"),
-                None,
-                "guideline",
-                detail="preflop re-raise: judged by a guideline, not an EV",
-            )
-        )
-        totals = []
-    if totals:
-        kind = legal.raise_type.value
-        villain_bet = legal.current_bet
-        villain_stack = obs.opponent_stacks[0] if obs.opponent_stacks else 0
-        bets = [t - legal.player_bet for t in totals]
-        folds = [fold_rate(b, pot, adjust) for b in bets]
-        if obs.board:
-            defenders = defending_ranges(villain_range, obs.board, [1 - f for f in folds])
-        else:
-            defenders = [_preflop_defenders(villain_range, 1 - f) for f in folds]
-        for total, b, fold, drange in zip(totals, bets, folds, defenders, strict=True):
-            key = _raise_key(total, legal)
-            if not _modelled(total, obs, legal):
-                opts.append(
-                    Option(
-                        key,
-                        kind,
-                        total,
-                        _bet_label(kind, total, pot, key == "all-in"),
-                        None,
-                        "not modelled",
-                        detail="bigger than 1.5× the pot: not modelled",
-                    )
-                )
-                continue
-            v_call = min(total - villain_bet, villain_stack)
-            final_pot = pot + b + v_call
-            eq_d, _, _ = _equity(obs.hole, drange, obs.board, rng.randrange(2**63), iterations)
-            defend = 1 - fold
-            ev = fold * pot + defend * (eq_d * final_pot - b)
+        if total not in fold_by_total:
             opts.append(
                 Option(
                     key,
                     kind,
                     total,
                     _bet_label(kind, total, pot, key == "all-in"),
-                    ev,
-                    "fold model",
-                    equity_when_called=eq_d,
-                    fold_rate=fold,
-                    detail=(
-                        f"fold {fold:.0%} × {pot} + continue {defend:.0%} × "
-                        f"({eq_d:.3f} × {final_pot} − {b}) = {ev:+.1f} chips"
-                    ),
+                    None,
+                    "not modelled",
+                    detail="bigger than 1.5× the pot: not modelled",
                 )
             )
+            continue
+        b = total - legal.player_bet
+        fold = fold_by_total[total]
+        villain_stack = obs.opponent_stacks[0] if obs.opponent_stacks else 0
+        final_pot = pot + b + min(total - legal.current_bet, villain_stack)
+        eq_d, ev = base.when_called[key], base.evs[key]
+        opts.append(
+            Option(
+                key,
+                kind,
+                total,
+                _bet_label(kind, total, pot, key == "all-in"),
+                ev,
+                "fold model",
+                equity_when_called=eq_d,
+                fold_rate=fold,
+                detail=(
+                    f"fold {fold:.0%} × {pot} + continue {1 - fold:.0%} × "
+                    f"({eq_d:.3f} × {final_pot} − {b}) = {ev:+.1f} chips"
+                ),
+            )
+        )
 
     a.options = opts
     hand = a.hand
@@ -775,6 +918,27 @@ def _grade_ev(a: DecisionAnalysis, key: str) -> None:
         confidence = "medium"  # the pot-odds part alone already settles it
     if grade == "mistake" and confidence == "low" and po_loss / pot <= LOW_CONFIDENCE_MISTAKE_AT:
         grade = "questionable"
+
+    # Does the verdict survive a different range assumption? Re-run the same comparison
+    # against the tighter and the looser range: a choice flagged here must also be flagged
+    # there, and a choice called good must not be a clear error there.
+    flagged = grade in ("questionable", "mistake")
+    flips: list[dict[str, Any]] = []
+    for rc in a.range_check:
+        evs = {k: v for k, v in rc["evs"].items() if k in by_key and by_key[k].ev is not None}
+        if key not in evs:
+            continue
+        v_loss = max(evs.values()) - evs[key]
+        v_flagged = v_loss > max(noise, QUESTIONABLE_AT * pot)
+        if (flagged and v_loss <= noise) or (not flagged and v_flagged):
+            flips.append({**rc, "best": max(evs, key=lambda k: evs[k])})
+    a.robust = not flips if a.range_check else None
+    if flips:
+        confidence = "low"
+        if grade == "mistake":
+            grade = "questionable"
+    elif confidence == "high" and a.robust is None:
+        confidence = "medium"
     a.grade, a.confidence = grade, confidence
 
     # Recurring-mistake tags (only for decisions worth flagging).
@@ -783,6 +947,17 @@ def _grade_ev(a: DecisionAnalysis, key: str) -> None:
 
     a.headline = GRADE_LABEL[grade]
     a.explanation = _explain(a, chosen, top, loss)
+    if flips:
+        rc = flips[0]
+        a.explanation += (
+            f" This verdict depends on the range assumption: if {rc['description']}, "
+            f"your {a.hand} has about {_pct(rc['equity'])} and "
+            + (
+                "your choice would be fine."
+                if flagged
+                else f"{by_key[rc['best']].label.lower()} would score clearly better."
+            )
+        )
 
 
 RERAISE_VALUE = 0.55  # equity against the raiser's range to re-raise for value
@@ -912,6 +1087,7 @@ def with_chosen(a: DecisionAnalysis, key: str) -> DecisionAnalysis:
         details=list(a.details),
         caveats=list(a.caveats),
         range_steps=list(a.range_steps),
+        range_check=list(a.range_check),
         reads=list(a.reads),
         history=list(a.history),
     )
