@@ -28,6 +28,7 @@ def create_app(store: SessionStore | None = None, allow_seed: bool | None = None
     sessions = store if store is not None else SessionStore()
     if allow_seed is None:
         allow_seed = os.getenv("POKERLAB_ALLOW_SEED", "").lower() in ("1", "true", "yes")
+    app.state.sessions = sessions
 
     origins = os.getenv("POKERLAB_CORS_ORIGINS", "http://localhost:5173").split(",")
     app.add_middleware(
@@ -97,6 +98,17 @@ def create_app(store: SessionStore | None = None, allow_seed: bool | None = None
             except IllegalActionError as exc:
                 raise HTTPException(status_code=400, detail=str(exc)) from exc
             return PlayResponse(state=session.view(), steps=[s.__dict__ for s in steps])
+
+    @app.get("/api/sessions/{session_id}/hands/{hand_number}/review")
+    def review_hand(session_id: str, hand_number: int) -> dict:
+        """Coaching review of the latest finished hand (only once it is over)."""
+        session = _get(session_id)
+        with session.lock:
+            hand = session.coach.pending(hand_number)
+        if hand is None:
+            raise HTTPException(status_code=404, detail="No finished hand to review")
+        # The analysis is slow; it runs outside the lock so play is never blocked.
+        return session.coach.review_hand(hand)
 
     @app.post("/api/equity", response_model=EquityResponse)
     def equity(req: EquityRequest) -> EquityResponse:

@@ -137,3 +137,70 @@ export interface OpponentModelView {
   adjustments: string[];
 }
 
+// ------------------------------------------------------------------ coaching (v0.3.5)
+
+export type Grade = "good" | "close" | "questionable" | "mistake" | "ungraded";
+export type Concept = "pot_odds" | "draws" | "value_betting" | "bet_sizing" | "preflop" | "reads";
+export type TrainingDifficulty = "beginner" | "intermediate" | "advanced";
+
+export interface CoachOption {
+  key: string;
+  action: string;
+  amount: number | null;
+  label: string;
+  /** Estimated chips from the moment of the decision (fold = 0); null when not modelled. */
+  ev: number | null;
+  basis: "pot odds" | "fold model" | "guideline" | "not modelled";
+  equity_when_called: number | null;
+  fold_rate: number | null;
+  detail: string;
+}
+
+export interface DecisionReview {
+  street: string;
+  hole: string[];
+  board: string[];
+  hand: string;
+  position: string;
+  pot: number;
+  to_call: number;
+  stack: number;
+  big_blind: number;
+  history: string[];
+  spot: "facing_bet" | "unbet" | "unopened";
+  concept: Concept;
+  equity: number | null;
+  equity_se: number | null;
+  equity_method: string | null;
+  required_equity: number | null;
+  range_size: number | null;
+  range_steps: string[];
+  reads: string[];
+  options: CoachOption[];
+  best: string[];
+  chosen: string | null;
+  grade: Grade;
+  grade_label: string;
+  confidence: "low" | "medium" | "high";
+  ev_loss: number;
+  tags: string[];
+  headline: string;
+  explanation: string;
+  details: string[];
+  caveats: string[];
+  /** The decision point as public data, for "practise this spot". */
+  spot_data?: Record<string, unknown>;
+}
+
+export interface HandReview {
+  hand_number: number;
+  decisions: DecisionReview[];
+  counts: Record<Grade, number>;
+  net: number;
+  net_bb: number;
+  ev_loss_bb: number;
+  quality: "sound" | "mixed" | "costly" | "none";
+  verdict: string;
+  hindsight: string | null;
+  tags: string[];
+}

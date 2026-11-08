@@ -15,6 +15,7 @@ from .ai.adaptation import adaptation_policy, explain_change
 from .ai.difficulty import DEFAULT_DIFFICULTY, Difficulty, make_agent
 from .ai.equity_agent import EquityAgent
 from .ai.player_model import MIN_OPPORTUNITIES
+from .coach.review import HandCoach
 from .engine import Action, Event, HoldemHand, IllegalActionError
 from .equity import STREET_BOARD_SIZES, EquityResult, calculate_equity
 from .evaluator import best_five, evaluate
@@ -83,6 +84,14 @@ class HeadsUpSession:
         self._equity_cache: dict[int, EquityResult] = {}  # board size -> face-up equity
         self._runout = False
         self._adaptation_notes: list[str] = []  # decisions adaptation changed this hand
+        # Records the human's decisions (from the human's own view) for post-hand review.
+        self.coach = HandCoach(
+            HUMAN,
+            AI,
+            self.config.small_blind,
+            self.config.big_blind,
+            names={AI: self.config.ai_name},
+        )
         # Serialises requests for this session (the API runs handlers on a threadpool).
         self.lock = threading.RLock()
         self.last_active = time.monotonic()
@@ -115,6 +124,7 @@ class HeadsUpSession:
             listener=self._on_event,
             autostart=False,
         )
+        self.coach.start_hand(self.hand_number, self.stacks, self.button)
         self.hand.start()
         self._run_ai()
         return self._steps
@@ -125,7 +135,15 @@ class HeadsUpSession:
         if self.hand.to_act != HUMAN:
             raise SessionStateError("It is not your turn")
         self._steps = []
-        self.hand.apply(action)  # raises IllegalActionError on bad input
+        # Recorded before applying: the action may end the hand, which closes the review.
+        self.coach.record(
+            Observation.from_hand(self.hand, HUMAN), self.hand.legal_actions(), action
+        )
+        try:
+            self.hand.apply(action)  # raises IllegalActionError on bad input
+        except IllegalActionError:
+            self.coach.discard_last()
+            raise
         self._run_ai()
         return self._steps
 
@@ -192,6 +210,8 @@ class HeadsUpSession:
         }
         if self.agent is not None:
             self.agent.observe_hand(self.hand.events, AI)
+        start = next(e.data["stacks"] for e in self.hand.events if e.type == "hand_start")
+        self.coach.finish_hand(self.hand.events, self.stacks[HUMAN] - start[HUMAN])
         self.status = SessionStatus.GAME_OVER if min(self.stacks) == 0 else SessionStatus.WAITING
 
     def _equity_rows(self, board_size: int) -> list[dict[str, Any]]:

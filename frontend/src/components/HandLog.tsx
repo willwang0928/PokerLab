@@ -7,7 +7,7 @@ const STREET_RE = new RegExp(`^(Flop|Turn|River): (${CARD_RUN})$`);
 const SHOW_RE = new RegExp(`(shows? )(${CARD_RUN})(?= \\()`, "g");
 
 /** A tiny inline card used in the log ("8♦"). */
-function MiniCard({ code }: { code: string }) {
+export function MiniCard({ code }: { code: string }) {
   const { rank, suit, red } = parseCard(code);
   return (
     <span

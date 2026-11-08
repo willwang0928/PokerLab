@@ -111,6 +111,14 @@ The first release, **v0.1**, is a fully playable game of **heads-up No-Limit Tex
 
   Half of one adjustment was measured and removed. Bluffing more against players who fold often, and assuming they fold more to bets, cost 66 ± 17 bb/100 against the v0.1 bot and gained nothing even against the "folder" style. The other half stays: against a player who rarely folds, the bot bluffs less, bets thinner for value and expects fewer folds. Removing that half dropped the gain against the calling station from about +140 to +51 bb/100.
 
+**v0.3.5 — Coaching and decision feedback**
+- A **Coach** panel reviews every hand once it is over. Each of your decisions is graded *Good*, *Close call*, *Questionable* or *Likely mistake* (or *Not graded* when it cannot be estimated reliably), with a plain explanation, the key numbers (your equity, the equity you needed, the size of the opponent's estimated range) and every alternative side by side with its estimated EV in big blinds. "Show the maths" adds the equity source, the EV formulas, how the range was estimated, and the assumptions behind them.
+- **Decision quality is kept apart from the result.** The verdict says "You won 300 chips, but 2 decisions gave up value" or "You lost 120 chips, but your decisions held up". Grades never change with the cards that came later.
+- **No hindsight.** A decision is recorded with exactly what you could see when you made it: your cards, the board so far and the public betting. The opponent's cards are never an input, not even after a showdown, and a test confirms that changing them changes nothing in the review.
+- **How decisions are judged.** The opponent's range is estimated from their actions with the same model the bots use, adjusted for their observed tendencies once there are enough hands (the coach tracks the bot just as the bot tracks you). Equity against that range is exact when the deal space is small, otherwise seeded Monte Carlo. Each option's EV is measured from the moment of the decision: calling is `equity × (pot + call) − call`; checking is `equity × pot`; bets and raises assume the opponent continues with the strongest part of their range at the minimum-defence frequency, and never assume more folds than against a pot-sized bet.
+- **Honest limits.** These are one-street estimates, not solver output, and nothing is ever called optimal. Every grade carries a confidence level. Only pot-odds comparisons (call or fold) can be labelled *likely mistakes*. A verdict that rests on an assumed fold rate is at most *questionable*, and needs twice the margin. Bets larger than 1.5× the pot are not modelled and are left ungraded. Preflop re-raises and unopened preflop pots use clearly labelled guidelines instead of invented EVs.
+- **Recurring leaks and progress.** Flagged decisions are tagged (calling without enough equity, folding when the price was right, checking strong hands, betting when behind, costly bet sizes, too loose or too tight preflop). The panel shows the leaks that keep recurring and compares your last 20 decisions with the 20 before. Progress is kept in the browser, so it carries across games and server restarts.
+
 ## Quick start
 
 Requirements: **Python 3.11+** and **Node.js 20.19+** (CI uses Node 24).
@@ -148,8 +156,8 @@ make test      # pytest + vitest
 make lint      # ruff + TypeScript
 ```
 
-- **Backend (pytest, 260+ tests):** deck and evaluator correctness (including exhaustive five-card frequencies), opponent modelling (statistics from public events only, shrinkage and minimum samples, decay, bounded adjustments, decisions unchanged by the human's hidden cards, legal play against every style, paired comparisons), difficulty levels (decisions that differ for stated reasons, decisions independent of the human's hidden cards, legality at every level, stronger levels beating Beginner, the expected-value formula), live all-in equity, the equity agent (exact pot-odds boundaries, legality, range estimates, a duplicate match against a random player), equity (exact results against an independent brute force, Monte Carlo accuracy within its standard error, overlapping ranges, reproducible seeds), range parsing, betting rules, illegal actions, side pots and odd chips, short-stack edge cases, AI legality, sessions, API robustness (locking, seeds, eviction), and full games played over HTTP. Randomized fuzz tests play thousands of 2–6 player hands and check chip conservation after every action.
-- **Frontend (Vitest + Testing Library):** difficulty selection and the adaptation toggle, the tendencies panel, the equity panel (live and review modes, reveal timing, percentage formatting), betting controls, seats and hidden cards, sizing helpers, animations, accessibility (focus, dialogs, announcements), connection failures and keyboard shortcuts, the sound engine (against a fake AudioContext) and event-to-sound timing, saved settings, and app flows with a mocked API (deal → act → showdown → next hand, errors, game over).
+- **Backend (pytest, 290+ tests):** coaching (grades against exact pot-odds cases, the documented EV formulas, the capped fold model, no optimality claims, reviews unchanged by the opponent's hidden cards and by the run-out, reproducible analyses, fuzzed random spots), deck and evaluator correctness (including exhaustive five-card frequencies), opponent modelling (statistics from public events only, shrinkage and minimum samples, decay, bounded adjustments, decisions unchanged by the human's hidden cards, legal play against every style, paired comparisons), difficulty levels (decisions that differ for stated reasons, decisions independent of the human's hidden cards, legality at every level, stronger levels beating Beginner, the expected-value formula), live all-in equity, the equity agent (exact pot-odds boundaries, legality, range estimates, a duplicate match against a random player), equity (exact results against an independent brute force, Monte Carlo accuracy within its standard error, overlapping ranges, reproducible seeds), range parsing, betting rules, illegal actions, side pots and odd chips, short-stack edge cases, AI legality, sessions, API robustness (locking, seeds, eviction), and full games played over HTTP. Randomized fuzz tests play thousands of 2–6 player hands and check chip conservation after every action.
+- **Frontend (Vitest + Testing Library):** the coach panel and the progress store (leaks, trends, malformed storage), difficulty selection and the adaptation toggle, the tendencies panel, the equity panel (live and review modes, reveal timing, percentage formatting), betting controls, seats and hidden cards, sizing helpers, animations, accessibility (focus, dialogs, announcements), connection failures and keyboard shortcuts, the sound engine (against a fake AudioContext) and event-to-sound timing, saved settings, and app flows with a mocked API (deal → act → showdown → next hand, errors, game over).
 - **CI:** GitHub Actions runs lint, tests and a production build on every push and pull request (Python 3.11–3.13).
 
 ## Architecture
@@ -179,7 +187,11 @@ backend/pokerlab/
 │   ├── styles.py     fixed leaky player styles for experiments
 │   ├── experiments.py adaptive vs non-adaptive controlled matches (+ CLI)
 │   └── random_agent.py
-├── session.py        heads-up match: hand sequencing, AI turns, per-seat views, log
+├── coach/
+│   ├── analysis.py   grade one decision from the player's own view: range, equity, EV per option
+│   ├── review.py     post-hand reviews, decision quality vs result, opponent tendencies
+│   └── spot.py       a decision point as public data, replayed through the engine
+├── session.py        heads-up match: hand sequencing, AI turns, per-seat views, log, coach
 └── api/              FastAPI app, schemas, session store
 
 frontend/src/
@@ -205,6 +217,7 @@ frontend/src/
 | `GET` | `/api/sessions/{id}` | Current state (from the human's point of view) |
 | `POST` | `/api/sessions/{id}/hands` | Deal the next hand |
 | `POST` | `/api/sessions/{id}/actions` | `{"action": "fold"\|"check"\|"call"\|"bet"\|"raise"\|"all_in", "amount"?: raise-to total}` |
+| `GET` | `/api/sessions/{id}/hands/{n}/review` | Coaching review of the latest finished hand (`404` while it is in progress) |
 | `DELETE` | `/api/sessions/{id}` | End a match |
 | `POST` | `/api/equity` | `{"players": ["AhKh", "QQ+,AKs"], "board"?, "dead"?, "iterations"?, "seed"?}` → equity, win, tie and standard error per player |
 
@@ -215,7 +228,7 @@ Illegal actions return `400` with an explanation. Out-of-turn or out-of-state re
 ## Roadmap
 
 - **v0.2 — Visual polish:** v0.2.1 visual redesign, v0.2.2 animations, v0.2.3 sound and themes, and v0.2.4 stability and accessibility (done).
-- **v0.3 — Smarter AI and training:** v0.3.1 equity engine, v0.3.2 equity-driven opponent with equity review, v0.3.3 difficulty levels and live all-in equity, v0.3.4 adaptive opponent (done); next, coaching and decision feedback.
+- **v0.3 — Smarter AI and training:** v0.3.1 equity engine, v0.3.2 equity-driven opponent with equity review, v0.3.3 difficulty levels and live all-in equity, v0.3.4 adaptive opponent, v0.3.5 coaching and decision feedback (done); next, interactive training mode.
 - **v0.4 — Analytics:** persistent hand history (SQLite), replays, performance stats, AI-vs-AI simulations.
 - **Later:** multiplayer, tournaments, Omaha / Stud / Draw, CFR agents, reinforcement learning, strategy dashboards.
 

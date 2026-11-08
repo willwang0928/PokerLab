@@ -1,4 +1,10 @@
-import type { ActionType, GameConfig, GameState, PlayResponse } from "../types";
+import type {
+  ActionType,
+  GameConfig,
+  GameState,
+  HandReview,
+  PlayResponse,
+} from "../types";
 
 const BASE = (import.meta.env.VITE_API_BASE_URL ?? "").replace(/\/$/, "");
 
@@ -45,4 +51,9 @@ export const api = {
       method: "POST",
       body: JSON.stringify(amount === undefined ? { action } : { action, amount }),
     }),
+};
+
+export const coachApi = {
+  review: (sessionId: string, hand: number) =>
+    request<HandReview>(`/api/sessions/${sessionId}/hands/${hand}/review`),
 };

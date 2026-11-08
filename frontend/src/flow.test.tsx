@@ -165,3 +165,39 @@ describe("connection problems", () => {
     expect(within(screen.getByTestId("board")).getByRole("img", { name: "7 of hearts" })).toBeInTheDocument();
   });
 });
+
+describe("coach review", () => {
+  it("fetches the review only after the hand is over and records progress", async () => {
+    const dealt = gameState();
+    const done = {
+      ...waiting(dealt),
+      result: { winnings: { 0: 20 }, uncontested: true, pots: [], showdown: null } as unknown as GameState["result"],
+    };
+    const review = {
+      hand_number: dealt.hand_number,
+      decisions: [],
+      counts: { good: 0, close: 0, questionable: 0, mistake: 0, ungraded: 0 },
+      net: 20,
+      net_bb: 2,
+      ev_loss_bb: 0,
+      quality: "none",
+      verdict: "You won 20 chips. You made no decisions that could be graded this hand.",
+      hindsight: null,
+      tags: [],
+    };
+    const fetchMock = mockFetch((url) => {
+      if (url.endsWith("/api/sessions")) return { state: waiting({ ...dealt, hand_number: 0 }), steps: [] };
+      if (url.endsWith("/hands")) return { state: dealt, steps: [] };
+      if (url.endsWith("/review")) return review;
+      return { state: done, steps: [] };
+    });
+    const reviews = () => fetchMock.mock.calls.filter(([u]) => String(u).endsWith("/review")).length;
+    await startGame();
+    const call = await screen.findByRole("button", { name: /Call 5/ });
+    expect(reviews()).toBe(0); // never during the hand
+    await userEvent.click(call);
+    expect(await screen.findByTestId("coach-verdict")).toHaveTextContent(/You won 20 chips/);
+    expect(reviews()).toBe(1);
+    expect(fetchMock.mock.calls.some(([u]) => String(u).endsWith(`/hands/${dealt.hand_number}/review`))).toBe(true);
+  });
+});

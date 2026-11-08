@@ -1,3 +1,3 @@
 """PokerLab — poker engine, AI agents and API."""
 
-__version__ = "0.3.4"
+__version__ = "0.3.5"

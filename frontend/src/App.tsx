@@ -5,6 +5,7 @@ import { GameOverModal } from "./components/GameOverModal";
 import { EquityPanel } from "./components/EquityPanel";
 import { HandLog } from "./components/HandLog";
 import { TendenciesPanel } from "./components/TendenciesPanel";
+import { CoachPanel } from "./components/CoachPanel";
 import { MuteButton, SettingsMenu } from "./components/SettingsMenu";
 import { DIFFICULTY_LABEL, StartScreen } from "./components/StartScreen";
 import { SuitIcon } from "./components/SuitIcon";
@@ -15,7 +16,11 @@ import { SPEED_SCALE, useSettings } from "./hooks/useSettings";
 import { canTravel, durationScale, type MotionPrefs, MotionPrefsContext, revealLag } from "./lib/motion";
 import { restoreFocus, shortcutBlocked } from "./lib/keys";
 import { sound } from "./lib/sound";
-import type { GameConfig, GameState } from "./types";
+import { ApiError, coachApi } from "./lib/api";
+import { addReview, loadProgress, type Progress, saveProgress } from "./lib/progress";
+import type { GameConfig, GameState, HandReview } from "./types";
+
+const COACH_DETAIL_KEY = "pokerlab.coach.detailed";
 
 const DEFAULT_CONFIG: GameConfig = {
   player_name: "You",
@@ -64,6 +69,70 @@ export default function App() {
     const t = setTimeout(clearError, 5000);
     return () => clearTimeout(t);
   }, [error, clearError]);
+
+  // ---- learning progress (kept in the browser across games)
+  const [progress, setProgress] = useState<Progress>(loadProgress);
+  const updateProgress = (f: (p: Progress) => Progress) =>
+    setProgress((p) => {
+      const next = f(p);
+      if (next !== p) saveProgress(next);
+      return next;
+    });
+  const [detailed, setDetailed] = useState(() => {
+    try {
+      return localStorage.getItem(COACH_DETAIL_KEY) === "1";
+    } catch {
+      return false;
+    }
+  });
+  const toggleDetailed = () =>
+    setDetailed((d) => {
+      try {
+        localStorage.setItem(COACH_DETAIL_KEY, d ? "0" : "1");
+      } catch {
+        /* not persisted */
+      }
+      return !d;
+    });
+
+  // ---- post-hand review: fetched once the hand is over and its animations have played
+  const [review, setReview] = useState<HandReview | null>(null);
+  const [reviewState, setReviewState] = useState<{ key: string; loading: boolean; error: string | null }>({
+    key: "",
+    loading: false,
+    error: null,
+  });
+  const reviewKey =
+    state && state.status !== "in_hand" && state.result && !game.animating
+      ? `${state.session_id}#${state.hand_number}`
+      : null;
+  useEffect(() => {
+    if (!reviewKey || !state || reviewState.key === reviewKey) return;
+    const sessionId = state.session_id;
+    const hand = state.hand_number;
+    setReviewState({ key: reviewKey, loading: true, error: null });
+    let cancelled = false;
+    coachApi
+      .review(sessionId, hand)
+      .then((r) => {
+        if (cancelled) return;
+        setReview(r);
+        setReviewState({ key: reviewKey, loading: false, error: null });
+        updateProgress((p) => addReview(p, sessionId, r));
+      })
+      .catch((e) => {
+        if (cancelled) return;
+        const gone = e instanceof ApiError && e.status === 404;
+        setReviewState({ key: reviewKey, loading: false, error: gone ? null : "The review could not be loaded." });
+      });
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [reviewKey]);
+  // A new game starts with an empty coach panel.
+  const sessionId = state?.session_id;
+  useEffect(() => setReview(null), [sessionId]);
 
   const busy = game.animating || game.pending;
   const humanTurn = Boolean(state?.legal) && !busy;
@@ -195,6 +264,14 @@ export default function App() {
             <EquityPanel
               state={state}
               revealDelayMs={canTravel(motionPrefs) ? revealLag(game.lastEvent) * durationScale(motionPrefs) * 1000 : 0}
+            />
+            <CoachPanel
+              review={review}
+              loading={reviewState.loading}
+              error={reviewState.error}
+              progress={progress}
+              detailed={detailed}
+              onToggleDetailed={toggleDetailed}
             />
             <TendenciesPanel state={state} />
             <HandLog lines={state.log} />
