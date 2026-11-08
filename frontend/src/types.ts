@@ -204,3 +204,54 @@ export interface HandReview {
   hindsight: string | null;
   tags: string[];
 }
+
+// ------------------------------------------------------------------ training (v0.3.6)
+
+export interface TrainingScenario {
+  id: string;
+  difficulty: TrainingDifficulty;
+  concept: Concept;
+  concept_label: string;
+  concept_blurb: string;
+  hero: string[];
+  board: string[];
+  street: string;
+  position: string;
+  pot: number;
+  to_call: number;
+  stack: number;
+  opponent_stack: number;
+  big_blind: number;
+  history: string[];
+  hand: string;
+  choices: { key: string; label: string }[];
+  opponent: {
+    name: string;
+    stats: { key: string; label: string; rate: number | null; opportunities: number; baseline: number }[];
+  } | null;
+  hints: string[];
+}
+
+export interface TrainingAlternative {
+  key: string;
+  label: string;
+  ev: number | null;
+  ev_bb: number | null;
+  basis: CoachOption["basis"];
+  grade: Grade;
+  grade_label: string;
+  explanation: string;
+  fold_rate: number | null;
+  equity_when_called: number | null;
+  detail: string;
+}
+
+export interface TrainingAnswer {
+  id: string;
+  concept: Concept;
+  choice: string;
+  correct: boolean;
+  acceptable: boolean;
+  analysis: DecisionReview;
+  alternatives: TrainingAlternative[];
+}

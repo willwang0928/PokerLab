@@ -201,3 +201,24 @@ describe("coach review", () => {
     expect(fetchMock.mock.calls.some(([u]) => String(u).endsWith(`/hands/${dealt.hand_number}/review`))).toBe(true);
   });
 });
+
+describe("training mode", () => {
+  it("does not let table shortcuts act on the hidden game", async () => {
+    const dealt = gameState();
+    const fetchMock = mockFetch((url) => {
+      if (url.endsWith("/api/sessions")) return { state: waiting({ ...dealt, hand_number: 0 }), steps: [] };
+      if (url.endsWith("/hands")) return { state: dealt, steps: [] };
+      if (url.includes("/api/training/")) return new Response("{}", { status: 503 });
+      return { state: waiting(dealt), steps: [] };
+    });
+    await startGame();
+    await screen.findByRole("button", { name: /Call 5/ });
+    await userEvent.click(screen.getByRole("tab", { name: "Train" }));
+    expect(screen.getByTestId("training-view")).toBeInTheDocument();
+    (document.activeElement as HTMLElement | null)?.blur();
+    await userEvent.keyboard("fcr ");
+    expect(calls(fetchMock, "/actions")).toBe(0);
+    await userEvent.click(screen.getByRole("tab", { name: "Play" }));
+    expect(await screen.findByRole("button", { name: /Call 5/ })).toBeInTheDocument();
+  });
+});

@@ -2,12 +2,15 @@
 
 from __future__ import annotations
 
-from typing import Annotated, Any
+from typing import Annotated, Any, Literal
 
 from pydantic import BaseModel, Field, StrictInt, model_validator
 
 from ..ai.difficulty import DEFAULT_DIFFICULTY, Difficulty
 from ..engine import ActionType
+
+TrainingDifficulty = Literal["beginner", "intermediate", "advanced"]
+TrainingConcept = Literal["pot_odds", "draws", "value_betting", "bet_sizing", "preflop", "reads"]
 
 
 class CreateSessionRequest(BaseModel):
@@ -81,3 +84,15 @@ class EquityResponse(BaseModel):
     trials: int
     seed: int | None
     players: list[PlayerEquityModel]
+
+
+class PracticeRequest(BaseModel):
+    """A decision point to practise: public betting plus the player's own cards."""
+
+    spot: dict[str, Any]
+    difficulty: TrainingDifficulty = "intermediate"
+
+
+class AnswerRequest(BaseModel):
+    id: str = Field(min_length=1, max_length=4000)
+    choice: str = Field(min_length=1, max_length=40)

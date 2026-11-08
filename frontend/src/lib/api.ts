@@ -1,9 +1,13 @@
 import type {
   ActionType,
+  Concept,
   GameConfig,
   GameState,
   HandReview,
   PlayResponse,
+  TrainingAnswer,
+  TrainingDifficulty,
+  TrainingScenario,
 } from "../types";
 
 const BASE = (import.meta.env.VITE_API_BASE_URL ?? "").replace(/\/$/, "");
@@ -56,4 +60,15 @@ export const api = {
 export const coachApi = {
   review: (sessionId: string, hand: number) =>
     request<HandReview>(`/api/sessions/${sessionId}/hands/${hand}/review`),
+  scenario: (difficulty: TrainingDifficulty, concept: Concept, seed?: number) =>
+    request<TrainingScenario>(
+      `/api/training/scenario?difficulty=${difficulty}&concept=${concept}` + (seed === undefined ? "" : `&seed=${seed}`),
+    ),
+  practice: (spot: Record<string, unknown>, difficulty: TrainingDifficulty) =>
+    request<TrainingScenario>("/api/training/practice", {
+      method: "POST",
+      body: JSON.stringify({ spot, difficulty }),
+    }),
+  answer: (id: string, choice: string) =>
+    request<TrainingAnswer>("/api/training/answer", { method: "POST", body: JSON.stringify({ id, choice }) }),
 };

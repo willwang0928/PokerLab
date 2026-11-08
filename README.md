@@ -119,6 +119,16 @@ The first release, **v0.1**, is a fully playable game of **heads-up No-Limit Tex
 - **Honest limits.** These are one-street estimates, not solver output, and nothing is ever called optimal. Every grade carries a confidence level. Only pot-odds comparisons (call or fold) can be labelled *likely mistakes*. A verdict that rests on an assumed fold rate is at most *questionable*, and needs twice the margin. Bets larger than 1.5× the pot are not modelled and are left ungraded. Preflop re-raises and unopened preflop pots use clearly labelled guidelines instead of invented EVs.
 - **Recurring leaks and progress.** Flagged decisions are tagged (calling without enough equity, folding when the price was right, checking strong hands, betting when behind, costly bet sizes, too loose or too tight preflop). The panel shows the leaks that keep recurring and compares your last 20 decisions with the 20 before. Progress is kept in the browser, so it carries across games and server restarts.
 
+**v0.3.6 — Interactive training mode**
+- A **Train** tab next to Play. Each scenario is a heads-up decision point with the board, the betting so far, pot, stacks and position. You pick one of the legal choices, and the feedback comes straight away: whether it was good, the numbers, and every alternative compared with its estimated EV, grade and explanation.
+- **Six concepts:** pot odds, drawing hands, value betting, bet sizing, preflop defence, and opponent tendencies. In tendency scenarios the opponent's stats are shown, and the spot is chosen so that those tendencies change the right answer.
+- **Three difficulties.** Beginner gets clear-cut spots (the best choice wins by at least 20% of the pot), two or three choices, and a pot-odds hint. Intermediate adds draws, raises and bet sizes with an 8% margin. Advanced uses 3% margins and opponents with tendencies.
+- **Personalised practice.** "Recommended for you" picks the next concept from your recurring leaks at the table, your recent training accuracy and concepts you have not tried, and says why it chose it.
+- **Progress by skill:** first-try accuracy per concept (a good answer scores 1, a close one ½), the last 10 attempts, and how many table decisions in that concept were flagged.
+- **Retry and compare.** "Try again" lets you take another answer on the same scenario (only the first counts towards progress), and the comparison shows how every choice would have scored.
+- **Connected to real hands.** "Practise this spot" on any reviewed decision opens it as a training scenario.
+- **How scenarios are made.** Cards are dealt at random and a betting line is played through the real engine, so every option is legal. The spot is analysed with the coaching engine and kept only if it teaches the concept at that difficulty; otherwise new cards are dealt. Scenario ids encode difficulty, concept and seed, so a scenario and its verdicts can be reproduced exactly and answers need no server state. There is no opponent hand in a scenario at all, and nothing about the answer is sent before you choose.
+
 ## Quick start
 
 Requirements: **Python 3.11+** and **Node.js 20.19+** (CI uses Node 24).
@@ -156,8 +166,8 @@ make test      # pytest + vitest
 make lint      # ruff + TypeScript
 ```
 
-- **Backend (pytest, 290+ tests):** coaching (grades against exact pot-odds cases, the documented EV formulas, the capped fold model, no optimality claims, reviews unchanged by the opponent's hidden cards and by the run-out, reproducible analyses, fuzzed random spots), deck and evaluator correctness (including exhaustive five-card frequencies), opponent modelling (statistics from public events only, shrinkage and minimum samples, decay, bounded adjustments, decisions unchanged by the human's hidden cards, legal play against every style, paired comparisons), difficulty levels (decisions that differ for stated reasons, decisions independent of the human's hidden cards, legality at every level, stronger levels beating Beginner, the expected-value formula), live all-in equity, the equity agent (exact pot-odds boundaries, legality, range estimates, a duplicate match against a random player), equity (exact results against an independent brute force, Monte Carlo accuracy within its standard error, overlapping ranges, reproducible seeds), range parsing, betting rules, illegal actions, side pots and odd chips, short-stack edge cases, AI legality, sessions, API robustness (locking, seeds, eviction), and full games played over HTTP. Randomized fuzz tests play thousands of 2–6 player hands and check chip conservation after every action.
-- **Frontend (Vitest + Testing Library):** the coach panel and the progress store (leaks, trends, malformed storage), difficulty selection and the adaptation toggle, the tendencies panel, the equity panel (live and review modes, reveal timing, percentage formatting), betting controls, seats and hidden cards, sizing helpers, animations, accessibility (focus, dialogs, announcements), connection failures and keyboard shortcuts, the sound engine (against a fake AudioContext) and event-to-sound timing, saved settings, and app flows with a mocked API (deal → act → showdown → next hand, errors, game over).
+- **Backend (pytest, 300+ tests):** training (every concept generated at its difficulty margin, deterministic ids, no verdicts before answering, tendencies that change the answer, practice spots), coaching (grades against exact pot-odds cases, the documented EV formulas, the capped fold model, no optimality claims, reviews unchanged by the opponent's hidden cards and by the run-out, reproducible analyses, fuzzed random spots), deck and evaluator correctness (including exhaustive five-card frequencies), opponent modelling (statistics from public events only, shrinkage and minimum samples, decay, bounded adjustments, decisions unchanged by the human's hidden cards, legal play against every style, paired comparisons), difficulty levels (decisions that differ for stated reasons, decisions independent of the human's hidden cards, legality at every level, stronger levels beating Beginner, the expected-value formula), live all-in equity, the equity agent (exact pot-odds boundaries, legality, range estimates, a duplicate match against a random player), equity (exact results against an independent brute force, Monte Carlo accuracy within its standard error, overlapping ranges, reproducible seeds), range parsing, betting rules, illegal actions, side pots and odd chips, short-stack edge cases, AI legality, sessions, API robustness (locking, seeds, eviction), and full games played over HTTP. Randomized fuzz tests play thousands of 2–6 player hands and check chip conservation after every action.
+- **Frontend (Vitest + Testing Library):** training (feedback, retries not counted, difficulty and concept requests, table shortcuts blocked while training), the coach panel and the progress store (recommendations, leaks, trends, malformed storage), difficulty selection and the adaptation toggle, the tendencies panel, the equity panel (live and review modes, reveal timing, percentage formatting), betting controls, seats and hidden cards, sizing helpers, animations, accessibility (focus, dialogs, announcements), connection failures and keyboard shortcuts, the sound engine (against a fake AudioContext) and event-to-sound timing, saved settings, and app flows with a mocked API (deal → act → showdown → next hand, errors, game over).
 - **CI:** GitHub Actions runs lint, tests and a production build on every push and pull request (Python 3.11–3.13).
 
 ## Architecture
@@ -190,15 +200,17 @@ backend/pokerlab/
 ├── coach/
 │   ├── analysis.py   grade one decision from the player's own view: range, equity, EV per option
 │   ├── review.py     post-hand reviews, decision quality vs result, opponent tendencies
-│   └── spot.py       a decision point as public data, replayed through the engine
+│   ├── spot.py       a decision point as public data, replayed through the engine
+│   └── training.py   scenario generation by concept and difficulty, grading, practice spots
 ├── session.py        heads-up match: hand sequencing, AI turns, per-seat views, log, coach
 └── api/              FastAPI app, schemas, session store
 
 frontend/src/
 ├── hooks/usePokerGame.ts   API calls + step-by-step animation playback
 ├── hooks/useGameSounds.ts  plays table sounds from the same event stream
-├── components/             Table, Seat, PlayingCard, ChipStack, ChipFlights, ActionBar, HandLog, SettingsMenu, modals
-└── lib/                    API client, betting and card helpers, motion timing, sound engine and cues
+├── components/             Table, Seat, PlayingCard, ChipStack, ChipFlights, ActionBar, HandLog, SettingsMenu, modals,
+│                           EquityPanel, TendenciesPanel, CoachPanel, DecisionDetail, TrainingView
+└── lib/                    API client, betting and card helpers, motion timing, sound engine and cues, progress store
 ```
 
 **How a turn works.** The server holds all game state. Each request (`POST /api/sessions/{id}/actions`) applies the human's action, then lets the AI act until it is the human's turn again or the hand ends. The response contains the final state plus a list of `steps`. Each step is an engine event paired with a state snapshot taken right after it, so the UI can replay the AI's moves, new streets and showdowns one at a time. Opponent hole cards are left out of every snapshot until they are shown down.
@@ -218,6 +230,9 @@ frontend/src/
 | `POST` | `/api/sessions/{id}/hands` | Deal the next hand |
 | `POST` | `/api/sessions/{id}/actions` | `{"action": "fold"\|"check"\|"call"\|"bet"\|"raise"\|"all_in", "amount"?: raise-to total}` |
 | `GET` | `/api/sessions/{id}/hands/{n}/review` | Coaching review of the latest finished hand (`404` while it is in progress) |
+| `GET` | `/api/training/scenario` | `?difficulty=beginner\|intermediate\|advanced&concept=pot_odds\|draws\|value_betting\|bet_sizing\|preflop\|reads&seed?` → a scenario (no answers included) |
+| `POST` | `/api/training/practice` | `{"spot": {...}, "difficulty"?}` → a scenario from a reviewed decision |
+| `POST` | `/api/training/answer` | `{"id", "choice"}` → grade, explanation and every alternative compared |
 | `DELETE` | `/api/sessions/{id}` | End a match |
 | `POST` | `/api/equity` | `{"players": ["AhKh", "QQ+,AKs"], "board"?, "dead"?, "iterations"?, "seed"?}` → equity, win, tie and standard error per player |
 
@@ -228,7 +243,7 @@ Illegal actions return `400` with an explanation. Out-of-turn or out-of-state re
 ## Roadmap
 
 - **v0.2 — Visual polish:** v0.2.1 visual redesign, v0.2.2 animations, v0.2.3 sound and themes, and v0.2.4 stability and accessibility (done).
-- **v0.3 — Smarter AI and training:** v0.3.1 equity engine, v0.3.2 equity-driven opponent with equity review, v0.3.3 difficulty levels and live all-in equity, v0.3.4 adaptive opponent, v0.3.5 coaching and decision feedback (done); next, interactive training mode.
+- **v0.3 — Smarter AI and training:** v0.3.1 equity engine, v0.3.2 equity-driven opponent with equity review, v0.3.3 difficulty levels and live all-in equity, v0.3.4 adaptive opponent, v0.3.5 coaching and decision feedback, v0.3.6 interactive training mode (done).
 - **v0.4 — Analytics:** persistent hand history (SQLite), replays, performance stats, AI-vs-AI simulations.
 - **Later:** multiplayer, tournaments, Omaha / Stud / Draw, CFR agents, reinforcement learning, strategy dashboards.
 

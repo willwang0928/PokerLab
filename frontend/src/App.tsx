@@ -6,6 +6,7 @@ import { EquityPanel } from "./components/EquityPanel";
 import { HandLog } from "./components/HandLog";
 import { TendenciesPanel } from "./components/TendenciesPanel";
 import { CoachPanel } from "./components/CoachPanel";
+import { TrainingView } from "./components/TrainingView";
 import { MuteButton, SettingsMenu } from "./components/SettingsMenu";
 import { DIFFICULTY_LABEL, StartScreen } from "./components/StartScreen";
 import { SuitIcon } from "./components/SuitIcon";
@@ -17,9 +18,10 @@ import { canTravel, durationScale, type MotionPrefs, MotionPrefsContext, revealL
 import { restoreFocus, shortcutBlocked } from "./lib/keys";
 import { sound } from "./lib/sound";
 import { ApiError, coachApi } from "./lib/api";
-import { addReview, loadProgress, type Progress, saveProgress } from "./lib/progress";
-import type { GameConfig, GameState, HandReview } from "./types";
+import { addAnswer, addReview, loadProgress, type Progress, saveProgress } from "./lib/progress";
+import type { DecisionReview, GameConfig, GameState, HandReview, TrainingScenario } from "./types";
 
+type Mode = "play" | "train";
 const COACH_DETAIL_KEY = "pokerlab.coach.detailed";
 
 const DEFAULT_CONFIG: GameConfig = {
@@ -36,8 +38,9 @@ export default function App() {
   const reducedMotion = Boolean(useReducedMotion());
   const [showSetup, setShowSetup] = useState(true);
   const [gameOver, setGameOver] = useState(false);
-  // No automatic dealing while a dialog covers the table.
-  const game = usePokerGame(settings, showSetup || gameOver);
+  const [mode, setMode] = useState<Mode>("play");
+  // No automatic dealing while a dialog covers the table or while training.
+  const game = usePokerGame(settings, showSetup || gameOver || mode === "train");
   const motionPrefs = useMemo<MotionPrefs>(
     () => ({ scale: SPEED_SCALE[settings.speed], reduced: reducedMotion }),
     [settings.speed, reducedMotion],
@@ -134,6 +137,19 @@ export default function App() {
   const sessionId = state?.session_id;
   useEffect(() => setReview(null), [sessionId]);
 
+  // ---- practising a decision from a reviewed hand
+  const [practice, setPractice] = useState<TrainingScenario | null>(null);
+  const practise = async (d: DecisionReview) => {
+    if (!d.spot_data) return;
+    try {
+      const s = await coachApi.practice(d.spot_data, "intermediate");
+      setPractice(s);
+      setMode("train");
+    } catch {
+      setReviewState((r) => ({ ...r, error: "That spot could not be opened for practice." }));
+    }
+  };
+
   const busy = game.animating || game.pending;
   const humanTurn = Boolean(state?.legal) && !busy;
   const matchEnded = state?.status === "game_over" && !busy;
@@ -168,7 +184,23 @@ export default function App() {
           </div>
         </div>
         <div className="flex items-center gap-2 sm:gap-2.5">
-          {state && (
+          <div className="surface flex rounded-xl p-0.5" role="tablist" aria-label="Mode">
+            {(["play", "train"] as const).map((m) => (
+              <button
+                key={m}
+                type="button"
+                role="tab"
+                aria-selected={mode === m}
+                onClick={() => setMode(m)}
+                className={`rounded-[10px] px-2.5 py-1.5 text-xs font-semibold sm:px-3 ${
+                  mode === m ? "bg-amber-300 text-slate-950" : "text-slate-300 hover:text-white"
+                }`}
+              >
+                {m === "play" ? "Play" : "Train"}
+              </button>
+            ))}
+          </div>
+          {state && mode === "play" && (
             <div className="surface flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs text-slate-400 sm:gap-3">
               <span>
                 <span className="hidden sm:inline">Hand </span>
@@ -210,17 +242,36 @@ export default function App() {
               sound.play("chip");
             }}
           />
-          <button
-            type="button"
-            onClick={() => setShowSetup(true)}
-            className="btn-dark whitespace-nowrap rounded-xl px-3 py-2 text-sm font-semibold"
-          >
-            New game
-          </button>
+          {mode === "play" && (
+            <button
+              type="button"
+              onClick={() => setShowSetup(true)}
+              className="btn-dark whitespace-nowrap rounded-xl px-3 py-2 text-sm font-semibold"
+            >
+              New game
+            </button>
+          )}
         </div>
       </header>
 
-      <main className="mx-auto flex w-full max-w-[1440px] flex-1 flex-col gap-5 px-3 pb-5 sm:px-6 lg:flex-row lg:items-start">
+      {mode === "train" && (
+        <main className="mx-auto flex w-full max-w-[1440px] flex-1 flex-col px-3 pb-5 sm:px-6">
+          <TrainingView
+            progress={progress}
+            initial={practice}
+            onAnswered={(sc, a) =>
+              updateProgress((p) =>
+                addAnswer(p, { id: sc.id, concept: sc.concept, difficulty: sc.difficulty, grade: a.analysis.grade }),
+              )
+            }
+          />
+        </main>
+      )}
+      <main
+        className={`mx-auto w-full max-w-[1440px] flex-1 flex-col gap-5 px-3 pb-5 sm:px-6 lg:flex-row lg:items-start ${
+          mode === "play" ? "flex" : "hidden"
+        }`}
+      >
         <div className="flex min-w-0 flex-col items-center gap-4 lg:flex-1">
           {state ? (
             <>
@@ -231,7 +282,7 @@ export default function App() {
                 humanTurn={humanTurn}
               />
               <div className="w-full max-w-[780px]">
-                {state.legal && state.status === "in_hand" && !game.animating ? (
+                {mode === "train" ? null : state.legal && state.status === "in_hand" && !game.animating ? (
                   <ActionBar
                     legal={state.legal}
                     pot={state.pot}
@@ -272,6 +323,7 @@ export default function App() {
               progress={progress}
               detailed={detailed}
               onToggleDetailed={toggleDetailed}
+              onPractice={(d) => void practise(d)}
             />
             <TendenciesPanel state={state} />
             <HandLog lines={state.log} />
@@ -294,7 +346,7 @@ export default function App() {
       )}
 
       <AnimatePresence>
-        {showSetup && (
+        {showSetup && mode === "play" && (
           <StartScreen
             key="setup"
             initial={config}
@@ -303,9 +355,10 @@ export default function App() {
             onStart={(c) => void start(c)}
             // There is nothing to go back to once the server has lost the game.
             onCancel={state && game.error?.kind !== "expired" ? () => setShowSetup(false) : undefined}
+            onTrain={() => setMode("train")}
           />
         )}
-        {gameOver && !showSetup && state && (
+        {gameOver && !showSetup && state && mode === "play" && (
           <GameOverModal
             key="over"
             state={state}

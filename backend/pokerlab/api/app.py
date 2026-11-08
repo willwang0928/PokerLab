@@ -3,20 +3,27 @@
 from __future__ import annotations
 
 import os
+import random
 
-from fastapi import FastAPI, HTTPException, Response
+from fastapi import FastAPI, HTTPException, Query, Response
 from fastapi.middleware.cors import CORSMiddleware
 
 from .. import __version__
+from ..coach import training
+from ..coach.spot import Spot, SpotError
 from ..engine import Action, IllegalActionError
 from ..equity import calculate_equity
 from ..session import HeadsUpSession, SessionConfig, SessionStateError
 from .schemas import (
     ActionRequest,
+    AnswerRequest,
     CreateSessionRequest,
     EquityRequest,
     EquityResponse,
     PlayResponse,
+    PracticeRequest,
+    TrainingConcept,
+    TrainingDifficulty,
 )
 from .store import SessionStore
 
@@ -109,6 +116,34 @@ def create_app(store: SessionStore | None = None, allow_seed: bool | None = None
             raise HTTPException(status_code=404, detail="No finished hand to review")
         # The analysis is slow; it runs outside the lock so play is never blocked.
         return session.coach.review_hand(hand)
+
+    # Training scenarios contain no hidden cards, so seeds are always allowed here.
+    @app.get("/api/training/scenario")
+    def training_scenario(
+        difficulty: TrainingDifficulty = "beginner",
+        concept: TrainingConcept = "pot_odds",
+        seed: int | None = Query(None, ge=0, lt=2**31),
+    ) -> dict:
+        seed = random.SystemRandom().randrange(2**31) if seed is None else seed
+        try:
+            return training.scenario_view(training.generate(difficulty, concept, seed))
+        except training.ScenarioError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    @app.post("/api/training/practice")
+    def training_practice(req: PracticeRequest) -> dict:
+        try:
+            spot = Spot.from_dict(req.spot)
+            return training.scenario_view(training.from_spot(spot, req.difficulty))
+        except (SpotError, training.ScenarioError) as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    @app.post("/api/training/answer")
+    def training_answer(req: AnswerRequest) -> dict:
+        try:
+            return training.answer(req.id, req.choice)
+        except (SpotError, training.ScenarioError) as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
 
     @app.post("/api/equity", response_model=EquityResponse)
     def equity(req: EquityRequest) -> EquityResponse:

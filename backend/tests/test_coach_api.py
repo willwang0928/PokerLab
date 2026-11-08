@@ -8,10 +8,14 @@ import pytest
 from fastapi.testclient import TestClient
 
 from pokerlab.api.app import create_app
+from pokerlab.coach import training as T
 
 
 @pytest.fixture
-def client():
+def client(monkeypatch):
+    monkeypatch.setattr(T, "ITERATIONS", 600)
+    monkeypatch.setattr(T, "FILTER_ITERATIONS", 300)
+    T._generate.cache_clear()
     return TestClient(create_app(allow_seed=True))
 
 
@@ -77,3 +81,48 @@ def _hidden_cards(client, sid):
     # Reach into the server's store (test only) to learn the cards the player never saw.
     session = client.app.state.sessions.get(sid)
     return [c.code for c in session.hand.players[1].hole]
+
+
+def test_training_scenario_and_answer(client):
+    r = client.get("/api/training/scenario", params={"difficulty": "beginner",
+                                                     "concept": "pot_odds", "seed": 9})  # fmt: skip
+    assert r.status_code == 200
+    s = r.json()
+    assert s["id"] == "v1.beginner.pot_odds.9" and len(s["choices"]) == 2
+    assert "ev" not in json.dumps(s["choices"])
+    a = client.post("/api/training/answer", json={"id": s["id"], "choice": "fold"})
+    assert a.status_code == 200
+    body = a.json()
+    assert body["choice"] == "fold" and len(body["alternatives"]) == 2
+    assert (
+        client.post("/api/training/answer", json={"id": s["id"], "choice": "x"}).status_code == 400
+    )
+    assert (
+        client.post("/api/training/answer", json={"id": "v9.x", "choice": "fold"}).status_code
+        == 400
+    )
+
+
+def test_training_rejects_unknown_options(client):
+    url = "/api/training/scenario"
+    assert client.get(url, params={"difficulty": "expert"}).status_code == 422
+    assert client.get(url, params={"concept": "luck"}).status_code == 422
+
+
+def test_practice_a_spot_from_a_review(client):
+    spot = {
+        "hero": "9h8h",
+        "board": "Th7c2h",
+        "actions": [["raise", 25], ["call", None], ["check", None], ["bet", 30]],
+        "button": 1,
+        "stacks": [1000, 1000],
+        "blinds": [5, 10],
+    }
+    r = client.post("/api/training/practice", json={"spot": spot, "difficulty": "advanced"})
+    assert r.status_code == 200
+    s = r.json()
+    assert s["id"].startswith("spot.") and s["hero"] == ["9h", "8h"]
+    a = client.post("/api/training/answer", json={"id": s["id"], "choice": "call"})
+    assert a.status_code == 200 and a.json()["analysis"]["chosen"] == "call"
+    bad = {**spot, "board": "Th7c2h5d"}
+    assert client.post("/api/training/practice", json={"spot": bad}).status_code == 400

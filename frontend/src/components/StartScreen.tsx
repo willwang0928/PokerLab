@@ -29,9 +29,11 @@ interface Props {
   error: string | null;
   onStart: (config: GameConfig) => void;
   onCancel?: () => void;
+  /** Switch to training mode instead of starting a game. */
+  onTrain?: () => void;
 }
 
-export function StartScreen({ initial, busy, error, onStart, onCancel }: Props) {
+export function StartScreen({ initial, busy, error, onStart, onCancel, onTrain }: Props) {
   const [name, setName] = useState(initial.player_name);
   const [stack, setStack] = useState(initial.starting_stack);
   const [blinds, setBlinds] = useState<[number, number]>([initial.small_blind, initial.big_blind]);
@@ -162,6 +164,15 @@ export function StartScreen({ initial, busy, error, onStart, onCancel }: Props) 
             className="-mt-2 rounded-xl py-2 text-sm font-semibold text-slate-400 hover:text-slate-200"
           >
             Back to current game
+          </button>
+        )}
+        {onTrain && (
+          <button
+            type="button"
+            onClick={onTrain}
+            className="-mt-2 rounded-xl py-2 text-sm font-semibold text-amber-200/90 hover:text-amber-100"
+          >
+            Practise decisions in training mode
           </button>
         )}
       </form>
