@@ -64,7 +64,8 @@ describe("App", () => {
     const history = screen.getByRole("region", { name: "Hand history" });
     expect(within(history).getByText("Flop")).toBeInTheDocument();
     expect(within(history).getByLabelText("7 of hearts")).toBeInTheDocument();
-    expect(fetchMock).toHaveBeenCalledTimes(3);
+    // Three game requests (progress sync calls /api/profile* separately).
+    expect(fetchMock.mock.calls.filter(([u]) => !String(u).includes("/api/profile")).length).toBe(3);
   });
 
   it("announces the winner and lets the player deal the next hand", async () => {

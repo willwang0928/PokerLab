@@ -208,4 +208,34 @@ describe("TrainingView", () => {
     expect(urls.some((u) => u.includes("concept=draws"))).toBe(true);
     expect(screen.getByTestId("skills-panel")).toHaveTextContent("Drawing hands");
   });
+
+  it("ignores a scenario that arrives after a newer one was requested", async () => {
+    let release: (() => void) | null = null;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string, init?: RequestInit) => {
+        if (url.includes("difficulty=advanced")) {
+          await new Promise<void>((r) => (release = r)); // the slow, older request
+          return new Response(JSON.stringify({ ...SCENARIO, id: "old", concept_label: "Old one" }), { status: 200 });
+        }
+        if (url.includes("/api/training/scenario")) return new Response(JSON.stringify(SCENARIO), { status: 200 });
+        if (url.includes("/api/training/answer")) {
+          const body = JSON.parse(String(init?.body));
+          return new Response(JSON.stringify(answerFor(body.choice)), { status: 200 });
+        }
+        return new Response("{}", { status: 404 });
+      }),
+    );
+    render(<TrainingView progress={EMPTY_PROGRESS} onAnswered={() => {}} />);
+    await screen.findByTestId("scenario");
+    fireEvent.click(screen.getByRole("radio", { name: "Advanced" })); // slow
+    fireEvent.click(screen.getByRole("radio", { name: "Beginner" })); // fast, newer
+    await waitFor(() => expect(screen.queryByTestId("dealing")).toBeNull());
+    fireEvent.click(screen.getByRole("button", { name: "Fold" }));
+    await screen.findByTestId("training-feedback");
+    release!(); // the stale scenario finally arrives
+    await new Promise((r) => setTimeout(r, 20));
+    expect(screen.getByTestId("training-feedback")).toBeInTheDocument(); // not wiped
+    expect(screen.getByTestId("scenario")).toHaveAttribute("data-id", SCENARIO.id);
+  });
 });

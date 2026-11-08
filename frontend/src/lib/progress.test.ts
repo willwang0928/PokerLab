@@ -7,12 +7,10 @@ import {
   credit,
   decisionTrend,
   EMPTY_PROGRESS,
-  loadProgress,
-  PROGRESS_KEY,
   type Progress,
   recurringLeaks,
   sanitizeProgress,
-  saveProgress,
+  sanitizeRecords,
 } from "./progress";
 
 function decision(grade: Grade, tags: string[] = [], concept: DecisionReview["concept"] = "pot_odds"): DecisionReview {
@@ -87,17 +85,22 @@ describe("progress store", () => {
     expect(conceptStats(p).find((s) => s.concept === "draws")).toMatchObject({ attempts: 1, accuracy: 0 });
   });
 
-  it("survives malformed storage and round-trips valid data", () => {
-    localStorage.setItem(PROGRESS_KEY, "{not json");
-    expect(loadProgress()).toEqual({ decisions: [], answers: [], reviews: [] });
-    const bad = sanitizeProgress({
-      decisions: [{ t: 1, hand: "a", grade: "great", concept: "pot_odds", tags: [], evLossBb: 0 }, null],
-      answers: [{ t: 1, id: "a", concept: "nope", difficulty: "x", grade: "good" }],
+  it("keeps invalid records aside instead of dropping them silently", () => {
+    const T = 1_762_600_000_000;
+    const good = { id: "a1", t: T, concept: "pot_odds", difficulty: "beginner", grade: "good" };
+    const out = sanitizeRecords({
+      decisions: [
+        { t: T, hand: "s#1", grade: "mistake", concept: "pot_odds", tags: [], evLossBb: 1 }, // v0.3: no id
+        { t: T, hand: "s#1", grade: "good", concept: "pot_odds", tags: [], evLossBb: 0 },
+        { id: "x", t: T, hand: "s#2", grade: "great", concept: "pot_odds", tags: [], evLossBb: 0 },
+        null,
+      ],
+      answers: [good, good, { ...good, id: "a2", t: 5 }, { ...good, id: "a3", extra: 1 }],
     });
-    expect(bad).toEqual({ decisions: [], answers: [], reviews: [] });
-    const p = addReview(EMPTY_PROGRESS, "s", review(1, [decision("good")]), 5);
-    saveProgress(p);
-    expect(loadProgress()).toEqual(p);
+    expect(out.decisions.map((d) => d.id)).toEqual(["s#1:0", "s#1:1"]); // migrated ids
+    expect(out.answers.map((a) => a.id)).toEqual(["a1"]); // duplicate collapsed
+    expect(out.dropped.map((d) => d.reason).sort()).toEqual(["grade", "not an object", "t", "unknown field"]);
+    expect(sanitizeProgress({ decisions: "nope" })).toEqual({ decisions: [], answers: [], reviews: [] });
   });
 
   it("finds recurring leaks only when they repeat", () => {

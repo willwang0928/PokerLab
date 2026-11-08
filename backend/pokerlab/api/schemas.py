@@ -100,3 +100,70 @@ class PracticeRequest(BaseModel):
 class AnswerRequest(BaseModel):
     id: str = Field(min_length=1, max_length=4000)
     choice: str = Field(min_length=1, max_length=40)
+
+
+# ------------------------------------------------------------------ progress storage
+
+GradeName = Literal["good", "close", "questionable", "mistake", "ungraded"]
+TagName = Literal[
+    "called_without_odds",
+    "folded_with_odds",
+    "missed_value",
+    "overaggressive",
+    "bet_sizing",
+    "preflop_loose",
+    "preflop_tight",
+]
+# Scenario ids, practice-spot ids (base64url) and "<session>#<hand>:<n>" decision ids.
+RecordId = Annotated[str, Field(min_length=1, max_length=1000, pattern=r"^[A-Za-z0-9._:#|=-]+$")]
+# Milliseconds since the epoch: 2001-09-09 to 2096-10-02. Rejects seconds and garbage.
+Timestamp = Annotated[float, Field(ge=1e12, le=4e12, allow_inf_nan=False)]
+Unit = Annotated[float, Field(ge=0, le=1, allow_inf_nan=False)]
+
+
+class _Record(BaseModel):
+    model_config = {"extra": "forbid"}
+
+
+class AnswerRecord(_Record):
+    """One first answer to a training scenario."""
+
+    id: RecordId
+    t: Timestamp
+    concept: TrainingConcept
+    difficulty: TrainingDifficulty
+    grade: GradeName
+    review: bool | None = None
+
+
+class DecisionRecord(_Record):
+    """One graded decision from a post-hand review."""
+
+    id: RecordId
+    t: Timestamp
+    hand: Annotated[str, Field(min_length=1, max_length=200)]
+    grade: GradeName
+    concept: TrainingConcept
+    tags: Annotated[list[TagName], Field(max_length=10)]
+    evLossBb: Annotated[float, Field(ge=0, le=10_000, allow_inf_nan=False)]  # noqa: N815
+    confidence: Literal["low", "medium", "high"] | None = None
+    equity: Unit | None = None
+    required: Unit | None = None
+
+
+MAX_UPLOAD = 2000  # records of each kind per request
+
+
+class RecordUpload(BaseModel):
+    """Records to add. Each is validated on its own, so one bad record cannot block the rest."""
+
+    answers: Annotated[list[Any], Field(max_length=MAX_UPLOAD)] = []
+    decisions: Annotated[list[Any], Field(max_length=MAX_UPLOAD)] = []
+
+
+class ProfileCreate(BaseModel):
+    name: Annotated[str, Field(max_length=40)] = "Player"
+
+
+class ProfileUpdate(BaseModel):
+    name: Annotated[str, Field(min_length=1, max_length=40)]

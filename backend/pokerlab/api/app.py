@@ -2,11 +2,16 @@
 
 from __future__ import annotations
 
+import logging
 import os
 import random
+import sqlite3
+import threading
 
-from fastapi import FastAPI, HTTPException, Query, Response
+from fastapi import FastAPI, Header, HTTPException, Query, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from pydantic import TypeAdapter, ValidationError
 
 from .. import __version__
 from ..coach import training
@@ -14,28 +19,71 @@ from ..coach.spot import Spot, SpotError
 from ..engine import Action, IllegalActionError
 from ..equity import calculate_equity
 from ..session import HeadsUpSession, SessionConfig, SessionStateError
+from ..storage import (
+    Profile,
+    ProfileNotFound,
+    ProgressStore,
+    QuotaExceeded,
+    StorageUnavailable,
+    default_path,
+)
 from .schemas import (
     ActionRequest,
+    AnswerRecord,
     AnswerRequest,
     CreateSessionRequest,
+    DecisionRecord,
     EquityRequest,
     EquityResponse,
     PlayResponse,
     PracticeRequest,
+    ProfileCreate,
+    ProfileUpdate,
+    RecordUpload,
     TrainingConcept,
     TrainingDifficulty,
 )
 from .store import SessionStore
 
+log = logging.getLogger(__name__)
 
-def create_app(store: SessionStore | None = None, allow_seed: bool | None = None) -> FastAPI:
-    """Build the API. ``allow_seed`` (default: ``POKERLAB_ALLOW_SEED``) permits seeded games."""
+_VALIDATORS = {"answers": TypeAdapter(AnswerRecord), "decisions": TypeAdapter(DecisionRecord)}
+
+
+def create_app(
+    store: SessionStore | None = None,
+    allow_seed: bool | None = None,
+    progress: ProgressStore | None = None,
+) -> FastAPI:
+    """Build the API.
+
+    ``allow_seed`` (default: ``POKERLAB_ALLOW_SEED``) permits seeded games. ``progress`` is
+    the progress database; by default it opens ``POKERLAB_DB`` (or
+    ``POKERLAB_DATA_DIR/pokerlab.sqlite3``) the first time it is needed.
+    """
     app = FastAPI(title="PokerLab API", version=__version__)
     # Not ``store or ...``: an empty store is falsy because it defines __len__.
     sessions = store if store is not None else SessionStore()
     if allow_seed is None:
         allow_seed = os.getenv("POKERLAB_ALLOW_SEED", "").lower() in ("1", "true", "yes")
     app.state.sessions = sessions
+    progress_lock = threading.Lock()
+
+    def _progress() -> ProgressStore:
+        nonlocal progress
+        with progress_lock:
+            if progress is None:
+                progress = ProgressStore(default_path())
+            app.state.progress = progress
+            return progress
+
+    @app.exception_handler(sqlite3.Error)
+    @app.exception_handler(StorageUnavailable)
+    async def _storage_failed(_: Request, exc: Exception) -> JSONResponse:
+        # A database that fails after startup (disk full, I/O error, locked for too long)
+        # is reported like storage that never opened: 503, which clients retry later.
+        log.error("Progress storage error: %s: %s", type(exc).__name__, exc)
+        return JSONResponse(status_code=503, content={"detail": "Progress storage is unavailable"})
 
     origins = os.getenv("POKERLAB_CORS_ORIGINS", "http://localhost:5173").split(",")
     app.add_middleware(
@@ -53,7 +101,91 @@ def create_app(store: SessionStore | None = None, allow_seed: bool | None = None
 
     @app.get("/api/health")
     def health() -> dict[str, str]:
-        return {"status": "ok", "version": __version__}
+        storage = "ok" if _progress().available else "unavailable"
+        return {"status": "ok", "version": __version__, "storage": storage}
+
+    # ------------------------------------------------------------------ progress
+
+    def _authed(authorization: str | None) -> tuple[ProgressStore, Profile]:
+        db = _progress()
+        if not db.available:
+            raise HTTPException(status_code=503, detail="Progress storage is unavailable")
+        scheme, _, token = (authorization or "").partition(" ")
+        if scheme.lower() != "bearer" or not token.strip():
+            raise HTTPException(status_code=401, detail="A profile key is required")
+        try:
+            return db, db.profile(token.strip())
+        except ProfileNotFound as exc:
+            raise HTTPException(status_code=401, detail="Unknown profile key") from exc
+        except StorageUnavailable as exc:
+            raise HTTPException(status_code=503, detail="Progress storage is unavailable") from exc
+
+    @app.post("/api/profiles", status_code=201)
+    def create_profile(req: ProfileCreate) -> dict:
+        db = _progress()
+        if not db.available:
+            raise HTTPException(status_code=503, detail="Progress storage is unavailable")
+        key, profile = db.create_profile(req.name.strip() or "Player")
+        return {"key": key, "profile": profile.view({"answers": 0, "decisions": 0})}
+
+    @app.get("/api/profile")
+    def get_profile(authorization: str | None = Header(None)) -> dict:
+        db, profile = _authed(authorization)
+        return profile.view(db.counts(profile))
+
+    @app.patch("/api/profile")
+    def update_profile(req: ProfileUpdate, authorization: str | None = Header(None)) -> dict:
+        db, profile = _authed(authorization)
+        return db.rename(profile, req.name.strip() or profile.name).view(db.counts(profile))
+
+    @app.delete("/api/profile", status_code=204)
+    def delete_profile(authorization: str | None = Header(None)) -> Response:
+        db, profile = _authed(authorization)
+        db.delete_profile(profile)
+        return Response(status_code=204)
+
+    @app.get("/api/profile/records")
+    def get_records(
+        limit: int = Query(20_000, ge=1, le=50_000),
+        authorization: str | None = Header(None),
+    ) -> dict:
+        db, profile = _authed(authorization)
+        records = db.records(profile, limit)
+        counts = db.counts(profile)
+        return {**records, "truncated": any(counts[k] > len(records[k]) for k in records)}
+
+    @app.post("/api/profile/records")
+    def add_records(req: RecordUpload, authorization: str | None = Header(None)) -> dict:
+        db, profile = _authed(authorization)
+        valid: dict[str, list[dict]] = {}
+        rejected: list[dict] = []
+        for kind, items in (("answers", req.answers), ("decisions", req.decisions)):
+            valid[kind] = []
+            for item in items:
+                try:
+                    rec = _VALIDATORS[kind].validate_python(item)
+                except ValidationError as exc:
+                    rid = item.get("id") if isinstance(item, dict) else None
+                    first = exc.errors()[0]
+                    where = ".".join(str(x) for x in first["loc"]) or "record"
+                    rejected.append(
+                        {
+                            "kind": kind,
+                            "id": rid if isinstance(rid, str) else None,
+                            "error": f"{where}: {first['msg']}",
+                        }  # fmt: skip
+                    )
+                    continue
+                valid[kind].append(rec.model_dump(exclude_none=True))
+        try:
+            added = db.add(profile, valid)
+        except QuotaExceeded as exc:
+            raise HTTPException(status_code=413, detail=str(exc)) from exc
+        return {
+            "added": added,
+            "accepted": {k: len(v) for k, v in valid.items()},
+            "rejected": rejected,
+        }
 
     @app.post("/api/sessions", status_code=201, response_model=PlayResponse)
     def create_session(req: CreateSessionRequest) -> PlayResponse:

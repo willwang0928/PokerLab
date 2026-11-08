@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { DecisionReview, Grade, HandReview } from "../types";
-import { EMPTY_PROGRESS, type Progress, sanitizeProgress } from "./progress";
+import { EMPTY_PROGRESS, type Progress } from "./progress";
 import {
   adaptiveLevel,
   answerTrend,
@@ -13,6 +13,7 @@ import {
   type Observation,
   recordAnswer,
   recordHandReview,
+  withReviews,
 } from "./skills";
 
 const rep = (n: number, y: number, b: number): Observation[] => Array.from({ length: n }, () => ({ y, b, w: 1 }));
@@ -134,10 +135,18 @@ describe("spaced repetition", () => {
     expect(["draws", "pot_odds"]).toContain(next.concept);
   });
 
-  it("survives malformed review storage", () => {
-    const p = sanitizeProgress({ decisions: [], answers: [], reviews: [{ key: "a" }, null, { key: "b|auto", concept: "draws", difficulty: "auto", box: 0, due: 1, lapses: 1, source: "table" }] });
-    expect(p.reviews).toHaveLength(1);
-    expect(sanitizeProgress({ decisions: [], answers: [] }).reviews).toEqual([]);
+  it("derives the same schedule from the records as step-by-step recording", () => {
+    let p: Progress = EMPTY_PROGRESS;
+    let t = T0;
+    const grades: Grade[] = ["mistake", "good", "questionable", "good", "good", "close", "mistake", "good"];
+    for (const [i, g] of grades.entries()) {
+      t += i % 3 === 0 ? INTERVALS[0] + 1 : DAY + 1;
+      p = answer(p, i % 2 ? "draws" : "pot_odds", "beginner", g, t);
+    }
+    p = recordHandReview(p, "s", hand(9, [decision({ concept: "preflop" })]), t + 1);
+    const derived = withReviews(p).reviews;
+    const byKey = (xs: typeof derived) => [...xs].sort((a, b) => a.key.localeCompare(b.key));
+    expect(byKey(derived)).toEqual(byKey(p.reviews));
   });
 });
 

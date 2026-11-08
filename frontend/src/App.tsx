@@ -1,13 +1,18 @@
 import { AnimatePresence, MotionConfig, useReducedMotion } from "motion/react";
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { ActionBar } from "./components/ActionBar";
 import { GameOverModal } from "./components/GameOverModal";
 import { EquityPanel } from "./components/EquityPanel";
 import { HandLog } from "./components/HandLog";
 import { TendenciesPanel } from "./components/TendenciesPanel";
 import { CoachPanel } from "./components/CoachPanel";
-import { type Plan, TrainingView } from "./components/TrainingView";
-import { ProgressDashboard } from "./components/ProgressDashboard";
+import type { Plan } from "./components/TrainingView";
+
+// Loaded on first use: most sessions start at the table.
+const TrainingView = lazy(() => import("./components/TrainingView").then((m) => ({ default: m.TrainingView })));
+const ProgressDashboard = lazy(() =>
+  import("./components/ProgressDashboard").then((m) => ({ default: m.ProgressDashboard })),
+);
 import { MuteButton, SettingsMenu } from "./components/SettingsMenu";
 import { DIFFICULTY_LABEL, StartScreen } from "./components/StartScreen";
 import { SuitIcon } from "./components/SuitIcon";
@@ -19,7 +24,7 @@ import { canTravel, durationScale, type MotionPrefs, MotionPrefsContext, revealL
 import { restoreFocus, shortcutBlocked } from "./lib/keys";
 import { sound } from "./lib/sound";
 import { ApiError, coachApi } from "./lib/api";
-import { EMPTY_PROGRESS, loadProgress, type Progress, saveProgress } from "./lib/progress";
+import { useProgressStore } from "./hooks/useProgressStore";
 import { recordAnswer, recordHandReview } from "./lib/skills";
 import type { DecisionReview, GameConfig, GameState, HandReview, TrainingScenario } from "./types";
 
@@ -75,14 +80,10 @@ export default function App() {
     return () => clearTimeout(t);
   }, [error, clearError]);
 
-  // ---- learning progress (kept in the browser across games)
-  const [progress, setProgress] = useState<Progress>(loadProgress);
-  const updateProgress = (f: (p: Progress) => Progress) =>
-    setProgress((p) => {
-      const next = f(p);
-      if (next !== p) saveProgress(next);
-      return next;
-    });
+  // ---- learning progress: saved on this device at once, synced to the server
+  const store = useProgressStore();
+  const { progress } = store;
+  const updateProgress = store.record;
   const [detailed, setDetailed] = useState(() => {
     try {
       return localStorage.getItem(COACH_DETAIL_KEY) === "1";
@@ -267,6 +268,7 @@ export default function App() {
 
       {mode === "train" && (
         <main className="mx-auto flex w-full max-w-[1440px] flex-1 flex-col px-3 pb-5 sm:px-6">
+          <Suspense fallback={<div className="surface rounded-2xl p-6 text-slate-400">Loading…</div>}>
           <TrainingView
             progress={progress}
             initial={practice}
@@ -283,10 +285,12 @@ export default function App() {
               )
             }
           />
+          </Suspense>
         </main>
       )}
       {mode === "progress" && (
         <main className="mx-auto flex w-full max-w-[1440px] flex-1 flex-col px-3 pb-5 sm:px-6">
+          <Suspense fallback={<div className="surface rounded-2xl p-6 text-slate-400">Loading…</div>}>
           <ProgressDashboard
             progress={progress}
             onStart={(plan) => {
@@ -294,8 +298,9 @@ export default function App() {
               setStartPlan({ ...plan });
               setMode("train");
             }}
-            onReset={() => updateProgress(() => ({ ...EMPTY_PROGRESS }))}
+            store={store}
           />
+          </Suspense>
         </main>
       )}
       <main

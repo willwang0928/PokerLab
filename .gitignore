@@ -22,6 +22,8 @@ coverage/
 !.env.example
 *.db
 *.sqlite3
+*.sqlite3-*
+backend/data/
 
 # OS / editor
 .DS_Store

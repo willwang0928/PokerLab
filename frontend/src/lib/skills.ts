@@ -236,6 +236,29 @@ export function scheduleReview(reviews: ReviewItem[], review: HandReview, now: n
   return out;
 }
 
+/**
+ * The review schedule implied by the records, replayed in time order. It is the same
+ * schedule ``recordAnswer`` and ``recordHandReview`` build step by step, but computed from
+ * the log alone, so it is never stored and can never disagree with the history (after a
+ * merge with another tab or the server, for example).
+ */
+export function deriveReviews(decisions: DecisionRecord[], answers: AnswerRecord[]): ReviewItem[] {
+  type Ev = { t: number; order: number; id: string; apply: (r: ReviewItem[]) => ReviewItem[] };
+  const events: Ev[] = [];
+  for (const d of decisions) {
+    if (!missed(d.grade) || d.confidence === "low" || d.confidence === undefined) continue;
+    events.push({ t: d.t, order: 0, id: d.id, apply: (r) => lapse(r, `${d.concept}|auto`, d.concept, "auto", "table", d.t) });
+  }
+  for (const a of answers) events.push({ t: a.t, order: 1, id: a.id, apply: (r) => scheduleAnswer(r, a, a.t) });
+  events.sort((x, y) => x.t - y.t || x.order - y.order || (x.id < y.id ? -1 : x.id > y.id ? 1 : 0));
+  return events.reduce((r, e) => e.apply(r), [] as ReviewItem[]);
+}
+
+/** ``p`` with its review schedule recomputed from the records. */
+export function withReviews(p: Pick<Progress, "decisions" | "answers">): Progress {
+  return { decisions: p.decisions, answers: p.answers, reviews: deriveReviews(p.decisions, p.answers) };
+}
+
 export function dueReviews(p: Progress, now: number): ReviewItem[] {
   return p.reviews.filter((r) => r.due <= now).sort((a, b) => a.due - b.due);
 }

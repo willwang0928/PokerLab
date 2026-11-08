@@ -107,7 +107,14 @@ export function TrainingView({ progress, onAnswered, initial = null, startPlan =
     return { key, plan, promise };
   };
 
+  // Only the most recent load may change the screen: an older one that finishes late
+  // (controls changed quickly, or effects run twice in development) must not replace the
+  // scenario the player is answering, or wipe their feedback.
+  const loadSeq = useRef(0);
+  const scenarioRef = useRef(scenario);
+  scenarioRef.current = scenario;
   const load = useCallback(async (difficulty: DifficultyChoice, choice: ConceptChoice, fixed?: Plan) => {
+    const seq = ++loadSeq.current;
     const key = `${difficulty}|${choice}`;
     let next = !fixed && prefetched.current?.key === key ? prefetched.current : null;
     prefetched.current = null;
@@ -121,14 +128,15 @@ export function TrainingView({ progress, onAnswered, initial = null, startPlan =
         next = request(fixed ?? planFor(progressRef.current, difficulty, choice), key);
         s = await next.promise;
       }
+      if (seq !== loadSeq.current) return;
       setScenario(s);
       setPlan(next.plan);
       setAnswer(null);
       setAttempts(0);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Could not load a scenario");
+      if (seq === loadSeq.current) setError(e instanceof Error ? e.message : "Could not load a scenario");
     } finally {
-      setBusy(false);
+      if (seq === loadSeq.current) setBusy(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -170,8 +178,9 @@ export function TrainingView({ progress, onAnswered, initial = null, startPlan =
     setError(null);
     try {
       const a = await coachApi.answer(scenario.id, key);
+      if (attempts === 0) onAnswered(scenario, a, plan); // a real first answer: always recorded
+      if (scenarioRef.current?.id !== scenario.id) return; // replaced meanwhile: don't show it
       setAnswer(a);
-      if (attempts === 0) onAnswered(scenario, a, plan);
       setAttempts((n) => n + 1);
       requestAnimationFrame(() => feedbackRef.current?.focus());
     } catch (e) {

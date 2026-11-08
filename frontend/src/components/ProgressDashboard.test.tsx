@@ -17,7 +17,7 @@ function answers(p: Progress, concept: Concept, difficulty: string, grades: Grad
 describe("ProgressDashboard", () => {
   it("starts empty with an honest first recommendation and no estimates", () => {
     const onStart = vi.fn();
-    render(<ProgressDashboard progress={EMPTY_PROGRESS} onStart={onStart} onReset={() => {}} now={NOW} />);
+    render(<ProgressDashboard progress={EMPTY_PROGRESS} onStart={onStart} now={NOW} />);
     expect(screen.getByTestId("next-practice")).toHaveTextContent(/not practised this yet/);
     expect(screen.getAllByTestId("skill-insufficient")).toHaveLength(7);
     expect(screen.getByTestId("dashboard-trend")).toHaveTextContent(/after 20 first answers/);
@@ -28,7 +28,7 @@ describe("ProgressDashboard", () => {
   it("shows measured counts next to the estimate, the trend and history", () => {
     let p = answers(EMPTY_PROGRESS, "pot_odds", "beginner", Array(12).fill("good"));
     p = answers(p, "pot_odds", "intermediate", ["good", "close", "good", "good", "mistake", "good", "good", "good", "good", "good"], NOW - 1_000_000);
-    render(<ProgressDashboard progress={p} onStart={() => {}} onReset={() => {}} now={NOW} />);
+    render(<ProgressDashboard progress={p} onStart={() => {}} now={NOW} />);
     const row = screen.getByTestId("dash-skill-pot_odds");
     expect(row).toHaveTextContent(/Training: 20 of 22 good, 1 close/);
     expect(within(row).getByTestId("skill-estimate")).toHaveTextContent(/Est\. \d+% \(\d+%–\d+%\)/);
@@ -41,21 +41,11 @@ describe("ProgressDashboard", () => {
   it("puts a due review first and shows the schedule", () => {
     const p = answers(EMPTY_PROGRESS, "draws", "intermediate", ["mistake"], NOW - 20 * 60_000);
     const onStart = vi.fn();
-    render(<ProgressDashboard progress={p} onStart={onStart} onReset={() => {}} now={NOW} />);
+    render(<ProgressDashboard progress={p} onStart={onStart} now={NOW} />);
     expect(screen.getByTestId("next-practice")).toHaveTextContent(/Review/);
     expect(screen.getByTestId("dashboard-reviews")).toHaveTextContent(/Drawing hands.*Intermediate.*step 1 of 5.*due now/);
     fireEvent.click(screen.getByRole("button", { name: "Start practice" }));
     expect(onStart).toHaveBeenCalledWith(expect.objectContaining({ concept: "draws", difficulty: "intermediate", review: true }));
   });
 
-  it("asks before deleting progress", () => {
-    const onReset = vi.fn();
-    render(<ProgressDashboard progress={EMPTY_PROGRESS} onStart={() => {}} onReset={onReset} now={NOW} />);
-    fireEvent.click(screen.getByRole("button", { name: "Reset progress" }));
-    expect(onReset).not.toHaveBeenCalled();
-    fireEvent.click(screen.getByRole("button", { name: "Keep" }));
-    fireEvent.click(screen.getByRole("button", { name: "Reset progress" }));
-    fireEvent.click(screen.getByRole("button", { name: "Delete" }));
-    expect(onReset).toHaveBeenCalledTimes(1);
-  });
 });

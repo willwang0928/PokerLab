@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import type { ProgressStore } from "../hooks/useProgressStore";
 import { CONCEPT_LABEL, decisionTrend, type Progress } from "../lib/progress";
 import {
   answerTrend,
@@ -12,6 +13,7 @@ import {
 import type { Grade, TrainingDifficulty } from "../types";
 import { GradeChip } from "./DecisionDetail";
 import { measuredText, SkillMeter } from "./SkillMeter";
+import { StoragePanel } from "./StoragePanel";
 import type { Plan } from "./TrainingView";
 
 const GRADE_LABEL: Record<Grade, string> = {
@@ -31,7 +33,8 @@ function relative(ms: number): string {
 interface Props {
   progress: Progress;
   onStart: (plan: Plan) => void;
-  onReset: () => void;
+  /** Storage, sync and profile controls (omitted in isolated tests). */
+  store?: ProgressStore;
   now?: number;
 }
 
@@ -40,7 +43,7 @@ interface Props {
  * next to the raw counts it comes from, the trend, recurring mistakes explained, the
  * spaced-repetition schedule and the practice history.
  */
-export function ProgressDashboard({ progress, onStart, onReset, now = Date.now() }: Props) {
+export function ProgressDashboard({ progress, onStart, store, now = Date.now() }: Props) {
   const skills = useMemo(() => conceptSkills(progress), [progress]);
   const next = useMemo(() => nextPractice(progress, now), [progress, now]);
   const guides = useMemo(() => mistakeGuides(progress), [progress]);
@@ -48,20 +51,9 @@ export function ProgressDashboard({ progress, onStart, onReset, now = Date.now()
   const table = decisionTrend(progress);
   const firstAnswers = progress.answers.length;
   const due = progress.reviews.filter((r) => r.due <= now).length;
-  const [confirmReset, setConfirmReset] = useState(false);
 
   const start = (concept: Plan["concept"], difficulty: TrainingDifficulty, reason: string, review = false) =>
     onStart({ concept, difficulty, reason, review });
-
-  const exportData = () => {
-    const blob = new Blob([JSON.stringify(progress, null, 2)], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "pokerlab-progress.json";
-    a.click();
-    URL.revokeObjectURL(url);
-  };
 
   return (
     <div className="grid w-full gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]" data-testid="progress-dashboard">
@@ -280,35 +272,9 @@ export function ProgressDashboard({ progress, onStart, onReset, now = Date.now()
             </table>
           </div>
         )}
-        <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-white/5 pt-3 text-[12px] text-slate-400">
-          <span className="mr-auto">Progress is saved in this browser.</span>
-          <button type="button" onClick={exportData} className="btn-dark rounded-lg px-3 py-1.5 font-semibold">
-            Export data
-          </button>
-          {confirmReset ? (
-            <>
-              <span className="text-rose-200">Delete all progress?</span>
-              <button
-                type="button"
-                onClick={() => {
-                  onReset();
-                  setConfirmReset(false);
-                }}
-                className="rounded-lg bg-rose-600 px-3 py-1.5 font-semibold text-white"
-              >
-                Delete
-              </button>
-              <button type="button" onClick={() => setConfirmReset(false)} className="btn-dark rounded-lg px-3 py-1.5 font-semibold">
-                Keep
-              </button>
-            </>
-          ) : (
-            <button type="button" onClick={() => setConfirmReset(true)} className="btn-dark rounded-lg px-3 py-1.5 font-semibold">
-              Reset progress
-            </button>
-          )}
-        </div>
       </section>
+
+      {store && <StoragePanel store={store} now={now} />}
     </div>
   );
 }

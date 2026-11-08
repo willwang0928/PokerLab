@@ -72,3 +72,36 @@ export const coachApi = {
   answer: (id: string, choice: string) =>
     request<TrainingAnswer>("/api/training/answer", { method: "POST", body: JSON.stringify({ id, choice }) }),
 };
+
+// ------------------------------------------------------------------ progress storage (v0.4)
+
+export interface ServerProfile {
+  profile_id: string;
+  name: string;
+  created_at: number;
+  updated_at: number;
+  counts?: { answers: number; decisions: number };
+}
+
+export interface UploadResult {
+  added: { answers: number; decisions: number };
+  accepted: { answers: number; decisions: number };
+  rejected: { kind: "answers" | "decisions"; id: string | null; error: string }[];
+}
+
+function authed(token: string, init: RequestInit = {}): RequestInit {
+  return { ...init, headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` } };
+}
+
+export const profileApi = {
+  create: (name: string) =>
+    request<{ key: string; profile: ServerProfile }>("/api/profiles", { method: "POST", body: JSON.stringify({ name }) }),
+  get: (token: string) => request<ServerProfile>("/api/profile", authed(token)),
+  rename: (token: string, name: string) =>
+    request<ServerProfile>("/api/profile", authed(token, { method: "PATCH", body: JSON.stringify({ name }) })),
+  remove: (token: string) => request<null>("/api/profile", authed(token, { method: "DELETE" })),
+  records: (token: string) =>
+    request<{ answers: unknown[]; decisions: unknown[]; truncated: boolean }>("/api/profile/records", authed(token)),
+  upload: (token: string, answers: unknown[], decisions: unknown[]) =>
+    request<UploadResult>("/api/profile/records", authed(token, { method: "POST", body: JSON.stringify({ answers, decisions }) })),
+};

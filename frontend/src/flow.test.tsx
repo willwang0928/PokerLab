@@ -214,7 +214,7 @@ describe("training mode", () => {
     await startGame();
     await screen.findByRole("button", { name: /Call 5/ });
     await userEvent.click(screen.getByRole("tab", { name: "Train" }));
-    expect(screen.getByTestId("training-view")).toBeInTheDocument();
+    expect(await screen.findByTestId("training-view")).toBeInTheDocument();
     (document.activeElement as HTMLElement | null)?.blur();
     await userEvent.keyboard("fcr ");
     expect(calls(fetchMock, "/actions")).toBe(0);
@@ -274,9 +274,11 @@ describe("personalised learning", () => {
     await userEvent.click(screen.getByRole("button", { name: /training mode/ }));
     await userEvent.click(await screen.findByRole("button", { name: "Call 50" }));
     await screen.findByTestId("training-feedback");
-    const stored = JSON.parse(localStorage.getItem("pokerlab.progress.v1")!);
+    const { active } = JSON.parse(localStorage.getItem("pokerlab.profiles.v1")!);
+    const stored = JSON.parse(localStorage.getItem(`pokerlab.progress.v2.${active}`)!);
     expect(stored.answers).toHaveLength(1);
-    expect(stored.reviews[0]).toMatchObject({ key: "pot_odds|beginner", box: 0 });
+    expect(stored.unsynced.answers).toEqual([scenario.id]); // the server was unreachable
+    expect(stored.reviews).toBeUndefined(); // the schedule is derived, never stored
     // Auto difficulty asked the server for the adaptive level (Beginner for a new player).
     expect(fetchMock.mock.calls.some(([u]) => String(u).includes("difficulty=beginner"))).toBe(true);
     unmount();
@@ -284,7 +286,7 @@ describe("personalised learning", () => {
     render(<App />);
     await userEvent.click(screen.getByRole("button", { name: /training mode/ }));
     await userEvent.click(screen.getByRole("tab", { name: "Progress" }));
-    expect(screen.getByTestId("dashboard-reviews")).toHaveTextContent(/Pot odds/);
+    expect(await screen.findByTestId("dashboard-reviews")).toHaveTextContent(/Pot odds/);
     expect(screen.getByTestId("dashboard-history")).toHaveTextContent(/Likely mistake/);
     expect(screen.getByTestId("dash-skill-pot_odds")).toHaveTextContent(/Training: 0 of 1 good/);
   });

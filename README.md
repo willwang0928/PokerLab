@@ -140,6 +140,19 @@ The first release, **v0.1**, is a fully playable game of **heads-up No-Limit Tex
 - **Consistent feedback.** Practising a reviewed decision now uses exactly the review's analysis (same seed, same samples, and the size you actually bet), so the training verdict always matches the review; a test checks this.
 - Progress is still kept in the browser (the existing store, with new validated fields). Older saved progress loads unchanged.
 
+**v0.4.0 — Reliable progress persistence**
+- **Why a database now.** Until v0.3.7, progress lived only in the browser. That copy capped history at 600 decisions and 1,000 answers, dropped unreadable records without a word, swallowed "storage full" errors, was lost with cleared site data or a private window, and two open tabs could overwrite each other's new answers. Every PokerLab feature already needs the Python server, so a database there adds no new service to run. SQLite ships with Python, so there is also no new dependency.
+- **Local first, server backed.** Progress is saved in the browser at once, so the app keeps working when the server is down, and synced to a SQLite database on the server in the background. The Progress tab shows where your progress is saved and whether it is synced; when the server is unreachable or its storage is down, records wait on the device and sync automatically, with retries backing off, once it is back.
+- **No conflicts by design.** Progress is an append-only log of immutable records (graded decisions and first answers), each with a unique id. A sync is a union in both directions, and an upload that is repeated, interrupted or sent from two devices at once cannot lose or duplicate anything. Skill estimates, the review schedule, trends and leaks are all derived from that one log, so the coach, training and the dashboard always agree. The review schedule is recomputed rather than stored, so it can never drift from the history.
+- **Profiles without accounts.** Each profile gets a random 256-bit key, shown on request for opening the same progress in another browser on the same server. The server stores only the key's SHA-256 hash, so the database file alone cannot be used to read or write a profile. Several players can keep separate profiles on one device and switch between them.
+- **Validation everywhere.** Records are checked field by field on the device and again on the server (concept, grade, level, tags, finite numbers, timestamps in milliseconds, no unknown fields). One bad record never blocks the rest of an upload: the server stores the valid ones and returns the reasons for the others, which stay on the device marked as refused.
+- **Nothing is deleted silently.** Records that fail validation, and unreadable saved data, are moved to a quarantine, reported on the Progress tab, and included in exports. A full or blocked browser store is reported instead of ignored. Local history is trimmed only beyond 20,000 records per kind, and never records that have not reached the server yet.
+- **Safe migration.** On first start, v0.3.x progress is copied to a backup key, migrated (old decisions get stable ids) and queued for upload. The old copy is removed only once the new one has been written, and the migration says what it moved and what it kept aside.
+- **Durable and recoverable server storage.** SQLite runs with WAL journaling and full synchronous writes, and each upload is a single transaction (all or nothing). If the database file is corrupt, unreadable or from a newer version, the server keeps serving games, reports progress storage as unavailable (`503`) and leaves the file untouched for recovery, rather than replacing it.
+- **Two-tab safety.** Every save reads what is stored and merges it, so two tabs never erase each other's records. Tabs also pick up each other's changes live. A reset starts a new "epoch" so another tab cannot bring the deleted records back.
+- **Failures mid-session.** A database error after startup (disk full, I/O error, a lock held too long) returns `503` like storage that never opened, so clients keep the records and retry. A sync that is in flight when the profile is reset (in this tab or another) is discarded rather than merged, so it cannot bring deleted records back.
+- **Export, import and reset.** Export writes a JSON file (including any unreadable records); import merges a file from v0.3.x or v0.4 after validating it. Reset deletes the profile's progress on the device and on the server, and refuses to delete anything locally if the server copy cannot be deleted at that moment.
+
 ## Quick start
 
 Requirements: **Python 3.11+** and **Node.js 20.19+** (CI uses Node 24).
@@ -168,7 +181,7 @@ npm run dev                            # http://localhost:5173 (proxies /api to 
 ```
 </details>
 
-Configuration is optional. See [`.env.example`](.env.example).
+Configuration is optional. See [`.env.example`](.env.example). Progress is stored in `backend/data/pokerlab.sqlite3` by default (`POKERLAB_DATA_DIR` or `POKERLAB_DB` to change it); back it up by copying the file while the server is stopped. Deleting it removes every profile, and the browsers that still hold progress offer to save it again.
 
 ## Testing
 
@@ -177,8 +190,8 @@ make test      # pytest + vitest
 make lint      # ruff + TypeScript
 ```
 
-- **Backend (pytest, 300+ tests):** training (semi-bluff scenarios, practice verdicts identical to the review's, every concept generated at its difficulty margin, deterministic ids, no verdicts before answering, tendencies that change the answer, practice spots), coaching (grades against exact pot-odds cases, the documented EV formulas, the capped fold model, no optimality claims, reviews unchanged by the opponent's hidden cards and by the run-out, reproducible analyses, fuzzed random spots), deck and evaluator correctness (including exhaustive five-card frequencies), opponent modelling (statistics from public events only, shrinkage and minimum samples, decay, bounded adjustments, decisions unchanged by the human's hidden cards, legal play against every style, paired comparisons), difficulty levels (decisions that differ for stated reasons, decisions independent of the human's hidden cards, legality at every level, stronger levels beating Beginner, the expected-value formula), live all-in equity, the equity agent (exact pot-odds boundaries, legality, range estimates, a duplicate match against a random player), equity (exact results against an independent brute force, Monte Carlo accuracy within its standard error, overlapping ranges, reproducible seeds), range parsing, betting rules, illegal actions, side pots and odd chips, short-stack edge cases, AI legality, sessions, API robustness (locking, seeds, eviction), and full games played over HTTP. Randomized fuzz tests play thousands of 2–6 player hands and check chip conservation after every action.
-- **Frontend (Vitest + Testing Library):** personalised learning (the skill model's posterior and intervals, promotion only on solid evidence, spaced-repetition scheduling and graduation, recommendations, mistake guides, the dashboard, persistence across reloads), training (feedback, retries not counted, difficulty and concept requests, table shortcuts blocked while training), the coach panel and the progress store (recommendations, leaks, trends, malformed storage), difficulty selection and the adaptation toggle, the tendencies panel, the equity panel (live and review modes, reveal timing, percentage formatting), betting controls, seats and hidden cards, sizing helpers, animations, accessibility (focus, dialogs, announcements), connection failures and keyboard shortcuts, the sound engine (against a fake AudioContext) and event-to-sound timing, saved settings, and app flows with a mocked API (deal → act → showdown → next hand, errors, game over).
+- **Backend (pytest, 330+ tests):** progress storage (survives restarts, only key hashes stored, idempotent unions, an interrupted batch writes nothing, profile isolation, quotas, corrupt or newer databases left untouched and reported, per-record validation over HTTP, games unaffected when storage is down), training (semi-bluff scenarios, practice verdicts identical to the review's, every concept generated at its difficulty margin, deterministic ids, no verdicts before answering, tendencies that change the answer, practice spots), coaching (grades against exact pot-odds cases, the documented EV formulas, the capped fold model, no optimality claims, reviews unchanged by the opponent's hidden cards and by the run-out, reproducible analyses, fuzzed random spots), deck and evaluator correctness (including exhaustive five-card frequencies), opponent modelling (statistics from public events only, shrinkage and minimum samples, decay, bounded adjustments, decisions unchanged by the human's hidden cards, legal play against every style, paired comparisons), difficulty levels (decisions that differ for stated reasons, decisions independent of the human's hidden cards, legality at every level, stronger levels beating Beginner, the expected-value formula), live all-in equity, the equity agent (exact pot-odds boundaries, legality, range estimates, a duplicate match against a random player), equity (exact results against an independent brute force, Monte Carlo accuracy within its standard error, overlapping ranges, reproducible seeds), range parsing, betting rules, illegal actions, side pots and odd chips, short-stack edge cases, AI legality, sessions, API robustness (locking, seeds, eviction), and full games played over HTTP. Randomized fuzz tests play thousands of 2–6 player hands and check chip conservation after every action.
+- **Frontend (Vitest + Testing Library):** progress storage and sync (v0.3 migration with backup, migration that cannot be written, quarantine of unreadable data, two tabs merging, reset epochs, trimming that keeps unsynced records, storage-full reporting, linking, offline queueing, pulling from another device, refused records, resuming an interrupted upload, unknown keys, import and export), personalised learning (the skill model's posterior and intervals, promotion only on solid evidence, spaced-repetition scheduling and graduation, recommendations, mistake guides, the dashboard, persistence across reloads), training (feedback, retries not counted, difficulty and concept requests, table shortcuts blocked while training), the coach panel and the progress store (recommendations, leaks, trends, malformed storage), difficulty selection and the adaptation toggle, the tendencies panel, the equity panel (live and review modes, reveal timing, percentage formatting), betting controls, seats and hidden cards, sizing helpers, animations, accessibility (focus, dialogs, announcements), connection failures and keyboard shortcuts, the sound engine (against a fake AudioContext) and event-to-sound timing, saved settings, and app flows with a mocked API (deal → act → showdown → next hand, errors, game over).
 - **CI:** GitHub Actions runs lint, tests and a production build on every push and pull request (Python 3.11–3.13).
 
 ## Architecture
@@ -214,6 +227,7 @@ backend/pokerlab/
 │   ├── spot.py       a decision point as public data, replayed through the engine
 │   └── training.py   scenario generation by concept and difficulty, grading, practice spots
 ├── session.py        heads-up match: hand sequencing, AI turns, per-seat views, log, coach
+├── storage.py        SQLite progress store: profiles (hashed keys), append-only records, integrity checks
 └── api/              FastAPI app, schemas, session store
 
 frontend/src/
@@ -222,7 +236,8 @@ frontend/src/
 ├── components/             Table, Seat, PlayingCard, ChipStack, ChipFlights, ActionBar, HandLog, SettingsMenu, modals,
 │                           EquityPanel, TendenciesPanel, CoachPanel, DecisionDetail, TrainingView, ProgressDashboard, SkillMeter
 └── lib/                    API client, betting and card helpers, motion timing, sound engine and cues, progress store,
-                            skills (skill model, adaptive level, spaced repetition, recommendations)
+                            skills (skill model, adaptive level, spaced repetition, recommendations),
+                            store (local persistence, migration, quarantine), sync (server sync)
 ```
 
 **How a turn works.** The server holds all game state. Each request (`POST /api/sessions/{id}/actions`) applies the human's action, then lets the AI act until it is the human's turn again or the hand ends. The response contains the final state plus a list of `steps`. Each step is an engine event paired with a state snapshot taken right after it, so the UI can replay the AI's moves, new streets and showdowns one at a time. Opponent hole cards are left out of every snapshot until they are shown down.
@@ -236,7 +251,7 @@ frontend/src/
 
 | Method | Path | Description |
 | --- | --- | --- |
-| `GET` | `/api/health` | Health check |
+| `GET` | `/api/health` | Health check, including whether progress storage is available |
 | `POST` | `/api/sessions` | Create a match (`starting_stack`, `small_blind`, `big_blind`, `player_name`, `difficulty` = `beginner`\|`intermediate`\|`advanced`, `adaptive`; `seed` only when the server sets `POKERLAB_ALLOW_SEED`) |
 | `GET` | `/api/sessions/{id}` | Current state (from the human's point of view) |
 | `POST` | `/api/sessions/{id}/hands` | Deal the next hand |
@@ -246,6 +261,10 @@ frontend/src/
 | `POST` | `/api/training/practice` | `{"spot": {...}, "difficulty"?, "chosen"?}` → a scenario from a reviewed decision |
 | `POST` | `/api/training/answer` | `{"id", "choice"}` → grade, explanation and every alternative compared |
 | `DELETE` | `/api/sessions/{id}` | End a match |
+| `POST` | `/api/profiles` | `{"name"?}` → a new progress profile and its secret `key` (returned once) |
+| `GET` / `PATCH` / `DELETE` | `/api/profile` | The profile for `Authorization: Bearer <key>`, with record counts; rename; delete it and all its records |
+| `GET` | `/api/profile/records` | `?limit` → the most recent records of each kind, oldest first |
+| `POST` | `/api/profile/records` | `{"answers": [...], "decisions": [...]}` (≤ 2,000 each) → added, accepted and per-record rejection reasons; repeats are no-ops |
 | `POST` | `/api/equity` | `{"players": ["AhKh", "QQ+,AKs"], "board"?, "dead"?, "iterations"?, "seed"?}` → equity, win, tie and standard error per player |
 
 Each response includes `steps`: one event plus a state snapshot for every change, which the UI replays to drive its animations. Showdown events list each player's best five cards (`best`), and `pot_awarded` events list the winning cards (`cards`).
@@ -256,8 +275,16 @@ Illegal actions return `400` with an explanation. Out-of-turn or out-of-state re
 
 - **v0.2 — Visual polish:** v0.2.1 visual redesign, v0.2.2 animations, v0.2.3 sound and themes, and v0.2.4 stability and accessibility (done).
 - **v0.3 — Smarter AI and training:** v0.3.1 equity engine, v0.3.2 equity-driven opponent with equity review, v0.3.3 difficulty levels and live all-in equity, v0.3.4 adaptive opponent, v0.3.5 coaching and decision feedback, v0.3.6 interactive training mode, v0.3.7 personalised learning and skill assessment (done).
-- **v0.4 — Analytics:** persistent hand history (SQLite), replays, performance stats, AI-vs-AI simulations.
+- **v0.4 — Platform:** v0.4.0 reliable progress persistence (done); next, persistent hand history and replays.
+- **v0.4 (continued) — Analytics:** persistent hand history, replays, performance stats, AI-vs-AI simulations.
 - **Later:** multiplayer, tournaments, Omaha / Stud / Draw, CFR agents, reinforcement learning, strategy dashboards.
+
+## Security and privacy
+
+- Progress contains poker statistics and an optional profile name, nothing else. It is stored on your own PokerLab server and in your browser; nothing is sent to third parties.
+- A profile key is a bearer secret: anyone with it, and access to the same server, can read and change that profile. It is kept in the browser's local storage, shown only on request, sent only in the `Authorization` header (never in URLs, so it does not appear in server logs), and stored on the server only as a SHA-256 hash.
+- The API checks every record, caps request sizes and the number of records per profile, and allows browser requests only from the configured origins (`POKERLAB_CORS_ORIGINS`).
+- There are no user accounts or passwords. PokerLab is meant to run on your own machine or a trusted network; exposing it to the internet would need HTTPS and rate limiting in front of it.
 
 ## License
 
