@@ -23,12 +23,15 @@ not just how random it is.
 from __future__ import annotations
 
 import random
+from collections.abc import Sequence
 from dataclasses import dataclass, replace
 
-from ..engine import Action, LegalActions, Street
+from ..engine import Action, Event, LegalActions, Street
 from ..equity import calculate_equity
 from ..ranges import HandRange
+from .adaptation import NEUTRAL, Adjustments, compute_adjustments
 from .base import Agent, Observation, make_legal, raise_to_pot_fraction
+from .player_model import PlayerModel
 from .preflop import hand_class, percentile
 from .range_model import defending_ranges, estimate_range
 from .strength import draw_bonus
@@ -64,6 +67,8 @@ class AgentProfile:
     # Choose postflop bets by expected value against a defending range (see _ev_bet).
     ev_bets: bool = False
     bet_sizes: tuple[float, ...] = (0.33, 0.66, 1.0)
+    # How strongly to adapt to the opponent's observed tendencies (0 = not at all).
+    adapt: float = 0.0
 
 
 class EquityAgent(Agent):
@@ -91,6 +96,42 @@ class EquityAgent(Agent):
         self.name = profile.name
         self.rng = rng or random.Random()
         self.exact_limit = exact_limit
+        self.model = PlayerModel()  # the opponent's observed tendencies (heads-up)
+        self.adaptive = True  # sessions can switch adaptation off
+        self.adjustments: Adjustments = NEUTRAL
+
+    # ------------------------------------------------------------------ learning
+
+    @property
+    def adapt_weight(self) -> float:
+        return self.profile.adapt if self.adaptive else 0.0
+
+    def observe_hand(self, events: Sequence[Event], seat: int) -> None:
+        """Learn from a finished heads-up hand's public events, then refresh adjustments."""
+        events = list(events)
+        seats = {e.data["seat"] for e in events if e.type == "post_blind"}
+        opponents = sorted(seats - {seat})
+        if len(opponents) != 1:
+            return  # the model tracks one opponent (heads-up)
+        self.model.observe(events, opponents[0])
+        self.refresh_adjustments()
+
+    def refresh_adjustments(self) -> None:
+        self.adjustments = compute_adjustments(self.model, self.adapt_weight)
+
+    def decide_without_adaptation(self, obs: Observation, legal: LegalActions) -> Action:
+        """The action this agent would take with no adaptation, from the same random state.
+
+        It does not consume randomness, so the real decision that follows uses exactly
+        the same draws. Comparing the two shows whether adaptation changed the decision.
+        """
+        state, saved = self.rng.getstate(), self.adjustments
+        self.adjustments = NEUTRAL
+        try:
+            return self.decide(obs, legal)
+        finally:
+            self.adjustments = saved
+            self.rng.setstate(state)
 
     # ------------------------------------------------------------------ public
 
@@ -116,6 +157,7 @@ class EquityAgent(Agent):
                 obs.board,
                 known=obs.hole,
                 cap_checks=self.profile.reads_checks,
+                adjust=self.adjustments,
             )
             for s in opponents
         ]
@@ -141,7 +183,7 @@ class EquityAgent(Agent):
             if p < pr.iso_raise:
                 return self._raise_to(legal, 4 * bb)
             return Action.check()
-        if p < pr.open_raise:
+        if p < pr.open_raise + self.adjustments.open_shift:
             return self._raise_to(legal, int(2.5 * bb))
         if p < pr.open_limp:
             return Action.call()
@@ -188,7 +230,7 @@ class EquityAgent(Agent):
             action = self._ev_bet(obs, legal, eq)
             if action is not None:
                 return action
-            if r < pr.bluff_rate:  # a small, unpredictable mix of pure bluffs
+            if r < pr.bluff_rate * self.adjustments.bluff_multiplier:  # a small, unpredictable mix
                 return raise_to_pot_fraction(obs, legal, 0.5)
             return Action.check()
         river = obs.street == Street.RIVER
@@ -196,10 +238,11 @@ class EquityAgent(Agent):
             if not river and r < pr.trap_rate:
                 return Action.check()
             return raise_to_pot_fraction(obs, legal, 0.66)
-        if eq >= pr.thin_bet and r < pr.thin_bet_rate:
+        adj = self.adjustments
+        if eq >= pr.thin_bet - adj.thin_value_shift and r < pr.thin_bet_rate:
             return raise_to_pot_fraction(obs, legal, 0.4)
         drawing = not river and draw_bonus(obs.hole, obs.board) >= 0.14
-        bluff = pr.semi_bluff_rate if drawing else pr.bluff_rate
+        bluff = (pr.semi_bluff_rate if drawing else pr.bluff_rate) * adj.bluff_multiplier
         if r < bluff:
             return raise_to_pot_fraction(obs, legal, 0.5)
         return Action.check()
@@ -210,7 +253,8 @@ class EquityAgent(Agent):
         For a bet of B into a pot of P, the opponent is assumed to defend at the minimum
         defence frequency ``P / (P + B)`` with the strongest part of their estimated
         range. At that frequency a pure bluff exactly breaks even, so any bet must earn
-        its keep with equity when called. Then::
+        its keep with equity when called. With adaptation, the fold rate is shifted by
+        the opponent's observed fold-to-bet deviation (see ``Adjustments``). Then::
 
             EV(bet)   = fold * P + defend * (equity_vs_defenders * (P + 2B) - B)
             EV(check) = equity * P            (the hand is checked down)
@@ -224,7 +268,7 @@ class EquityAgent(Agent):
             action = raise_to_pot_fraction(obs, legal, fraction)
             if action.amount is not None and action not in (c[0] for c in candidates):
                 bet = action.amount - legal.player_bet
-                candidates.append((action, bet, pot / (pot + bet)))
+                candidates.append((action, bet, 1 - self.adjustments.fold_probability(bet, pot)))
         defenders = defending_ranges(opp, obs.board, [d for _, _, d in candidates])
         best_action, best_ev = None, eq * pot
         for (action, bet, defend), rng in zip(candidates, defenders, strict=True):

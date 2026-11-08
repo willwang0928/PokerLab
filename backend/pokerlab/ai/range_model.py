@@ -18,6 +18,7 @@ fractions per player) builds on it later.
 from __future__ import annotations
 
 from collections.abc import Sequence
+from typing import TYPE_CHECKING
 
 from .. import fasteval
 from ..cards import Card
@@ -26,6 +27,9 @@ from ..ranges import Combo, HandRange
 from .base import ActionRecord
 from .preflop import top_range
 from .strength import draw_bonus
+
+if TYPE_CHECKING:
+    from .adaptation import Adjustments
 
 # Preflop caps, indexed by the number of raises before the action (last entry repeats).
 PREFLOP_RAISE = (0.70, 0.15, 0.06)  # open, 3-bet, 4-bet+
@@ -42,8 +46,19 @@ MIN_COMBOS = 12
 _BOARD_SIZE = {Street.FLOP: 3, Street.TURN: 4, Street.RIVER: 5}
 
 
-def preflop_fraction(actions: Sequence[ActionRecord], seat: int, button: int, bb: int) -> float:
-    """The "top X%" cap implied by ``seat``'s preflop actions."""
+def preflop_fraction(
+    actions: Sequence[ActionRecord],
+    seat: int,
+    button: int,
+    bb: int,
+    raise_scale: float = 1.0,
+    call_scale: float = 1.0,
+) -> float:
+    """The "top X%" cap implied by ``seat``'s preflop actions.
+
+    ``raise_scale`` and ``call_scale`` widen or narrow the raising and calling levels for
+    a player whose observed preflop frequencies differ from the baseline.
+    """
     fraction = 1.0
     raises = 0
     for a in actions:
@@ -55,11 +70,13 @@ def preflop_fraction(actions: Sequence[ActionRecord], seat: int, button: int, bb
                     level = PREFLOP_RAISE_VS_LIMP
                 else:
                     level = PREFLOP_RAISE[min(raises, len(PREFLOP_RAISE) - 1)]
+                level = min(1.0, level * raise_scale)
                 if a.all_in and a.amount <= SHORT_SHOVE_BB * bb:
                     level = max(level, SHORT_SHOVE_RANGE)
                 fraction = min(fraction, level)
             elif a.action == "call":
-                fraction = min(fraction, PREFLOP_CALL[min(raises, len(PREFLOP_CALL) - 1)])
+                level = PREFLOP_CALL[min(raises, len(PREFLOP_CALL) - 1)]
+                fraction = min(fraction, min(1.0, level * call_scale))
         if a.action in ("bet", "raise"):
             raises += 1
     return fraction
@@ -100,10 +117,23 @@ def estimate_range(
     board: Sequence[Card],
     known: Sequence[Card] = (),
     cap_checks: bool = False,
+    adjust: Adjustments | None = None,
 ) -> HandRange:
-    """``seat``'s plausible holdings given the public actions, the board and our cards."""
+    """``seat``'s plausible holdings given the public actions, the board and our cards.
+
+    ``adjust`` (from :mod:`pokerlab.ai.adaptation`) scales the assumed range widths to the
+    player's observed frequencies. Without it the fixed defaults apply.
+    """
     blocked = set(board) | set(known)
-    base = top_range(preflop_fraction(actions, seat, button, big_blind))
+    raise_scale = adjust.raise_range_scale if adjust else 1.0
+    call_scale = adjust.vpip_range_scale if adjust else 1.0
+    keep_scale = {
+        "bet": adjust.bet_range_scale if adjust else 1.0,
+        "raise": adjust.raise_range_post_scale if adjust else 1.0,
+        "call": adjust.call_range_scale if adjust else 1.0,
+    }
+    fraction = preflop_fraction(actions, seat, button, big_blind, raise_scale, call_scale)
+    base = top_range(round(max(0.02, fraction), 3))
     combos = [h for h in base if h[0] not in blocked and h[1] not in blocked]
     board = list(board)
     for a in actions:
@@ -111,7 +141,8 @@ def estimate_range(
             continue
         street_board = board[: _BOARD_SIZE[a.street]]
         if a.action in POSTFLOP_KEEP:
-            combos = _narrow(combos, street_board, POSTFLOP_KEEP[a.action])
+            keep = min(1.0, max(0.15, POSTFLOP_KEEP[a.action] * keep_scale[a.action]))
+            combos = _narrow(combos, street_board, keep)
         elif a.action == "check" and cap_checks:
             combos = _cap(combos, street_board, CHECK_CAP)
     return HandRange.of(combos, "estimated")

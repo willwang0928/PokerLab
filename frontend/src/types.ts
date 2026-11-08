@@ -54,6 +54,8 @@ export interface HandResult {
   > | null;
   /** Present only when the hand reached a showdown. */
   equity?: StreetEquity[] | null;
+  /** Decisions this hand that adaptation changed, with the tendency behind each. */
+  adaptation_notes?: string[];
 }
 
 export interface GameState {
@@ -73,8 +75,15 @@ export interface GameState {
   log: string[];
   /** During an all-in with every hand face up: equity at each street reached so far. */
   live_equity?: StreetEquity[] | null;
+  opponent_model?: OpponentModelView | null;
   winner: number | null;
-  config: { starting_stack: number; small_blind: number; big_blind: number; difficulty?: Difficulty };
+  config: {
+    starting_stack: number;
+    small_blind: number;
+    big_blind: number;
+    difficulty?: Difficulty;
+    adaptive?: boolean;
+  };
 }
 
 export interface GameEvent {
@@ -100,4 +109,31 @@ export interface GameConfig {
   big_blind: number;
   player_name: string;
   difficulty: Difficulty;
+  /** Let the opponent adapt to your observed tendencies (Intermediate and Advanced). */
+  adaptive: boolean;
 }
+
+export interface TrackedStat {
+  key: string;
+  label: string;
+  hint: string;
+  /** Observed frequency (null before the first opportunity). Older hands count less. */
+  rate: number | null;
+  count: number;
+  opportunities: number;
+  /** Shrunk estimate the opponent actually uses. */
+  estimate: number;
+  baseline: number;
+  reliable: boolean;
+}
+
+export interface OpponentModelView {
+  adapts: boolean;
+  weight: number;
+  policy: string;
+  hands: number;
+  min_opportunities: number;
+  stats: TrackedStat[];
+  adjustments: string[];
+}
+

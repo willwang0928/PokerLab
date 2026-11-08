@@ -3,10 +3,11 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from collections.abc import Sequence
 from dataclasses import dataclass
 
 from ..cards import Card
-from ..engine import Action, ActionType, HoldemHand, LegalActions, Street
+from ..engine import Action, ActionType, Event, HoldemHand, LegalActions, Street
 
 
 @dataclass(frozen=True, slots=True)
@@ -91,6 +92,12 @@ class Agent(ABC):
 
     @abstractmethod
     def decide(self, obs: Observation, legal: LegalActions) -> Action: ...
+
+    def observe_hand(self, events: Sequence[Event], seat: int) -> None:  # noqa: B027
+        """Called with a finished hand's public events (``seat`` = this agent's seat).
+
+        Agents that learn about their opponents override this. The default ignores it.
+        """
 
 
 def raise_to_pot_fraction(obs: Observation, legal: LegalActions, fraction: float) -> Action:

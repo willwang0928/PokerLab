@@ -55,9 +55,10 @@ BEGINNER = AgentProfile(
     trap_rate=0.30,
     bluff_rate=0.04,
     semi_bluff_rate=0.10,
+    adapt=0.0,  # does not track you
 )
 
-INTERMEDIATE = AgentProfile(name="intermediate")
+INTERMEDIATE = AgentProfile(name="intermediate", adapt=0.5)
 
 ADVANCED = AgentProfile(
     name="advanced",
@@ -66,6 +67,7 @@ ADVANCED = AgentProfile(
     position_margin=0.02,
     bluff_rate=0.05,
     ev_bets=True,
+    adapt=1.0,
 )
 
 PROFILES: dict[Difficulty, AgentProfile] = {

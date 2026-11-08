@@ -90,6 +90,27 @@ The first release, **v0.1**, is a fully playable game of **heads-up No-Limit Tex
 - Equity panel fixes found in browser testing: the live view no longer reveals a flop or turn before it turns over, no longer flickers away on the river, and no longer appears at ordinary showdowns (where the post-hand review takes over).
 - Faster ranges: `HandRange` sorts its combos once, with an integer key, instead of comparing cards in Python on every iteration.
 
+**v0.3.4 — Adaptive opponent**
+- Intermediate and Advanced now learn from how you play. They track nine statistics from the public betting only (never your cards, not even cards shown at showdown): VPIP, preflop raise, fold to a preflop raise, aggression, bet when checked to, raise against a bet, fold to a bet, went to showdown and won at showdown.
+- **No overreacting.** Each statistic is a Beta-posterior estimate pulled towards a baseline (12 pseudo-hands of prior), is ignored until it has 15 opportunities, ignores deviations under 3 points, and forgets old hands (about a 150-hand memory) so it follows a player who changes style. Every adjustment is clamped.
+- **What changes.** How often you bet when checked to, and how often you raise a bet, widen or narrow the range the bot assumes behind your bets and raises (frequent bettors get called lighter, rare bettors get more credit). Your preflop raise and VPIP rates rescale your preflop ranges. Your fold-to-bet rate sets how wide a range it assumes you call with, and against a player who rarely folds it bluffs less and bets thinner for value. Folding to preflop raises often makes it open more hands from the button.
+- **Levels.** Beginner never adapts (your stats are still shown). Intermediate adapts at half strength, Advanced at full strength. Adaptation can be switched off on the start screen.
+- **Explained.** A **Your tendencies** panel shows each stat against its reference, with sample sizes and a "needs 15" marker until it counts. It also lists the opponent's current adjustments and, after each hand, which of its decisions adaptation changed and why (worked out by re-running the decision without adaptation from the same random state).
+- **Validated with controlled matches.** Adaptive and non-adaptive Advanced play their own copies of each opponent on identical cards, and the paired difference cancels most card luck (`python -m pokerlab.ai.experiments advanced --deals 2000 --jobs 8`). Results on seeds not used for tuning, 2,000 deals × 2 seats each, in bb/100:
+
+  | Opponent (fixed style) | Adaptive | Non-adaptive | Difference |
+  | --- | --- | --- | --- |
+  | Aggressive (bets and raises too much) | +345 ± 47 | +79 ± 41 | **+266 ± 49** (z = 5.4) |
+  | Passive (calling station) | +445 ± 33 | +355 ± 31 | **+90 ± 23** (z = 3.9) |
+  | Folder (folds to most bets) | +52 ± 9 | +58 ± 11 | −6 ± 10 (no clear effect) |
+  | Intermediate, non-adaptive (balanced) | +23 ± 14 | +15 ± 14 | +8 ± 15 (no clear effect) |
+  | v0.1 basic bot | +60 ± 14 | +83 ± 18 | −23 ± 17 (z = −1.4, not significant) |
+  | Random player | +381 ± 44 | +361 ± 45 | +21 ± 52 (no clear effect) |
+
+  Adaptation clearly helps against the two leaky styles. Against the others the difference is within noise, and against the v0.1 bot the point estimate is negative, so it is not claimed to help there. Only Advanced was measured; Intermediate uses the same adjustments at half strength.
+
+  Half of one adjustment was measured and removed. Bluffing more against players who fold often, and assuming they fold more to bets, cost 66 ± 17 bb/100 against the v0.1 bot and gained nothing even against the "folder" style. The other half stays: against a player who rarely folds, the bot bluffs less, bets thinner for value and expects fewer folds. Removing that half dropped the gain against the calling station from about +140 to +51 bb/100.
+
 ## Quick start
 
 Requirements: **Python 3.11+** and **Node.js 20.19+** (CI uses Node 24).
@@ -127,8 +148,8 @@ make test      # pytest + vitest
 make lint      # ruff + TypeScript
 ```
 
-- **Backend (pytest, 230+ tests):** deck and evaluator correctness (including exhaustive five-card frequencies), difficulty levels (decisions that differ for stated reasons, decisions independent of the human's hidden cards, legality at every level, stronger levels beating Beginner, the expected-value formula), live all-in equity, the equity agent (exact pot-odds boundaries, legality, range estimates, a duplicate match against a random player), equity (exact results against an independent brute force, Monte Carlo accuracy within its standard error, overlapping ranges, reproducible seeds), range parsing, betting rules, illegal actions, side pots and odd chips, short-stack edge cases, AI legality, sessions, API robustness (locking, seeds, eviction), and full games played over HTTP. Randomized fuzz tests play thousands of 2–6 player hands and check chip conservation after every action.
-- **Frontend (Vitest + Testing Library):** difficulty selection, the equity panel (live and review modes, reveal timing, percentage formatting), betting controls, seats and hidden cards, sizing helpers, animations, accessibility (focus, dialogs, announcements), connection failures and keyboard shortcuts, the sound engine (against a fake AudioContext) and event-to-sound timing, saved settings, and app flows with a mocked API (deal → act → showdown → next hand, errors, game over).
+- **Backend (pytest, 260+ tests):** deck and evaluator correctness (including exhaustive five-card frequencies), opponent modelling (statistics from public events only, shrinkage and minimum samples, decay, bounded adjustments, decisions unchanged by the human's hidden cards, legal play against every style, paired comparisons), difficulty levels (decisions that differ for stated reasons, decisions independent of the human's hidden cards, legality at every level, stronger levels beating Beginner, the expected-value formula), live all-in equity, the equity agent (exact pot-odds boundaries, legality, range estimates, a duplicate match against a random player), equity (exact results against an independent brute force, Monte Carlo accuracy within its standard error, overlapping ranges, reproducible seeds), range parsing, betting rules, illegal actions, side pots and odd chips, short-stack edge cases, AI legality, sessions, API robustness (locking, seeds, eviction), and full games played over HTTP. Randomized fuzz tests play thousands of 2–6 player hands and check chip conservation after every action.
+- **Frontend (Vitest + Testing Library):** difficulty selection and the adaptation toggle, the tendencies panel, the equity panel (live and review modes, reveal timing, percentage formatting), betting controls, seats and hidden cards, sizing helpers, animations, accessibility (focus, dialogs, announcements), connection failures and keyboard shortcuts, the sound engine (against a fake AudioContext) and event-to-sound timing, saved settings, and app flows with a mocked API (deal → act → showdown → next hand, errors, game over).
 - **CI:** GitHub Actions runs lint, tests and a production build on every push and pull request (Python 3.11–3.13).
 
 ## Architecture
@@ -152,7 +173,11 @@ backend/pokerlab/
 │   ├── range_model.py  opponent range estimate from public actions
 │   ├── equity_agent.py equity agent, configured by an AgentProfile
 │   ├── difficulty.py Beginner / Intermediate / Advanced profiles, make_agent()
-│   ├── match.py      duplicate-deal agent-vs-agent evaluation (+ CLI)
+│   ├── match.py      duplicate-deal and paired agent-vs-agent evaluation (+ CLI)
+│   ├── player_model.py opponent statistics (VPIP, PFR, fold to bet, ...) from public events
+│   ├── adaptation.py bounded, explained adjustments from those statistics
+│   ├── styles.py     fixed leaky player styles for experiments
+│   ├── experiments.py adaptive vs non-adaptive controlled matches (+ CLI)
 │   └── random_agent.py
 ├── session.py        heads-up match: hand sequencing, AI turns, per-seat views, log
 └── api/              FastAPI app, schemas, session store
@@ -176,7 +201,7 @@ frontend/src/
 | Method | Path | Description |
 | --- | --- | --- |
 | `GET` | `/api/health` | Health check |
-| `POST` | `/api/sessions` | Create a match (`starting_stack`, `small_blind`, `big_blind`, `player_name`, `difficulty` = `beginner`\|`intermediate`\|`advanced`; `seed` only when the server sets `POKERLAB_ALLOW_SEED`) |
+| `POST` | `/api/sessions` | Create a match (`starting_stack`, `small_blind`, `big_blind`, `player_name`, `difficulty` = `beginner`\|`intermediate`\|`advanced`, `adaptive`; `seed` only when the server sets `POKERLAB_ALLOW_SEED`) |
 | `GET` | `/api/sessions/{id}` | Current state (from the human's point of view) |
 | `POST` | `/api/sessions/{id}/hands` | Deal the next hand |
 | `POST` | `/api/sessions/{id}/actions` | `{"action": "fold"\|"check"\|"call"\|"bet"\|"raise"\|"all_in", "amount"?: raise-to total}` |
@@ -190,7 +215,7 @@ Illegal actions return `400` with an explanation. Out-of-turn or out-of-state re
 ## Roadmap
 
 - **v0.2 — Visual polish:** v0.2.1 visual redesign, v0.2.2 animations, v0.2.3 sound and themes, and v0.2.4 stability and accessibility (done).
-- **v0.3 — Smarter AI:** v0.3.1 equity engine, v0.3.2 equity-driven opponent with equity review, v0.3.3 difficulty levels and live all-in equity (done); next, opponent modeling that adapts to the player.
+- **v0.3 — Smarter AI and training:** v0.3.1 equity engine, v0.3.2 equity-driven opponent with equity review, v0.3.3 difficulty levels and live all-in equity, v0.3.4 adaptive opponent (done); next, coaching and decision feedback.
 - **v0.4 — Analytics:** persistent hand history (SQLite), replays, performance stats, AI-vs-AI simulations.
 - **Later:** multiplayer, tournaments, Omaha / Stud / Draw, CFR agents, reinforcement learning, strategy dashboards.
 

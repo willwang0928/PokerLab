@@ -16,6 +16,7 @@ class CreateSessionRequest(BaseModel):
     big_blind: int = Field(10, ge=1, le=200_000)
     player_name: str = Field("You", min_length=1, max_length=24)
     difficulty: Difficulty = DEFAULT_DIFFICULTY
+    adaptive: bool = True
     # Only honoured when the server allows seeded games (tests and debugging); a known
     # seed would let a client work out the opponent's cards.
     seed: int | None = None

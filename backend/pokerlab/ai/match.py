@@ -51,6 +51,85 @@ def play_hand(agents: list[Agent], stacks: list[int], button: int, deck: Deck, s
     return hand
 
 
+def _observe(agents: list[Agent], hand: HoldemHand) -> None:
+    """Let learning agents see the finished hand's public events."""
+    for seat, agent in enumerate(agents):
+        agent.observe_hand(hand.events, seat)
+
+
+def _summary(per_deal: list[float], big_blind: int, hands_per_deal: int) -> MatchResult:
+    n = len(per_deal)
+    mean = sum(per_deal) / n
+    var = sum((x - mean) ** 2 for x in per_deal) / (n - 1)
+    scale = 100 / (hands_per_deal * big_blind)
+    return MatchResult(
+        deals=n,
+        big_blind=big_blind,
+        net_chips=round(sum(per_deal)),
+        bb_per_100=mean * scale,
+        std_error=math.sqrt(var / n) * scale,
+    )
+
+
+@dataclass(frozen=True, slots=True)
+class PairedComparison:
+    """Two agents against identical copies of one opponent, on identical cards."""
+
+    a: MatchResult
+    b: MatchResult
+    difference: MatchResult  # A minus B, paired per deal
+
+
+def paired_comparison(
+    make_a: AgentFactory,
+    make_b: AgentFactory,
+    make_opponent: AgentFactory,
+    deals: int,
+    *,
+    seed: int = 0,
+    stack: int = 1000,
+    small_blind: int = 5,
+    big_blind: int = 10,
+) -> PairedComparison:
+    """Compare A and B by playing each against its own copy of the same opponent.
+
+    The two copies start from the same random seed, and each deal is played from both
+    seats with the same cards for A and B. Each deal therefore gives a *paired*
+    difference A − B, and the luck that both arms share cancels out. Each arm keeps its
+    own state, so a learning agent only learns from its own games.
+    """
+    if deals < 2:
+        raise ValueError("A paired comparison needs at least two deals")
+    rng = random.Random(seed)
+    agent_seed, opp_seed = rng.random(), rng.random()
+    arms = [
+        (make_a(random.Random(agent_seed)), make_opponent(random.Random(opp_seed))),
+        (make_b(random.Random(agent_seed)), make_opponent(random.Random(opp_seed))),
+    ]
+    results: list[list[int]] = [[], []]
+    for i in range(deals):
+        deck = Deck(random.Random(rng.random()))
+        deck.shuffle()
+        order = deck.remaining()
+        button = i % 2
+        for arm, (agent, opponent) in enumerate(arms):
+            total = 0
+            for seat in (0, 1):
+                agents = [agent, opponent] if seat == 0 else [opponent, agent]
+                hand = play_hand(
+                    agents, [stack, stack], button, Deck(cards=order), small_blind, big_blind
+                )
+                _observe(agents, hand)
+                total += hand.players[seat].stack - stack
+            results[arm].append(total)
+    diffs = [x - y for x, y in zip(results[0], results[1], strict=True)]
+    return PairedComparison(
+        a=_summary(results[0], big_blind, 2),
+        b=_summary(results[1], big_blind, 2),
+        difference=_summary(diffs, big_blind, 2),
+    )
+
+
 def duplicate_match(
     make_a: AgentFactory,
     make_b: AgentFactory,
@@ -79,6 +158,7 @@ def duplicate_match(
             hand = play_hand(
                 agents, [stack, stack], button, Deck(cards=order), small_blind, big_blind
             )
+            _observe(agents, hand)
             total += hand.players[a_seat].stack - stack
         pair_results.append(total)
 

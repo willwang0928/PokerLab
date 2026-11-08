@@ -9,6 +9,7 @@ const INITIAL: GameConfig = {
   small_blind: 5,
   big_blind: 10,
   difficulty: "intermediate",
+  adaptive: true,
 };
 
 describe("StartScreen difficulty", () => {
@@ -29,5 +30,20 @@ describe("StartScreen difficulty", () => {
     fireEvent.click(screen.getByRole("button", { name: "Advanced" }));
     fireEvent.click(screen.getByRole("button", { name: "Take a seat" }));
     expect(onStart).toHaveBeenCalledWith({ ...INITIAL, difficulty: "advanced" });
+  });
+});
+
+describe("StartScreen adaptation toggle", () => {
+  it("sends the choice and is disabled for Beginner", () => {
+    const onStart = vi.fn();
+    render(<StartScreen initial={INITIAL} busy={false} error={null} onStart={onStart} />);
+    const toggle = screen.getByRole("checkbox", { name: /adapts to your play/ });
+    expect(toggle).toBeChecked();
+    fireEvent.click(toggle);
+    fireEvent.click(screen.getByRole("button", { name: "Take a seat" }));
+    expect(onStart).toHaveBeenCalledWith({ ...INITIAL, adaptive: false });
+    fireEvent.click(screen.getByRole("button", { name: "Beginner" }));
+    expect(toggle).toBeDisabled();
+    expect(screen.getByText(/Beginner never adapts/)).toBeInTheDocument();
   });
 });

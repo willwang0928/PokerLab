@@ -11,7 +11,10 @@ from enum import StrEnum
 from typing import Any
 
 from .ai import Agent, Observation
+from .ai.adaptation import adaptation_policy, explain_change
 from .ai.difficulty import DEFAULT_DIFFICULTY, Difficulty, make_agent
+from .ai.equity_agent import EquityAgent
+from .ai.player_model import MIN_OPPORTUNITIES
 from .engine import Action, Event, HoldemHand, IllegalActionError
 from .equity import STREET_BOARD_SIZES, EquityResult, calculate_equity
 from .evaluator import best_five, evaluate
@@ -34,6 +37,7 @@ class SessionConfig:
     player_name: str = "You"
     ai_name: str = "Dealer Bot"
     difficulty: Difficulty = DEFAULT_DIFFICULTY
+    adaptive: bool = True  # let the opponent adapt to the player (levels that support it)
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "difficulty", Difficulty(self.difficulty))
@@ -66,6 +70,7 @@ class HeadsUpSession:
         self.rng = random.Random(self.seed)
         if self.agent is None:
             self.agent = make_agent(self.config.difficulty, random.Random(self.rng.random()))
+            self.agent.adaptive = self.config.adaptive
         self.stacks = [self.config.starting_stack, self.config.starting_stack]
         self.button = self.rng.randrange(2)
         self.hand_number = 0
@@ -77,6 +82,7 @@ class HeadsUpSession:
         self._steps: list[Step] = []
         self._equity_cache: dict[int, EquityResult] = {}  # board size -> face-up equity
         self._runout = False
+        self._adaptation_notes: list[str] = []  # decisions adaptation changed this hand
         # Serialises requests for this session (the API runs handlers on a threadpool).
         self.lock = threading.RLock()
         self.last_active = time.monotonic()
@@ -95,6 +101,7 @@ class HeadsUpSession:
         self.revealed = set()
         self._equity_cache = {}
         self._runout = False  # True once hands are turned up for an all-in runout
+        self._adaptation_notes = []
         self.log = []
         self.result = None
         self.status = SessionStatus.IN_HAND
@@ -127,7 +134,18 @@ class HeadsUpSession:
         assert hand is not None and self.agent is not None
         while not hand.is_complete and hand.to_act == AI:
             legal = hand.legal_actions()
-            action = self.agent.decide(Observation.from_hand(hand, AI), legal)
+            obs = Observation.from_hand(hand, AI)
+            agent = self.agent
+            # What would it do without adaptation? Same random state, so any difference
+            # is caused by adaptation alone.
+            neutral = None
+            if isinstance(agent, EquityAgent) and not agent.adjustments.neutral:
+                neutral = agent.decide_without_adaptation(obs, legal)
+            action = agent.decide(obs, legal)
+            if neutral is not None and neutral != action:
+                self._adaptation_notes.append(
+                    explain_change(obs, legal, action, neutral, agent.adjustments)
+                )
             try:
                 hand.apply(action)
             except IllegalActionError:  # defensive: never let a buggy agent stall the game
@@ -170,7 +188,10 @@ class HeadsUpSession:
                 else None
             ),
             "equity": self._equity_summary(showdown),
+            "adaptation_notes": list(self._adaptation_notes),
         }
+        if self.agent is not None:
+            self.agent.observe_hand(self.hand.events, AI)
         self.status = SessionStatus.GAME_OVER if min(self.stacks) == 0 else SessionStatus.WAITING
 
     def _equity_rows(self, board_size: int) -> list[dict[str, Any]]:
@@ -234,6 +255,20 @@ class HeadsUpSession:
         if len(live) < 2 or not live <= self.revealed:
             return None
         return self._equity_rows(len(hand.board))
+
+    def _opponent_model_view(self) -> dict[str, Any] | None:
+        agent = self.agent
+        if not isinstance(agent, EquityAgent):
+            return None
+        return {
+            "adapts": agent.adapt_weight > 0,
+            "weight": agent.adapt_weight,
+            "policy": adaptation_policy(self.config.difficulty, self.config.adaptive),
+            "hands": agent.model.hands,
+            "min_opportunities": MIN_OPPORTUNITIES,
+            "stats": agent.model.snapshot(),
+            "adjustments": list(agent.adjustments.reasons.values()),
+        }
 
     def _public_event(self, event: Event) -> dict[str, Any]:
         data = dict(event.data)
@@ -365,11 +400,13 @@ class HeadsUpSession:
             "result": self.result,
             "log": list(self.log),
             "live_equity": self._live_equity(),
+            "opponent_model": self._opponent_model_view(),
             "winner": winner,
             "config": {
                 "starting_stack": cfg.starting_stack,
                 "small_blind": cfg.small_blind,
                 "big_blind": cfg.big_blind,
                 "difficulty": cfg.difficulty.value,
+                "adaptive": cfg.adaptive,
             },
         }

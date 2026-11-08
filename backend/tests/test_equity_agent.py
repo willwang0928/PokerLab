@@ -1,6 +1,7 @@
 """Preflop table, range model, equity agent decisions, and the duplicate-match harness."""
 
 import random
+from dataclasses import replace
 
 import pytest
 
@@ -214,8 +215,14 @@ def test_identical_deterministic_agents_break_exactly_even():
 
 
 def test_equity_agent_beats_random_agent():
+    # The fixed (non-adaptive) agent: whether adaptation helps against random play is
+    # measured with ``python -m pokerlab.ai.experiments``, not in a 120-deal unit test.
+    fixed = replace(INTERMEDIATE, adapt=0.0)
     r = duplicate_match(
-        lambda g: EquityAgent(g, iterations=200), lambda g: RandomAgent(g), 120, seed=8
+        lambda g: EquityAgent(g, iterations=200, profile=fixed),
+        lambda g: RandomAgent(g),
+        120,
+        seed=8,
     )
     assert r.bb_per_100 > 0 and r.z_score > 3, r
 

@@ -36,6 +36,7 @@ export function StartScreen({ initial, busy, error, onStart, onCancel }: Props) 
   const [stack, setStack] = useState(initial.starting_stack);
   const [blinds, setBlinds] = useState<[number, number]>([initial.small_blind, initial.big_blind]);
   const [difficulty, setDifficulty] = useState<Difficulty>(initial.difficulty);
+  const [adaptive, setAdaptive] = useState(initial.adaptive);
 
   return (
     <Modal labelledBy="start-title" onClose={busy ? undefined : onCancel}>
@@ -48,6 +49,7 @@ export function StartScreen({ initial, busy, error, onStart, onCancel }: Props) 
             small_blind: blinds[0],
             big_blind: blinds[1],
             difficulty,
+            adaptive,
           });
         }}
         className="flex flex-col gap-5"
@@ -118,6 +120,25 @@ export function StartScreen({ initial, busy, error, onStart, onCancel }: Props) 
           <p className="min-h-[2lh] text-xs leading-snug text-slate-400" data-testid="difficulty-hint">
             {DIFFICULTY_HINT[difficulty]}
           </p>
+          <label className="mt-1 flex items-start gap-2.5 text-[13px] text-slate-300">
+            <input
+              type="checkbox"
+              checked={adaptive && difficulty !== "beginner"}
+              disabled={difficulty === "beginner"}
+              onChange={(e) => setAdaptive(e.target.checked)}
+              className="mt-0.5 h-4 w-4 accent-amber-300 disabled:opacity-40"
+            />
+            <span>
+              Opponent adapts to your play
+              <span className="block text-xs text-slate-400">
+                {difficulty === "beginner"
+                  ? "Beginner never adapts. Your stats are still shown."
+                  : difficulty === "intermediate"
+                    ? "Learns from your betting at half strength, once it has enough hands."
+                    : "Learns from your betting at full strength, once it has enough hands."}
+              </span>
+            </span>
+          </label>
         </fieldset>
 
         {error && (

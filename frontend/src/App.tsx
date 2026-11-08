@@ -4,6 +4,7 @@ import { ActionBar } from "./components/ActionBar";
 import { GameOverModal } from "./components/GameOverModal";
 import { EquityPanel } from "./components/EquityPanel";
 import { HandLog } from "./components/HandLog";
+import { TendenciesPanel } from "./components/TendenciesPanel";
 import { MuteButton, SettingsMenu } from "./components/SettingsMenu";
 import { DIFFICULTY_LABEL, StartScreen } from "./components/StartScreen";
 import { SuitIcon } from "./components/SuitIcon";
@@ -22,6 +23,7 @@ const DEFAULT_CONFIG: GameConfig = {
   small_blind: 5,
   big_blind: 10,
   difficulty: "intermediate",
+  adaptive: true,
 };
 
 export default function App() {
@@ -194,6 +196,7 @@ export default function App() {
               state={state}
               revealDelayMs={canTravel(motionPrefs) ? revealLag(game.lastEvent) * durationScale(motionPrefs) * 1000 : 0}
             />
+            <TendenciesPanel state={state} />
             <HandLog lines={state.log} />
           </aside>
         )}
