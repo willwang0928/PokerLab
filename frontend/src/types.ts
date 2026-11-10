@@ -173,6 +173,39 @@ export interface RangeCheck {
   evs: Record<string, number>;
 }
 
+export type LessonKind = "exact" | "estimate" | "assumption" | "model" | "guideline";
+
+/** The decision as five steps (v0.4.2): what you did, knew, estimated, the alternative, the principle. */
+export interface Lesson {
+  did: string;
+  known: string[];
+  estimated: string[];
+  math: { text: string; kind: LessonKind }[];
+  alternative: string;
+  principle: string;
+  also: string[];
+}
+
+export interface TendencyEvidence {
+  key: string;
+  phrase: string;
+  estimate: number;
+  low: number;
+  high: number;
+  reference: number;
+  seen: number;
+  reliable: boolean;
+  used: boolean;
+  clear: boolean;
+}
+
+export interface OpponentInfo {
+  evidence: TendencyEvidence[];
+  used: string[];
+  style: string[];
+  note: string;
+}
+
 export interface DecisionReview {
   street: string;
   hole: string[];
@@ -209,6 +242,14 @@ export interface DecisionReview {
   range_check?: RangeCheck[];
   /** Whether the verdict holds against every range in ``range_check``. */
   robust?: boolean | null;
+  /** v0.4.2: no more betting can follow, so equity is realised in full. */
+  betting_closed?: boolean;
+  /** v0.4.2: share of its equity a call must realise to break even (before the river). */
+  realization_needed?: number | null;
+  /** v0.4.2: what the coach knows about the opponent, with sample sizes. */
+  opponent?: OpponentInfo | null;
+  /** v0.4.2: the explanation as steps (absent on reviews saved by older versions). */
+  lesson?: Lesson | Record<string, never>;
   /** The decision point as public data, for "practise this spot". */
   spot_data?: Record<string, unknown>;
 }

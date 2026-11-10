@@ -1,4 +1,5 @@
-import type { CoachOption, DecisionReview, Grade } from "../types";
+import type { ReactNode } from "react";
+import type { CoachOption, DecisionReview, Grade, Lesson, LessonKind, OpponentInfo } from "../types";
 import { formatPercent } from "./EquityPanel";
 import { MiniCard } from "./HandLog";
 
@@ -183,6 +184,129 @@ export function KeyNumbers({ review }: { review: DecisionReview }) {
   );
 }
 
+const KIND_STYLE: Record<LessonKind, string> = {
+  exact: "text-emerald-300 ring-emerald-400/30",
+  estimate: "text-sky-300 ring-sky-400/30",
+  assumption: "text-amber-300 ring-amber-400/30",
+  model: "text-amber-300 ring-amber-400/30",
+  guideline: "text-slate-300 ring-slate-400/30",
+};
+
+function KindTag({ kind }: { kind: LessonKind }) {
+  return (
+    <span
+      className={`mr-1.5 inline-block rounded px-1 text-[9.5px] font-semibold uppercase tracking-wide ring-1 ${KIND_STYLE[kind]}`}
+      data-kind={kind}
+    >
+      {kind}
+    </span>
+  );
+}
+
+function hasLesson(review: DecisionReview): review is DecisionReview & { lesson: Lesson } {
+  return !!review.lesson && "did" in review.lesson;
+}
+
+/**
+ * The decision as steps: what you did, what you knew, what was estimated (and how sure),
+ * the arithmetic with what kind of number each step is, the alternative, and the takeaway.
+ */
+export function LessonSteps({ lesson }: { lesson: Lesson }) {
+  const row = (label: string, body: ReactNode) => (
+    <div className="grid grid-cols-[5.5rem_1fr] gap-2">
+      <dt className="pt-px text-[10.5px] uppercase tracking-wide text-slate-400">{label}</dt>
+      <dd className="text-slate-300">{body}</dd>
+    </div>
+  );
+  return (
+    <dl className="mt-2 space-y-1.5 rounded-lg bg-white/[0.03] p-2 text-[12px]" data-testid="lesson">
+      {row("You did", lesson.did)}
+      {row("You knew", lesson.known.join(" · "))}
+      {lesson.estimated.length > 0 &&
+        row(
+          "Estimated",
+          <ul className="space-y-0.5">
+            {lesson.estimated.map((e) => (
+              <li key={e}>{e}</li>
+            ))}
+          </ul>,
+        )}
+      {lesson.math.length > 0 &&
+        row(
+          "The maths",
+          <ul className="space-y-0.5" data-testid="lesson-math">
+            {lesson.math.map((m) => (
+              <li key={m.text}>
+                <KindTag kind={m.kind} />
+                {m.text}
+              </li>
+            ))}
+          </ul>,
+        )}
+      {row("Instead", lesson.alternative)}
+      {row(
+        "Remember",
+        <div data-testid="lesson-principle">
+          <p className="font-medium text-amber-100">{lesson.principle}</p>
+          {lesson.also.map((t) => (
+            <p key={t} className="mt-0.5 text-slate-300">
+              {t}
+            </p>
+          ))}
+        </div>,
+      )}
+    </dl>
+  );
+}
+
+/** Observed tendencies with their sample size and a rough 80% interval. */
+export function OpponentEvidence({ info }: { info: OpponentInfo }) {
+  const rows = info.evidence.filter((e) => e.seen > 0);
+  return (
+    <div data-testid="opponent-evidence">
+      <div className="text-[10.5px] uppercase tracking-wide text-slate-400">What is known about the opponent</div>
+      <p className="mt-0.5 text-[11.5px] text-slate-300">{info.note}</p>
+      {rows.length > 0 && (
+        <table className="mt-1 w-full text-[11.5px]">
+          <thead>
+            <tr className="text-left text-[10px] uppercase tracking-wide text-slate-500">
+              <th scope="col" className="py-0.5 font-medium">
+                Tendency
+              </th>
+              <th scope="col" className="py-0.5 text-right font-medium">
+                Estimate (80% range)
+              </th>
+              <th scope="col" className="py-0.5 pl-2 text-right font-medium">
+                Seen
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((e) => (
+              <tr key={e.key} className="border-t border-white/5">
+                <th scope="row" className="py-0.5 text-left font-normal text-slate-300">
+                  {e.phrase}
+                  <span className="ml-1 text-slate-500">(ref. {formatPercent(e.reference)})</span>
+                </th>
+                <td className="py-0.5 text-right tabular-nums text-slate-200">
+                  {formatPercent(e.estimate)}{" "}
+                  <span className="text-slate-500">
+                    ({formatPercent(e.low)}–{formatPercent(e.high)})
+                  </span>
+                </td>
+                <td className="py-0.5 pl-2 text-right tabular-nums text-slate-400">
+                  {Math.round(e.seen)}
+                  {!e.reliable && <span className="ml-1 text-amber-300/80">too few</span>}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+    </div>
+  );
+}
+
 /**
  * The full explanation of one decision. ``detailed`` adds the maths: equity source, EV
  * formulas, how the range was estimated, and the assumptions behind the numbers.
@@ -191,6 +315,7 @@ export function DecisionDetail({ review, detailed }: { review: DecisionReview; d
   return (
     <div className="text-[12.5px] leading-snug text-slate-300">
       <p>{review.explanation}</p>
+      {hasLesson(review) && <LessonSteps lesson={review.lesson} />}
       <KeyNumbers review={review} />
       {review.options.length > 0 && <OptionsTable review={review} />}
       <RangeCheckTable review={review} />
@@ -234,6 +359,7 @@ export function DecisionDetail({ review, detailed }: { review: DecisionReview; d
               </li>
             </ul>
           </div>
+          {review.opponent && <OpponentEvidence info={review.opponent} />}
           {review.range_steps.length > 0 && (
             <div>
               <div className="text-[10.5px] uppercase tracking-wide text-slate-400">How their range was estimated</div>

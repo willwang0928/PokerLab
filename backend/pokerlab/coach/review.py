@@ -149,6 +149,7 @@ def build_review(
             reads=d.reads,
             seed=d.spot.seed(),
             names=names,
+            opponent=d.spot.opponent_info(),
             **kwargs,
         )
         decisions.append({**a.to_dict(), "spot_data": d.spot.to_dict()})

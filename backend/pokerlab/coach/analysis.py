@@ -76,6 +76,13 @@ CLOSE_AT = 0.03
 QUESTIONABLE_AT = 0.10
 MISTAKE_AT = 0.25
 LOW_CONFIDENCE_MISTAKE_AT = 0.50  # preflop: the model is cruder, so demand more
+# Equity realisation: the share of its all-in equity a hand actually wins when there is
+# betting still to come. It depends on position, hand type and stack depth, and PokerLab
+# does not model it. A call is only judged independently of it when it breaks even at
+# 70% realisation or less, and a fold only when even 110% would not be enough; this band
+# is an assumption, stated as such wherever it matters.
+REALIZATION_LOW = 0.70
+REALIZATION_HIGH = 1.10
 # Bets adding more than this many times the pot (after calling) are not modelled: how
 # often an opponent calls a huge overbet cannot be read off a fold-frequency rule.
 OVERBET_LIMIT = 1.5
@@ -139,6 +146,14 @@ class DecisionAnalysis:
     range_check: list[dict[str, Any]] = field(default_factory=list)
     # Whether the verdict on the chosen option holds against every range in range_check.
     robust: bool | None = None
+    # No more betting can follow (someone is all-in): equity is realised in full.
+    betting_closed: bool = False
+    # Share of its equity a call must realise to break even (calls before the river).
+    realization_needed: float | None = None
+    # What the coach knows about the opponent's tendencies (see spot.opponent_profile).
+    opponent: dict[str, Any] | None = None
+    # The explanation as steps: did / known / estimated / math / alternative / principle.
+    lesson: dict[str, Any] = field(default_factory=dict)
     best: list[str] = field(default_factory=list)  # keys of options within noise of the top
     chosen: str | None = None
     grade: str = "ungraded"
@@ -351,6 +366,7 @@ def analyze(
     iterations: int = ANALYSIS_ITERATIONS,
     names: dict[int, str] | None = None,
     range_check: bool = True,
+    opponent: dict[str, Any] | None = None,
 ) -> DecisionAnalysis:
     """Analyse a decision. With ``chosen`` it is also graded (see :func:`grade_option`).
 
@@ -397,6 +413,9 @@ def analyze(
         range_steps=[],
         reads=list(reads or []),
         options=[],
+        opponent=opponent,
+        betting_closed=legal.call_amount >= legal.player_stack
+        or bool(obs.opponent_stacks and obs.opponent_stacks[0] == 0),
     )
     if unopened:
         _guideline_options(base, obs, legal)
@@ -663,6 +682,12 @@ def _ev_options(
         a.details.append(
             f"Pot odds: call ÷ (pot + call) = {call} ÷ ({pot} + {call}) = {need:.1%} equity needed."
         )
+        if not a.betting_closed and obs.street != Street.RIVER and eq > 0:
+            a.realization_needed = need / eq
+            a.details.append(
+                f"Break-even realisation: {need:.1%} ÷ {eq:.1%} = {need / eq:.0%} of your "
+                "equity must be won on later streets for the call to pay."
+            )
     else:
         ev_check = base.evs["check"]
         opts.append(
@@ -842,6 +867,8 @@ def _grade_guideline(a: DecisionAnalysis, key: str) -> None:
     a.grade = grade
     a.headline = GRADE_LABEL[grade] + " (guideline)"
     a.explanation = why
+    opt = next((o for o in a.options if o.key == key), None)
+    a.lesson = build_lesson(a, opt, opt, 0.0)
 
 
 def _grade_ev(a: DecisionAnalysis, key: str) -> None:
@@ -864,6 +891,7 @@ def _grade_ev(a: DecisionAnalysis, key: str) -> None:
         if valued:
             top_ev = max(o.ev or 0.0 for o in valued)
             a.best = [o.key for o in valued if top_ev - (o.ev or 0.0) <= _noise(a)]
+        a.lesson = build_lesson(a, chosen, None, 0.0)
         return
     valued = [o for o in a.options if o.ev is not None]
     best_ev = max(o.ev or 0.0 for o in valued)
@@ -939,6 +967,21 @@ def _grade_ev(a: DecisionAnalysis, key: str) -> None:
             grade = "questionable"
     elif confidence == "high" and a.robust is None:
         confidence = "medium"
+    # Equity realisation: before the river the call only wins its equity if the hand is
+    # played to showdown. If the verdict on call vs fold hinges on how much of it is
+    # realised, it is a judgement call, not a pot-odds fact.
+    r = a.realization_needed
+    # A fold is always weighed against calling (its pot-odds alternative), whatever
+    # scores best overall; a call only when the question is call versus fold.
+    realization_matters = (
+        r is not None
+        and (chosen.action == "fold" or {chosen.action, top.action} <= {"fold", "call"})
+        and REALIZATION_LOW < r < REALIZATION_HIGH
+    )
+    if realization_matters:
+        confidence = "low"
+        if grade == "mistake":
+            grade = "questionable"
     a.grade, a.confidence = grade, confidence
 
     # Recurring-mistake tags (only for decisions worth flagging).
@@ -947,6 +990,21 @@ def _grade_ev(a: DecisionAnalysis, key: str) -> None:
 
     a.headline = GRADE_LABEL[grade]
     a.explanation = _explain(a, chosen, top, loss)
+    a.lesson = build_lesson(
+        a, chosen, top, loss, range_dependent=bool(flips), realization_dependent=realization_matters
+    )
+    if realization_matters and r is not None:
+        a.explanation += (
+            f" Calling needs you to win at least {r:.0%} of your equity on later streets. "
+            + (
+                "Out of position or with a hand that is hard to play, you usually realise "
+                "less than all of it, so this is a judgement call rather than a clear verdict."
+                if r < 1
+                else "That is more than all of it, which only happens when you can win extra "
+                "bets later (a strong draw in position, say): folding is reasonable, but "
+                "not clearly better."
+            )
+        )
     if flips:
         rc = flips[0]
         a.explanation += (
@@ -994,6 +1052,7 @@ def _grade_reraise(a: DecisionAnalysis, chosen: Option) -> None:
     a.grade = grade
     a.headline = GRADE_LABEL[grade] + " (guideline)"
     a.explanation = why
+    a.lesson = build_lesson(a, chosen, chosen, 0.0)
     a.caveats.append(
         f"Preflop re-raises are judged by a guideline (re-raise for value with about "
         f"{RERAISE_VALUE:.0%} or more against their range), not a computed EV."
@@ -1075,6 +1134,170 @@ def _raise_sentence(chosen: Option, top: Option, loss: float, a: DecisionAnalysi
     return (
         s + f" {top.label} scored about {_bb(loss, bb)} more: when called you are behind too often."
     )
+
+
+# --------------------------------------------------------------------------- lesson
+
+_VERB = {"fold": "folded", "check": "checked", "call": "called", "bet": "bet", "raise": "raised"}
+
+PRINCIPLES = {
+    "call_ok": "Call when your equity against the hands they are likely to have beats the "
+    "price the pot offers.",
+    "fold_with_odds": "Don't fold a hand that clears the price: the pot is already paying you "
+    "to continue.",
+    "call_without_odds": "Judge a hand against their likely range, not on its own: if it "
+    "cannot beat the price, it is a fold however good it looks.",
+    "fold_ok": "Folding is right when your equity is below the price; saving chips is "
+    "winning chips.",
+    "missed_value": "Bet when worse hands will call: checking a strong hand lets them see "
+    "cards for free and gives up value.",
+    "overaggressive": "Bet for value only when enough worse hands call, or as a bluff when "
+    "enough better hands fold; otherwise checking keeps the pot small.",
+    "sizing": "Choose the size that worse hands still call: bigger when they will pay, "
+    "smaller when only better hands would continue.",
+    "check_ok": "When betting would mostly be called by better hands, checking is fine: "
+    "not every hand needs a bet.",
+    "bet_ok": "A bet earns when worse hands call or better hands fold; this one does both "
+    "often enough.",
+    "depends": "When the answer changes with their range, ask what this opponent really "
+    "bets and calls with: that read decides it.",
+    "realization": "Before the river, equity is only worth what you can realise: position "
+    "and playable hands realise more of it.",
+    "raise_value": "Facing a bet with a strong hand or a strong draw, consider raising: "
+    "worse hands may pay more and some better hands fold (how often is an assumption).",
+    "fold_vs_raise": "Folding is not the only alternative to a bad call: a raise can win "
+    "the pot at once when they fold often enough (how often is an assumption).",
+    "preflop": "Preflop, hand strength and position decide: play strong hands for value, "
+    "and give up the weakest ones from out of position.",
+}
+
+
+def _principle(a: DecisionAnalysis, chosen: Option | None, top: Option | None) -> str:
+    if chosen is None or top is None or a.spot == "unopened" or chosen.basis == "guideline":
+        return PRINCIPLES["preflop"]
+    good = a.grade in ("good", "close")
+    if a.spot == "facing_bet":
+        if good:
+            return PRINCIPLES[{"call": "call_ok", "fold": "fold_ok"}.get(chosen.action, "bet_ok")]
+        if chosen.action == "call":
+            # Graded down because folding scores more, or because raising does?
+            return PRINCIPLES["call_without_odds" if top.action == "fold" else "raise_value"]
+        if chosen.action == "fold":
+            clears = a.equity is not None and a.required_equity is not None
+            clears = clears and (a.equity or 0) >= (a.required_equity or 0)
+            if top.action == "call" or clears:
+                return PRINCIPLES["fold_with_odds"]
+            return PRINCIPLES["fold_vs_raise"]
+        return PRINCIPLES["overaggressive"]
+    if chosen.action == "check":
+        return PRINCIPLES["check_ok" if good else "missed_value"]
+    if not good and top.action in ("bet", "raise"):
+        return PRINCIPLES["sizing"]
+    return PRINCIPLES["bet_ok" if good else "overaggressive"]
+
+
+def build_lesson(
+    a: DecisionAnalysis,
+    chosen: Option | None,
+    top: Option | None,
+    loss: float,
+    *,
+    range_dependent: bool = False,
+    realization_dependent: bool = False,
+) -> dict[str, Any]:
+    """The decision as five short steps, each marked by what kind of claim it is."""
+    bb = a.big_blind
+    label = chosen.label if chosen else (a.chosen or "?")
+    verb = _VERB.get(chosen.action, chosen.action) if chosen else "acted"
+    when = "preflop" if a.street == "preflop" else f"on the {a.street}"
+    did = f"You {verb} ({label}) {when} with {a.hand}, as the {a.position}."
+    facts = [f"Your cards: {' '.join(a.hole)}"]
+    if a.board:
+        facts.append(f"The board: {' '.join(a.board)}")
+    facts.append(f"Pot {a.pot}" + (f", {a.to_call} to call" if a.to_call else ", nothing to call"))
+    estimates: list[str] = []
+    if a.range_size:
+        estimates.append(
+            f"Their range: about {a.range_size} hand combinations, estimated from their actions"
+        )
+    if a.opponent is not None:
+        estimates.append(a.opponent["note"])
+    if a.equity is None:
+        estimates.append("No range to calculate against yet (nobody has bet).")
+
+    math: list[dict[str, str]] = []
+
+    def step(text: str, kind: str) -> None:
+        math.append({"text": text, "kind": kind})
+
+    if a.spot == "unopened":
+        if a.hand_percentile is not None:
+            step(
+                f"{a.hand} ranks in the top {max(1, round(a.hand_percentile * 100))}% of "
+                "starting hands; the advice follows an opening guideline, not a computed EV.",
+                "guideline",
+            )
+    else:
+        eq = a.equity or 0.0
+        band = [rc["equity"] for rc in a.range_check]
+        spread = (
+            f" ({_pct(min(band))}–{_pct(max(band))} if their range is tighter or looser)"
+            if band and (max(band) - min(band)) >= 0.02
+            else ""
+        )
+        if a.required_equity is not None:
+            step(
+                f"Price: you needed {_pct(a.required_equity)} equity "
+                f"({a.to_call} to win {a.pot + a.to_call}).",
+                "exact",
+            )
+        step(f"Your equity against their estimated range: about {_pct(eq)}{spread}.", "estimate")
+        if a.realization_needed is not None:
+            step(
+                "With betting still to come, a call must realise at least "
+                f"{a.realization_needed:.0%} of that equity to pay.",
+                "assumption",
+            )
+        elif a.betting_closed:
+            step("Nobody can bet again, so your equity is realised in full.", "exact")
+        fold_model = (chosen is not None and chosen.basis == "fold model") or (
+            top is not None and top.basis == "fold model"
+        )
+        if fold_model:
+            step("Bet and raise values also assume how often they fold.", "model")
+        if chosen is not None and chosen.basis == "guideline":
+            step("Preflop re-raises follow a guideline, not a computed EV.", "guideline")
+
+    if top is None or chosen is None or a.grade == "ungraded":
+        alternative = "No option was compared for this decision."
+    elif chosen.basis == "guideline" or a.spot == "unopened":
+        better = [o.label for o in a.options if o.key in a.best and o.key != a.chosen]
+        alternative = (
+            f"The guideline suggests {better[0].lower()} instead."
+            if better
+            else "Your choice matches the guideline."
+        )
+    elif a.chosen in a.best or loss <= _noise(a):
+        alternative = "No option scored clearly better by these estimates."
+    else:
+        basis = " (this rests on an assumed fold rate)" if top.basis == "fold model" else ""
+        alternative = f"{top.label} scored about {_bb(loss, bb)} better{basis}."
+
+    principle = _principle(a, chosen, top)
+    extra = []
+    if range_dependent:
+        extra.append(PRINCIPLES["depends"])
+    if realization_dependent:
+        extra.append(PRINCIPLES["realization"])
+    return {
+        "did": did,
+        "known": facts,
+        "estimated": estimates,
+        "math": math,
+        "alternative": alternative,
+        "principle": principle,
+        "also": extra,
+    }
 
 
 def with_chosen(a: DecisionAnalysis, key: str) -> DecisionAnalysis:

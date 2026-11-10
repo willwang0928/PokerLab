@@ -197,6 +197,60 @@ function answerFor(choice: string): TrainingAnswer {
   };
 }
 
+describe("DecisionDetail lesson (v0.4.2)", () => {
+  const lesson = {
+    did: "You called (Call 200) on the river with High Card, Ace, as the big blind.",
+    known: ["Your cards: 3c 2d", "The board: Ah Kd Qs 7c 9h", "Pot 430, 200 to call"],
+    estimated: ["Their range: about 187 hand combinations, estimated from their actions"],
+    math: [
+      { text: "Price: you needed 32% equity (200 to win 630).", kind: "exact" as const },
+      { text: "Your equity against their estimated range: about 0%.", kind: "estimate" as const },
+      { text: "With betting still to come, a call must realise at least 91% of that equity to pay.", kind: "assumption" as const },
+    ],
+    alternative: "Fold scored about +20.0 bb better.",
+    principle: "Judge a hand against their likely range, not on its own.",
+    also: ["Before the river, equity is only worth what you can realise."],
+  };
+
+  it("walks through the decision with each number labelled by kind", () => {
+    render(<DecisionDetail review={decision({ lesson })} detailed={false} />);
+    const steps = screen.getByTestId("lesson");
+    expect(steps).toHaveTextContent("You called (Call 200)");
+    expect(steps).toHaveTextContent("Your cards: 3c 2d · The board");
+    expect(steps).toHaveTextContent("about 187 hand combinations");
+    const kinds = [...screen.getByTestId("lesson-math").querySelectorAll("[data-kind]")].map((e) =>
+      e.getAttribute("data-kind"),
+    );
+    expect(kinds).toEqual(["exact", "estimate", "assumption"]);
+    expect(screen.getByTestId("lesson-principle")).toHaveTextContent(/Judge a hand.*Before the river/);
+  });
+
+  it("still renders reviews saved before lessons existed", () => {
+    render(<DecisionDetail review={decision({ lesson: {} })} detailed />);
+    expect(screen.queryByTestId("lesson")).not.toBeInTheDocument();
+    expect(screen.getByText(/You needed 32% equity/)).toBeInTheDocument();
+  });
+
+  it("shows opponent tendencies with their sample size in the detailed view", () => {
+    const opponent = {
+      evidence: [
+        { key: "vpip", phrase: "plays a hand preflop", estimate: 0.8, low: 0.7, high: 0.9, reference: 0.83, seen: 6, reliable: false, used: false, clear: false },
+        { key: "fold_to_bet", phrase: "folds to a bet", estimate: 0.0, low: 0, high: 0, reference: 0.4, seen: 0, reliable: false, used: false, clear: false },
+      ],
+      used: [],
+      style: [],
+      note: "Too few hands to read the opponent yet.",
+    };
+    const { rerender } = render(<DecisionDetail review={decision({ opponent })} detailed={false} />);
+    expect(screen.queryByTestId("opponent-evidence")).not.toBeInTheDocument();
+    rerender(<DecisionDetail review={decision({ opponent })} detailed />);
+    const box = screen.getByTestId("opponent-evidence");
+    expect(box).toHaveTextContent("Too few hands");
+    expect(box).toHaveTextContent(/plays a hand preflop.*80%.*70%–90%.*6too few/);
+    expect(box).not.toHaveTextContent("folds to a bet"); // never observed: not listed
+  });
+});
+
 describe("TrainingView", () => {
   beforeEach(() => {
     localStorage.clear();

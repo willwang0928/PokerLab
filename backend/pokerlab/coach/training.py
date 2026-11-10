@@ -455,6 +455,7 @@ def _analyse(
         seed=spot.seed(),
         iterations=iterations,
         range_check=range_check,
+        opponent=spot.opponent_info(),
     )
 
 

@@ -173,6 +173,19 @@ class Spot:
             model.stats[k] = Stat(count=c, opportunities=o)
         return model
 
+    def opponent_info(self, name: str = "The opponent") -> dict[str, Any]:
+        """What is known about the opponent's tendencies at this decision (see
+        :func:`opponent_profile`)."""
+        if not self.villain_stats:
+            return {
+                "evidence": [],
+                "used": [],
+                "style": [],
+                "note": "Nothing is known yet about this opponent's tendencies, so their "
+                "range is estimated from default tendencies.",
+            }
+        return opponent_profile(self.villain_model(), name)
+
     def villain_adjustments(self) -> Adjustments | None:
         if not self.villain_stats:
             return None
@@ -215,7 +228,96 @@ def villain_reads(model: PlayerModel, name: str = "The opponent") -> list[str]:
             else "so their preflop calls are read as stronger",
         }[key]
         what = f"plays {est:.0%} of hands" if key == "vpip" else f"{phrase} {est:.0%} of the time"
-        reads.append(f"{name} {what} (reference {ref:.0%}), {effect}.")
+        ev = stat_evidence(model, key)
+        sure = "" if ev["clear"] else "; tentative"
+        reads.append(
+            f"{name} {what} (reference {ref:.0%}; roughly {ev['low']:.0%}–{ev['high']:.0%} "
+            f"from {ev['seen']:.0f} chances{sure}), {effect}."
+        )
     if adj.neutral:
         return []
     return reads
+
+
+# Stats that change how the coach reads the opponent's range or folds, in display order.
+_READ_STATS = ("vpip", "pfr", "bet_unopposed", "raise_vs_bet", "fold_to_bet", "aggression")
+_STAT_PHRASE = {
+    "vpip": "plays a hand preflop",
+    "pfr": "raises preflop",
+    "bet_unopposed": "bets when checked to",
+    "raise_vs_bet": "raises a bet",
+    "fold_to_bet": "folds to a bet",
+    "aggression": "bets or raises (of their postflop actions)",
+}
+Z80 = 1.2816  # two-sided 80% normal quantile
+
+
+def stat_evidence(model: PlayerModel, key: str) -> dict[str, Any]:
+    """One tendency with its evidence: the estimate, a rough 80% interval and the sample.
+
+    The estimate is the model's Beta posterior mean (a prior of ``PRIOR_STRENGTH``
+    pseudo-observations at the reference). The interval is a normal approximation to
+    that posterior, so it is rough, but it shows honestly how little 15-30 observations
+    pin down. A read is *clear* only when the reference lies outside the interval.
+    """
+    from ..ai.player_model import MIN_OPPORTUNITIES, PRIOR_STRENGTH
+
+    s, ref = model.stats[key], BASELINES[key]
+    a = s.count + ref * PRIOR_STRENGTH
+    b = (s.opportunities - s.count) + (1 - ref) * PRIOR_STRENGTH
+    mean = a / (a + b)
+    sd = (a * b / ((a + b) ** 2 * (a + b + 1))) ** 0.5
+    low, high = max(0.0, mean - Z80 * sd), min(1.0, mean + Z80 * sd)
+    reliable = s.opportunities >= MIN_OPPORTUNITIES
+    return {
+        "key": key,
+        "phrase": _STAT_PHRASE.get(key, key),
+        "estimate": mean,
+        "low": low,
+        "high": high,
+        "reference": ref,
+        "seen": round(s.opportunities, 1),
+        "reliable": reliable,
+        "used": reliable and abs(mean - ref) >= DEADBAND,
+        "clear": reliable and not (low <= ref <= high),
+    }
+
+
+def opponent_profile(model: PlayerModel, name: str = "The opponent") -> dict[str, Any]:
+    """What the coach knows about the opponent's tendencies, and how sure it is."""
+    evidence = [stat_evidence(model, k) for k in _READ_STATS]
+    used = [e for e in evidence if e["used"]]
+    style = []
+    by = {e["key"]: e for e in evidence}
+    if by["vpip"]["clear"]:
+        style.append("loose" if by["vpip"]["estimate"] > by["vpip"]["reference"] else "tight")
+    if by["aggression"]["clear"]:
+        style.append(
+            "aggressive"
+            if by["aggression"]["estimate"] > by["aggression"]["reference"]
+            else "passive"
+        )
+    if by["fold_to_bet"]["clear"]:
+        style.append(
+            "folds often to bets"
+            if by["fold_to_bet"]["estimate"] > by["fold_to_bet"]["reference"]
+            else "rarely folds to bets"
+        )
+    most = max((e["seen"] for e in evidence), default=0)
+    if not used:
+        note = (
+            f"Too few hands to read {name.lower() if name == 'The opponent' else name} yet "
+            f"(at most {most:.0f} chances for any one tendency; 15 are needed): their range "
+            "is estimated from default tendencies."
+            if most < 15
+            else f"{name}'s observed tendencies are close to the defaults, so the default "
+            "range estimate is used."
+        )
+    elif all(e["clear"] for e in used):
+        note = f"{name}'s tendencies below are well supported and shift their estimated range."
+    else:
+        note = (
+            f"{name}'s tendencies shift their estimated range a little, but some reads rest "
+            "on a small sample: treat them as tentative."
+        )
+    return {"evidence": evidence, "used": [e["key"] for e in used], "style": style, "note": note}
