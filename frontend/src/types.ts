@@ -317,3 +317,115 @@ export interface TrainingAnswer {
   analysis: DecisionReview;
   alternatives: TrainingAlternative[];
 }
+
+// ------------------------------------------------------------------ hand history (v0.4.3)
+
+/** A completed hand as public data (see backend ``pokerlab/history.py``). */
+export interface HandRecord {
+  v: 1;
+  id: string;
+  t: number;
+  session: string;
+  hand_number: number;
+  mode: "play";
+  difficulty: string | null;
+  adaptive: boolean | null;
+  hero: number;
+  names: string[];
+  hero_cards: string[];
+  /** Opponent cards by seat, only when they were shown (null otherwise). */
+  opponent_cards: Record<string, string[] | null>;
+  board: string[];
+  events: ({ type: string; decision?: number } & Record<string, unknown>)[];
+  decisions_linked: boolean;
+  coaching: HandReview | null;
+}
+
+/** The table after one event, rebuilt by the server from the recorded events. */
+export interface HandFrame {
+  index: number;
+  type: string;
+  text: string | null;
+  street: string;
+  board: string[];
+  pot: number;
+  bets: number[];
+  stacks: number[];
+  folded: boolean[];
+  actor: number | null;
+  /** Index into ``coaching.decisions`` for the player's own actions. */
+  decision: number | null;
+  to_call: number | null;
+  /** Opponent cards shown so far (by seat). */
+  visible: Record<string, string[]>;
+  awarded: Record<string, number> | null;
+}
+
+export interface HandSummaryDecision {
+  i: number;
+  street: string;
+  spot: string;
+  action: string | null;
+  grade: Grade;
+  confidence: "low" | "medium" | "high";
+  tags: string[];
+  concept: Concept;
+  pot: number;
+  to_call: number;
+  stack: number;
+  equity: number | null;
+  required: number | null;
+  ev_loss: number;
+}
+
+export interface HandSummary {
+  id: string;
+  t: number;
+  hand_number: number;
+  session: string;
+  difficulty: string | null;
+  position: string;
+  big_blind: number;
+  hero_cards: string[];
+  opponent_cards: string[] | null;
+  board: string[];
+  hand_class: string;
+  hand_percentile: number;
+  final_hand: string | null;
+  final_category: string | null;
+  net: number;
+  net_bb: number;
+  pot: number;
+  pot_bb: number;
+  result: "won" | "lost" | "split" | "even";
+  showdown: boolean;
+  last_street: string;
+  flagged: number;
+  quality: HandReview["quality"] | null;
+  ev_loss_bb: number | null;
+  tags: string[];
+  decisions: HandSummaryDecision[];
+}
+
+export interface Weakness {
+  key: string;
+  title: string;
+  description: string;
+  concept: Concept;
+  opportunities: number;
+  flagged: number;
+  rate: number;
+  low: number;
+  high: number;
+  hands: { id: string; decision: number | null; hand_number: number; t: number }[];
+  conditions?: { key: string; label: string; flagged: number; opportunities: number; rate: number; rate_elsewhere: number }[];
+  missing?: string[];
+}
+
+export interface Weaknesses {
+  hands: number;
+  decisions: number;
+  patterns: Weakness[];
+  early: Weakness[];
+  rules: { min_opportunities: number; min_flagged: number; min_rate: number; interval: string };
+}

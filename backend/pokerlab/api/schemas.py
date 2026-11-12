@@ -161,6 +161,12 @@ class RecordUpload(BaseModel):
     decisions: Annotated[list[Any], Field(max_length=MAX_UPLOAD)] = []
 
 
+class HandUpload(BaseModel):
+    """Hand-history records to add (v0.4.3); each is validated and replayed on its own."""
+
+    hands: Annotated[list[Any], Field(max_length=200)] = []
+
+
 class ProfileCreate(BaseModel):
     name: Annotated[str, Field(max_length=40)] = "Player"
 

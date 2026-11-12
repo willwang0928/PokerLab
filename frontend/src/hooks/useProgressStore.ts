@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ApiError, profileApi } from "../lib/api";
+import { clearPendingHands, flushHands, HANDS_PREFIX, pendingHands, queueHand } from "../lib/hands";
+import type { HandRecord } from "../types";
 import type { Progress } from "../lib/progress";
 import {
   applyChange,
@@ -50,6 +52,12 @@ export interface ProgressStore {
   reset: () => Promise<string | null>;
   importText: (text: string) => { added: number; invalid: number } | null;
   exportJson: () => string;
+  /** Hand histories (v0.4.3): queue a finished hand for saving on the server. */
+  saveHand: (record: HandRecord) => void;
+  /** Finished hands on this device not yet saved on the server. */
+  pendingHands: number;
+  /** Increases whenever hands reach the server (so views can reload their list). */
+  handsVersion: number;
 }
 
 /**
@@ -64,6 +72,8 @@ export function useProgressStore(): ProgressStore {
   const [storageError, setStorageError] = useState<StorageError | null>(initial.error);
   const active = profiles.profiles.find((p) => p.key === profiles.active) ?? profiles.profiles[0];
   const [syncState, setSyncState] = useState<SyncState>(active.token ? { status: "syncing" } : { status: "local" });
+  const [handsWaiting, setHandsWaiting] = useState(() => pendingHands(active.key, initial.doc.epoch).length);
+  const [handsVersion, setHandsVersion] = useState(0);
 
   // Refs so async work always sees the latest values.
   const docRef = useRef(doc);
@@ -104,7 +114,9 @@ export function useProgressStore(): ProgressStore {
         const profile = state.profiles.find((p) => p.key === state.active)!;
         setSyncState({ status: "syncing" });
         const startEpoch = docRef.current.epoch;
-        const res = await syncProfile(profile, docRef.current);
+        const res = await syncProfile(profile, docRef.current, {
+          forceLink: pendingHands(profile.key, startEpoch).length > 0,
+        });
         if (profilesRef.current.active !== profile.key) return; // switched profile meanwhile
         // A reset (here or in another tab) while the request was in flight: the result
         // describes the deleted data, so merging it would bring the records back.
@@ -123,7 +135,22 @@ export function useProgressStore(): ProgressStore {
             ...n,
             { kind: "quarantined", text: `${res.invalidRemote} record(s) on the server could not be read here and were skipped.` },
           ]);
-        if (res.state.status === "offline" || res.state.status === "unavailable") {
+        // Then the finished hands waiting on this device.
+        let outcome = res.state;
+        if (outcome.status === "synced" && res.profile.token) {
+          try {
+            const { saved } = await flushHands(res.profile.token, profile.key, startEpoch);
+            if (saved) setHandsVersion((v) => v + 1);
+          } catch (e) {
+            outcome =
+              e instanceof ApiError && e.status === 503
+                ? { status: "unavailable", message: "The server's progress storage is unavailable." }
+                : { status: "offline", message: "Finished hands could not be saved on the server yet." };
+            setSyncState(outcome);
+          }
+          setHandsWaiting(pendingHands(profile.key, startEpoch).length);
+        }
+        if (outcome.status === "offline" || outcome.status === "unavailable") {
           const wait = RETRY_MS[Math.min(retry.current++, RETRY_MS.length - 1)];
           retryTimer.current = setTimeout(() => void sync(), wait);
           return;
@@ -166,6 +193,8 @@ export function useProgressStore(): ProgressStore {
         const next = other.epoch === mine.epoch ? mergeDocs(mine, other) : other;
         docRef.current = next;
         setDoc(next);
+      } else if (e.key === HANDS_PREFIX + key) {
+        setHandsWaiting(pendingHands(key, docRef.current.epoch).length);
       } else if (e.key === PROFILES_KEY) {
         const next = readProfiles();
         if (next) {
@@ -200,6 +229,7 @@ export function useProgressStore(): ProgressStore {
       const next = d ?? emptyDoc();
       docRef.current = next;
       setDoc(next);
+      setHandsWaiting(pendingHands(state.active, next.epoch).length);
       const p = state.profiles.find((x) => x.key === state.active)!;
       setSyncState(p.token ? { status: "syncing" } : { status: "local" });
       void sync();
@@ -270,6 +300,9 @@ export function useProgressStore(): ProgressStore {
       }
     }
     const fresh = emptyDoc();
+    clearPendingHands(active.key);
+    setHandsWaiting(0);
+    setHandsVersion((v) => v + 1);
     setStorageError(replaceDoc(active.key, fresh));
     docRef.current = fresh;
     setDoc(fresh);
@@ -304,6 +337,18 @@ export function useProgressStore(): ProgressStore {
       2,
     );
 
+  const saveHand = useCallback(
+    (rec: HandRecord) => {
+      const key = profilesRef.current.active;
+      const epoch = docRef.current.epoch;
+      const err = queueHand(key, epoch, rec);
+      if (err) setStorageError(err);
+      setHandsWaiting(pendingHands(key, epoch).length);
+      scheduleSync();
+    },
+    [scheduleSync],
+  );
+
   const progress = useMemo(() => toProgress(doc), [doc]);
   const shownNotices = storageError ? [...notices.filter((n) => n.kind !== "storage"), { kind: "storage" as const, text: storageErrorText(storageError) }] : notices;
 
@@ -329,5 +374,8 @@ export function useProgressStore(): ProgressStore {
     reset,
     importText,
     exportJson,
+    saveHand,
+    pendingHands: handsWaiting,
+    handsVersion,
   };
 }

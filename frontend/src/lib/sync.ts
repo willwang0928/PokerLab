@@ -3,7 +3,8 @@
  *
  * Records are immutable with unique ids, so a sync is a union in both directions:
  *
- * 1. Link: a profile without a server key gets one (``POST /api/profiles``).
+ * 1. Link: a profile without a server key gets one (``POST /api/profiles``), once there
+ *    is something to keep (records, or a finished hand waiting to be saved).
  * 2. Pull: every server record the device lacks is added locally (validated first).
  * 3. Push: records the server has not confirmed are uploaded in batches. The server
  *    validates each one; accepted ones are marked synced, refused ones are kept locally
@@ -52,14 +53,18 @@ function wire<T extends object>(r: T): T {
   return { ...r };
 }
 
-export async function syncProfile(profile: LocalProfile, doc: LocalDoc): Promise<SyncResult> {
+export async function syncProfile(
+  profile: LocalProfile,
+  doc: LocalDoc,
+  opts: { forceLink?: boolean } = {},
+): Promise<SyncResult> {
   let p = profile;
   let d = doc;
   let rejected = 0;
   let invalidRemote = 0;
   try {
     // 1. Link (only once there is something to keep: opening the app creates nothing).
-    if (!p.token && !d.answers.length && !d.decisions.length) {
+    if (!p.token && !d.answers.length && !d.decisions.length && !opts.forceLink) {
       return { doc: d, profile: p, state: { status: "local" }, rejected, invalidRemote };
     }
     if (!p.token) {

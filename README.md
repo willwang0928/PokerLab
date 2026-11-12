@@ -173,6 +173,14 @@ The first release, **v0.1**, is a fully playable game of **heads-up No-Limit Tex
 - **Controlled scenarios.** A new test suite covers clear calls and folds, decisions at the pot-odds threshold, realisation-dependent folds, all-ins and stack depth, loose and tight opponents, small samples, unopened pots, hidden-card independence and reproducibility, with the numbers derived by hand in each test.
 - Reviews saved by older versions (without lessons) still display.
 
+**v0.4.3 — Hand history, replay and decision analysis**
+- **Every finished hand is saved** to the profile's database on the server, with the coaching review computed during the hand. Hands are queued on the device first, so a hand played while the server is unreachable is uploaded with the next sync; a profile is linked to the server as soon as there is a hand to keep.
+- **Public information only.** A hand record contains the blinds, button, starting stacks, your cards, every public event and the result. The opponent's cards appear only if they were shown (an all-in reveal or a showdown); a folded hand never appears. The server refuses uploaded records that contain opponent cards no event revealed.
+- **Exact replays.** The server rebuilds the table after every event from the recorded events alone and checks every chip movement against the amounts the engine recorded (stacks, bets, pots, final stacks, chip conservation). A record that does not add up is refused, and a damaged stored hand is reported rather than replayed wrongly.
+- **History tab.** A searchable list (a hand number, a starting hand such as `AK` or `AKs`, a card, words of your final hand) with filters for result, starting-hand strength, dates, showdown, large pots and flagged decisions. The replayer steps through the hand (buttons, play/pause, ← → Home End), jumps between your decisions, and at each one shows the table as you faced it, the coaching (judged with only what you could see then) and a button to practise the spot. Results and decision quality are shown apart.
+- **Recurring weaknesses** across saved hands, measured against the decisions where each could happen, reported only with enough evidence (90% Wilson interval), with the hands that support them.
+- **Migration.** The progress database moves from schema 1 to 2 by adding a `hands` table; existing profiles and records are untouched.
+
 **Limitations (what the coach does not know)**
 - **Realisation is a band, not a model.** The 70–110% band is an assumption; PokerLab does not estimate how much equity a hand actually realises by position or hand type.
 - **One street at a time.** EVs ignore later betting: implied odds, reverse implied odds and being bet off a hand. Check EV assumes the hand is checked down.
@@ -255,7 +263,9 @@ backend/pokerlab/
 │   ├── analysis.py   grade one decision from the player's own view: range, equity, EV per option
 │   ├── review.py     post-hand reviews, decision quality vs result, opponent tendencies
 │   ├── spot.py       a decision point as public data, replayed through the engine
-│   └── training.py   scenario generation by concept and difficulty, grading, practice spots
+│   ├── training.py   scenario generation by concept and difficulty, grading, practice spots
+│   └── patterns.py   recurring weaknesses across saved hands, with sample-size safeguards
+├── history.py        hand-history records (public data only), exact replay and validation, summaries
 ├── session.py        heads-up match: hand sequencing, AI turns, per-seat views, log, coach
 ├── storage.py        SQLite progress store: profiles (hashed keys), append-only records, integrity checks
 └── api/              FastAPI app, schemas, session store
@@ -264,7 +274,8 @@ frontend/src/
 ├── hooks/usePokerGame.ts   API calls + step-by-step animation playback
 ├── hooks/useGameSounds.ts  plays table sounds from the same event stream
 ├── components/             Table, Seat, PlayingCard, ChipStack, ChipFlights, ActionBar, HandLog, SettingsMenu, modals,
-│                           EquityPanel, TendenciesPanel, CoachPanel, DecisionDetail, TrainingView, ProgressDashboard, SkillMeter
+│                           EquityPanel, TendenciesPanel, CoachPanel, DecisionDetail, TrainingView, ProgressDashboard, SkillMeter,
+│                           HistoryView, HandReplayer
 └── lib/                    API client, betting and card helpers, motion timing, sound engine and cues, progress store,
                             skills (skill model, adaptive level, spaced repetition, recommendations),
                             store (local persistence, migration, quarantine), sync (server sync)
@@ -295,6 +306,10 @@ frontend/src/
 | `GET` / `PATCH` / `DELETE` | `/api/profile` | The profile for `Authorization: Bearer <key>`, with record counts; rename; delete it and all its records |
 | `GET` | `/api/profile/records` | `?limit` → the most recent records of each kind, oldest first |
 | `POST` | `/api/profile/records` | `{"answers": [...], "decisions": [...]}` (≤ 2,000 each) → added, accepted and per-record rejection reasons; repeats are no-ops |
+| `POST` | `/api/profile/hands` | `{"hands": [...]}` (≤ 200) → hand records validated and replayed one by one; added, accepted and per-record rejection reasons |
+| `GET` | `/api/profile/hands` | `?limit` → summaries of saved hands, newest first, with the total |
+| `GET` | `/api/profile/hands/{id}` | One saved hand and its replay (the table after every event) |
+| `GET` | `/api/sessions/{id}/hands/{n}/record` | The hand-history record of a recently finished hand (public information only) |
 | `POST` | `/api/equity` | `{"players": ["AhKh", "QQ+,AKs"], "board"?, "dead"?, "iterations"?, "seed"?}` → equity, win, tie and standard error per player |
 
 Each response includes `steps`: one event plus a state snapshot for every change, which the UI replays to drive its animations. Showdown events list each player's best five cards (`best`), and `pot_awarded` events list the winning cards (`cards`).
@@ -305,7 +320,7 @@ Illegal actions return `400` with an explanation. Out-of-turn or out-of-state re
 
 - **v0.2 — Visual polish:** v0.2.1 visual redesign, v0.2.2 animations, v0.2.3 sound and themes, and v0.2.4 stability and accessibility (done).
 - **v0.3 — Smarter AI and training:** v0.3.1 equity engine, v0.3.2 equity-driven opponent with equity review, v0.3.3 difficulty levels and live all-in equity, v0.3.4 adaptive opponent, v0.3.5 coaching and decision feedback, v0.3.6 interactive training mode, v0.3.7 personalised learning and skill assessment (done).
-- **v0.4 — Platform:** v0.4.0 reliable progress persistence, v0.4.1 strategy validation and coaching accuracy, v0.4.2 coaching quality and explainability (done); next, persistent hand history and replays.
+- **v0.4 — Platform:** v0.4.0 reliable progress persistence, v0.4.1 strategy validation and coaching accuracy, v0.4.2 coaching quality and explainability, v0.4.3 hand history, replay and decision analysis (done).
 - **v0.4 (continued) — Analytics:** persistent hand history, replays, performance stats, AI-vs-AI simulations.
 - **Later:** multiplayer, tournaments, Omaha / Stud / Draw, CFR agents, reinforcement learning, strategy dashboards.
 

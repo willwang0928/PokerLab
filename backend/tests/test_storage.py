@@ -75,7 +75,7 @@ def test_uploads_are_idempotent_unions(db_path):
     assert store.add(p, {"answers": [answer(1), answer(2)]})["answers"] == 2
     # The same records again (a retry) plus one new one: only the new one is added.
     assert store.add(p, {"answers": [answer(1), answer(2), answer(3)]})["answers"] == 1
-    assert store.counts(p) == {"answers": 3, "decisions": 0}
+    assert store.counts(p) == {"answers": 3, "decisions": 0, "hands": 0}
 
 
 def test_an_interrupted_batch_writes_nothing(db_path, monkeypatch):
@@ -103,7 +103,7 @@ def test_profiles_are_isolated(db_path):
     store.add(a, {"answers": [answer(1)]})
     assert store.records(b, 10)["answers"] == []
     store.delete_profile(a)
-    assert store.counts(b) == {"answers": 0, "decisions": 0}
+    assert store.counts(b) == {"answers": 0, "decisions": 0, "hands": 0}
     with pytest.raises(S.ProfileNotFound):
         store.profile("not-a-key")
 
@@ -160,7 +160,11 @@ def test_profile_lifecycle_over_http(db_path):
     c = client_for(db_path)
     auth, body = new_profile(c, "  Ana  ")
     assert body["profile"]["name"] == "Ana" and len(body["key"]) >= 40
-    assert c.get("/api/profile", headers=auth).json()["counts"] == {"answers": 0, "decisions": 0}
+    assert c.get("/api/profile", headers=auth).json()["counts"] == {
+        "answers": 0,
+        "decisions": 0,
+        "hands": 0,
+    }
     assert c.patch("/api/profile", json={"name": "Bea"}, headers=auth).json()["name"] == "Bea"
     assert c.delete("/api/profile", headers=auth).status_code == 204
     assert c.get("/api/profile", headers=auth).status_code == 401

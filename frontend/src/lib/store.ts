@@ -123,7 +123,7 @@ export function quarantined(): { at: number; reason: string; record: unknown }[]
   return Array.isArray(q) ? q : [];
 }
 
-function quarantine(items: Dropped[] | { reason: string; record: unknown }[], now: number): void {
+export function quarantine(items: Dropped[] | { reason: string; record: unknown }[], now: number): void {
   if (!items.length) return;
   const next = [...quarantined(), ...items.map((d) => ({ at: now, reason: d.reason, record: d.record }))];
   write(QUARANTINE_KEY, JSON.stringify(next.slice(-QUARANTINE_LIMIT)));

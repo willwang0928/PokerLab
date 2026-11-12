@@ -4,6 +4,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import App from "./App";
 import { gameState } from "./test/fixtures";
+import handFixture from "./test/hands.fixture.json";
 import type { GameState } from "./types";
 
 type Handler = (url: string, init?: RequestInit) => unknown;
@@ -199,6 +200,39 @@ describe("coach review", () => {
     expect(await screen.findByTestId("coach-verdict")).toHaveTextContent(/You won 20 chips/);
     expect(reviews()).toBe(1);
     expect(fetchMock.mock.calls.some(([u]) => String(u).endsWith(`/hands/${dealt.hand_number}/review`))).toBe(true);
+  });
+});
+
+describe("hand history", () => {
+  it("saves each finished hand to the server, linking the profile when needed", async () => {
+    const dealt = gameState();
+    const done = {
+      ...waiting(dealt),
+      result: { winnings: { 0: 20 }, uncontested: true, pots: [], showdown: null } as unknown as GameState["result"],
+    };
+    const record = { ...handFixture.folded.record, hand_number: dealt.hand_number };
+    const uploaded: string[] = [];
+    const fetchMock = mockFetch((url, init) => {
+      if (url.endsWith("/api/profile/hands") && init?.method === "POST") {
+        uploaded.push(...JSON.parse(String(init.body)).hands.map((h: { id: string }) => h.id));
+        return { added: 1, accepted: 1, rejected: [] };
+      }
+      if (url.endsWith("/api/sessions")) return { state: waiting({ ...dealt, hand_number: 0 }), steps: [] };
+      if (url.endsWith("/hands")) return { state: dealt, steps: [] };
+      if (url.endsWith("/review")) return { ...handFixture.folded.record.coaching, decisions: [] };
+      if (url.endsWith("/record")) return record;
+      if (url.endsWith("/api/profiles")) return { key: "secret", profile: { profile_id: "p1", name: "Player" } };
+      if (url.endsWith("/api/profile/records") && init?.method === "POST")
+        return { added: { answers: 0, decisions: 0 }, accepted: { answers: 0, decisions: 0 }, rejected: [] };
+      if (url.endsWith("/api/profile/records")) return { answers: [], decisions: [], truncated: false };
+      return { state: done, steps: [] };
+    });
+    await startGame();
+    await userEvent.click(await screen.findByRole("button", { name: /Call 5/ }));
+    await waitFor(() => expect(uploaded).toEqual([record.id]), { timeout: 4000 });
+    // The record was fetched only after the hand was over, for that hand.
+    expect(fetchMock.mock.calls.some(([u]) => String(u).endsWith(`/hands/${dealt.hand_number}/record`))).toBe(true);
+    expect(localStorage.getItem("pokerlab.hands.pending.v1." + JSON.parse(localStorage.getItem("pokerlab.profiles.v1")!).active)).toBeNull();
   });
 });
 

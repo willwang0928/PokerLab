@@ -1,0 +1,3603 @@
+{
+ "folded": {
+  "record": {
+   "v": 1,
+   "id": "ha8ed7d667ef6bc4aef1b1e4",
+   "t": 1762600000000.0,
+   "session": "fixture-a",
+   "hand_number": 1,
+   "mode": "play",
+   "difficulty": "beginner",
+   "adaptive": true,
+   "hero": 0,
+   "names": [
+    "You",
+    "Dealer Bot"
+   ],
+   "hero_cards": [
+    "Ah",
+    "Kh"
+   ],
+   "opponent_cards": {
+    "1": null
+   },
+   "board": [
+    "Kd",
+    "7c",
+    "2h",
+    "4s"
+   ],
+   "events": [
+    {
+     "type": "hand_start",
+     "button": 1,
+     "small_blind": 5,
+     "big_blind": 10,
+     "stacks": [
+      1000,
+      1000
+     ]
+    },
+    {
+     "type": "post_blind",
+     "seat": 1,
+     "blind": "small_blind",
+     "amount": 5,
+     "all_in": false
+    },
+    {
+     "type": "post_blind",
+     "seat": 0,
+     "blind": "big_blind",
+     "amount": 10,
+     "all_in": false
+    },
+    {
+     "type": "action",
+     "seat": 1,
+     "action": "raise",
+     "amount": 30,
+     "all_in": false,
+     "label": "raise",
+     "stack": 970,
+     "bet": 30
+    },
+    {
+     "type": "action",
+     "seat": 0,
+     "action": "call",
+     "amount": 20,
+     "all_in": false,
+     "label": "call",
+     "stack": 970,
+     "bet": 30,
+     "decision": 0
+    },
+    {
+     "type": "bets_collected",
+     "pot": 60
+    },
+    {
+     "type": "street",
+     "street": "flop",
+     "cards": [
+      "Kd",
+      "7c",
+      "2h"
+     ],
+     "board": [
+      "Kd",
+      "7c",
+      "2h"
+     ]
+    },
+    {
+     "type": "action",
+     "seat": 0,
+     "action": "check",
+     "amount": 0,
+     "all_in": false,
+     "label": "check",
+     "stack": 970,
+     "bet": 0,
+     "decision": 1
+    },
+    {
+     "type": "action",
+     "seat": 1,
+     "action": "bet",
+     "amount": 40,
+     "all_in": false,
+     "label": "bet",
+     "stack": 930,
+     "bet": 40
+    },
+    {
+     "type": "action",
+     "seat": 0,
+     "action": "raise",
+     "amount": 120,
+     "all_in": false,
+     "label": "raise",
+     "stack": 850,
+     "bet": 120,
+     "decision": 2
+    },
+    {
+     "type": "action",
+     "seat": 1,
+     "action": "call",
+     "amount": 80,
+     "all_in": false,
+     "label": "call",
+     "stack": 850,
+     "bet": 120
+    },
+    {
+     "type": "bets_collected",
+     "pot": 300
+    },
+    {
+     "type": "street",
+     "street": "turn",
+     "cards": [
+      "4s"
+     ],
+     "board": [
+      "Kd",
+      "7c",
+      "2h",
+      "4s"
+     ]
+    },
+    {
+     "type": "action",
+     "seat": 0,
+     "action": "bet",
+     "amount": 200,
+     "all_in": false,
+     "label": "bet",
+     "stack": 650,
+     "bet": 200,
+     "decision": 3
+    },
+    {
+     "type": "action",
+     "seat": 1,
+     "action": "fold",
+     "amount": 0,
+     "all_in": false,
+     "label": "fold",
+     "stack": 850,
+     "bet": 0
+    },
+    {
+     "type": "uncalled_returned",
+     "seat": 0,
+     "amount": 200
+    },
+    {
+     "type": "pot_awarded",
+     "pot_index": 0,
+     "amount": 300,
+     "winners": [
+      0
+     ],
+     "payouts": {
+      "0": 300
+     },
+     "hand": null
+    },
+    {
+     "type": "hand_complete",
+     "winnings": {
+      "0": 300
+     },
+     "stacks": [
+      1150,
+      850
+     ],
+     "uncontested": true
+    }
+   ],
+   "decisions_linked": true,
+   "coaching": {
+    "hand_number": 1,
+    "decisions": [
+     {
+      "street": "preflop",
+      "hole": [
+       "Ah",
+       "Kh"
+      ],
+      "board": [],
+      "hand": "AKs",
+      "position": "big blind",
+      "pot": 40,
+      "to_call": 20,
+      "stack": 990,
+      "big_blind": 10,
+      "history": [
+       "Preflop: Opponent raises to 30"
+      ],
+      "spot": "facing_bet",
+      "concept": "preflop",
+      "equity": 0.72,
+      "equity_se": 0.025750712992477685,
+      "equity_method": "monte_carlo",
+      "required_equity": 0.3333333333333333,
+      "range_size": 825,
+      "range_steps": [
+       "Preflop: the top 70% of hands (from their raise)"
+      ],
+      "reads": [],
+      "options": [
+       {
+        "key": "fold",
+        "action": "fold",
+        "amount": null,
+        "label": "Fold",
+        "ev": 0.0,
+        "basis": "pot odds",
+        "equity_when_called": null,
+        "fold_rate": null,
+        "detail": ""
+       },
+       {
+        "key": "call",
+        "action": "call",
+        "amount": null,
+        "label": "Call 20",
+        "ev": 23.199999999999996,
+        "basis": "pot odds",
+        "equity_when_called": null,
+        "fold_rate": null,
+        "detail": "0.720 \u00d7 60 \u2212 20 = +23.2 chips"
+       },
+       {
+        "key": "raise-75",
+        "action": "raise",
+        "amount": 75,
+        "label": "Raise to 75",
+        "ev": null,
+        "basis": "guideline",
+        "equity_when_called": null,
+        "fold_rate": null,
+        "detail": "preflop re-raise: judged by a guideline, not an EV"
+       }
+      ],
+      "hand_percentile": null,
+      "range_check": [
+       {
+        "name": "tighter",
+        "label": "Tighter range",
+        "description": "they bet, raise and call only with stronger hands (about a quarter fewer)",
+        "range_size": 685,
+        "equity": 0.69,
+        "evs": {
+         "fold": 0.0,
+         "call": 21.4
+        }
+       },
+       {
+        "name": "looser",
+        "label": "Looser range",
+        "description": "they bet, raise and call with more hands, including weaker ones and bluffs (about a third more)",
+        "range_size": 1013,
+        "equity": 0.5666666666666667,
+        "evs": {
+         "fold": 0.0,
+         "call": 14.0
+        }
+       }
+      ],
+      "robust": true,
+      "betting_closed": false,
+      "realization_needed": 0.46296296296296297,
+      "opponent": {
+       "evidence": [],
+       "used": [],
+       "style": [],
+       "note": "Nothing is known yet about this opponent's tendencies, so their range is estimated from default tendencies."
+      },
+      "lesson": {
+       "did": "You called (Call 20) preflop with AKs, as the big blind.",
+       "known": [
+        "Your cards: Ah Kh",
+        "Pot 40, 20 to call"
+       ],
+       "estimated": [
+        "Their range: about 825 hand combinations, estimated from their actions",
+        "Nothing is known yet about this opponent's tendencies, so their range is estimated from default tendencies."
+       ],
+       "math": [
+        {
+         "text": "Price: you needed 33% equity (20 to win 60).",
+         "kind": "exact"
+        },
+        {
+         "text": "Your equity against their estimated range: about 72% (57%\u201369% if their range is tighter or looser).",
+         "kind": "estimate"
+        },
+        {
+         "text": "With betting still to come, a call must realise at least 46% of that equity to pay.",
+         "kind": "assumption"
+        }
+       ],
+       "alternative": "No option scored clearly better by these estimates.",
+       "principle": "Call when your equity against the hands they are likely to have beats the price the pot offers.",
+       "also": []
+      },
+      "best": [
+       "call"
+      ],
+      "chosen": "call",
+      "grade": "good",
+      "confidence": "low",
+      "ev_loss": 0.0,
+      "tags": [],
+      "headline": "Good",
+      "explanation": "You needed 33% equity to call 20 into 40. Against the hands the opponent is likely to have here, your AKs has about 72%. Calling was worth about +2.3 bb by this estimate.",
+      "details": [
+       "Your AKs has 72.0% equity against the estimated range (825 combos, Monte Carlo, \u00b15.0%).",
+       "Pot odds: call \u00f7 (pot + call) = 20 \u00f7 (40 + 20) = 33.3% equity needed.",
+       "Break-even realisation: 33.3% \u00f7 72.0% = 46% of your equity must be won on later streets for the call to pay.",
+       "EV(Fold) = 0 (nothing more invested) = +0.0 bb",
+       "EV(Call 20) = 0.720 \u00d7 60 \u2212 20 = +23.2 chips = +2.3 bb"
+      ],
+      "caveats": [
+       "Preflop estimates ignore the later streets, where position and playability matter a lot. Treat the grade as a rough guide."
+      ],
+      "grade_label": "Good",
+      "spot_data": {
+       "hero": "AhKh",
+       "board": "",
+       "actions": [
+        [
+         "raise",
+         30
+        ]
+       ],
+       "button": 1,
+       "stacks": [
+        1000,
+        1000
+       ],
+       "blinds": [
+        5,
+        10
+       ],
+       "hero_seat": 0,
+       "villain_stats": {}
+      }
+     },
+     {
+      "street": "flop",
+      "hole": [
+       "Ah",
+       "Kh"
+      ],
+      "board": [
+       "Kd",
+       "7c",
+       "2h"
+      ],
+      "hand": "Pair of Kings",
+      "position": "big blind",
+      "pot": 60,
+      "to_call": 0,
+      "stack": 970,
+      "big_blind": 10,
+      "history": [
+       "Preflop: Opponent raises to 30",
+       "Preflop: You call 20"
+      ],
+      "spot": "unbet",
+      "concept": "value_betting",
+      "equity": 0.8966666666666666,
+      "equity_se": 0.017283996331037332,
+      "equity_method": "monte_carlo",
+      "required_equity": null,
+      "range_size": 730,
+      "range_steps": [
+       "Preflop: the top 70% of hands (from their raise)"
+      ],
+      "reads": [],
+      "options": [
+       {
+        "key": "check",
+        "action": "check",
+        "amount": null,
+        "label": "Check",
+        "ev": 53.8,
+        "basis": "pot odds",
+        "equity_when_called": null,
+        "fold_rate": null,
+        "detail": "0.897 \u00d7 60 = +53.8 chips (if checked down)"
+       },
+       {
+        "key": "bet-20",
+        "action": "bet",
+        "amount": 20,
+        "label": "Bet 20 (33% pot)",
+        "ev": 66.75,
+        "basis": "fold model",
+        "equity_when_called": 0.89,
+        "fold_rate": 0.25,
+        "detail": "fold 25% \u00d7 60 + continue 75% \u00d7 (0.890 \u00d7 100 \u2212 20) = +66.8 chips"
+       },
+       {
+        "key": "bet-40",
+        "action": "bet",
+        "amount": 40,
+        "label": "Bet 40 (67% pot)",
+        "ev": 74.62,
+        "basis": "fold model",
+        "equity_when_called": 0.8883333333333333,
+        "fold_rate": 0.4,
+        "detail": "fold 40% \u00d7 60 + continue 60% \u00d7 (0.888 \u00d7 140 \u2212 40) = +74.6 chips"
+       },
+       {
+        "key": "bet-60",
+        "action": "bet",
+        "amount": 60,
+        "label": "Bet 60 (100% pot)",
+        "ev": 76.5,
+        "basis": "fold model",
+        "equity_when_called": 0.85,
+        "fold_rate": 0.5,
+        "detail": "fold 50% \u00d7 60 + continue 50% \u00d7 (0.850 \u00d7 180 \u2212 60) = +76.5 chips"
+       }
+      ],
+      "hand_percentile": null,
+      "range_check": [
+       {
+        "name": "tighter",
+        "label": "Tighter range",
+        "description": "they bet, raise and call only with stronger hands (about a quarter fewer)",
+        "range_size": 604,
+        "equity": 0.91,
+        "evs": {
+         "check": 54.6,
+         "bet-20": 67.5,
+         "bet-40": 71.68,
+         "bet-60": 76.22772426249247
+        }
+       },
+       {
+        "name": "looser",
+        "label": "Looser range",
+        "description": "they bet, raise and call with more hands, including weaker ones and bluffs (about a third more)",
+        "range_size": 901,
+        "equity": 0.9283333333333333,
+        "evs": {
+         "check": 55.7,
+         "bet-20": 67.25,
+         "bet-40": 74.9,
+         "bet-60": 77.25
+        }
+       }
+      ],
+      "robust": true,
+      "betting_closed": false,
+      "realization_needed": null,
+      "opponent": {
+       "evidence": [],
+       "used": [],
+       "style": [],
+       "note": "Nothing is known yet about this opponent's tendencies, so their range is estimated from default tendencies."
+      },
+      "lesson": {
+       "did": "You checked (Check) on the flop with Pair of Kings, as the big blind.",
+       "known": [
+        "Your cards: Ah Kh",
+        "The board: Kd 7c 2h",
+        "Pot 60, nothing to call"
+       ],
+       "estimated": [
+        "Their range: about 730 hand combinations, estimated from their actions",
+        "Nothing is known yet about this opponent's tendencies, so their range is estimated from default tendencies."
+       ],
+       "math": [
+        {
+         "text": "Your equity against their estimated range: about 90%.",
+         "kind": "estimate"
+        },
+        {
+         "text": "Bet and raise values also assume how often they fold.",
+         "kind": "model"
+        }
+       ],
+       "alternative": "Bet 60 (100% pot) scored about +2.3 bb better (this rests on an assumed fold rate).",
+       "principle": "Bet when worse hands will call: checking a strong hand lets them see cards for free and gives up value.",
+       "also": []
+      },
+      "best": [
+       "bet-40",
+       "bet-60"
+      ],
+      "chosen": "check",
+      "grade": "questionable",
+      "confidence": "low",
+      "ev_loss": 22.700000000000003,
+      "tags": [
+       "missed_value"
+      ],
+      "headline": "Questionable",
+      "explanation": "Your Pair of Kings has about 90% equity against their likely hands. Bet 60 (100% pot) scored about +2.3 bb more: hands that call are worse often enough (85% equity when called) to bet for value.",
+      "details": [
+       "Your Pair of Kings has 89.7% equity against the estimated range (730 combos, Monte Carlo, \u00b13.4%).",
+       "EV(Check) = 0.897 \u00d7 60 = +53.8 chips (if checked down) = +5.4 bb",
+       "EV(Bet 20 (33% pot)) = fold 25% \u00d7 60 + continue 75% \u00d7 (0.890 \u00d7 100 \u2212 20) = +66.8 chips = +6.7 bb",
+       "EV(Bet 40 (67% pot)) = fold 40% \u00d7 60 + continue 60% \u00d7 (0.888 \u00d7 140 \u2212 40) = +74.6 chips = +7.5 bb",
+       "EV(Bet 60 (100% pot)) = fold 50% \u00d7 60 + continue 50% \u00d7 (0.850 \u00d7 180 \u2212 60) = +76.5 chips = +7.7 bb"
+      ],
+      "caveats": [
+       "These are one-street estimates: they ignore betting on later streets (implied odds, or being bet off your hand).",
+       "Bet and raise values assume the opponent continues with the strongest part of their range at the minimum-defence frequency."
+      ],
+      "grade_label": "Questionable",
+      "spot_data": {
+       "hero": "AhKh",
+       "board": "Kd7c2h",
+       "actions": [
+        [
+         "raise",
+         30
+        ],
+        [
+         "call",
+         null
+        ]
+       ],
+       "button": 1,
+       "stacks": [
+        1000,
+        1000
+       ],
+       "blinds": [
+        5,
+        10
+       ],
+       "hero_seat": 0,
+       "villain_stats": {}
+      }
+     },
+     {
+      "street": "flop",
+      "hole": [
+       "Ah",
+       "Kh"
+      ],
+      "board": [
+       "Kd",
+       "7c",
+       "2h"
+      ],
+      "hand": "Pair of Kings",
+      "position": "big blind",
+      "pot": 100,
+      "to_call": 40,
+      "stack": 970,
+      "big_blind": 10,
+      "history": [
+       "Preflop: Opponent raises to 30",
+       "Preflop: You call 20",
+       "Flop: You check",
+       "Flop: Opponent bets 40"
+      ],
+      "spot": "facing_bet",
+      "concept": "pot_odds",
+      "equity": 0.8866666666666667,
+      "equity_se": 0.018025952635387376,
+      "equity_method": "monte_carlo",
+      "required_equity": 0.2857142857142857,
+      "range_size": 474,
+      "range_steps": [
+       "Preflop: the top 70% of hands (from their raise)",
+       "Flop bet: keeps their strongest 65%, plus strong draws"
+      ],
+      "reads": [],
+      "options": [
+       {
+        "key": "fold",
+        "action": "fold",
+        "amount": null,
+        "label": "Fold",
+        "ev": 0.0,
+        "basis": "pot odds",
+        "equity_when_called": null,
+        "fold_rate": null,
+        "detail": ""
+       },
+       {
+        "key": "call",
+        "action": "call",
+        "amount": null,
+        "label": "Call 40",
+        "ev": 84.13333333333334,
+        "basis": "pot odds",
+        "equity_when_called": null,
+        "fold_rate": null,
+        "detail": "0.887 \u00d7 140 \u2212 40 = +84.1 chips"
+       },
+       {
+        "key": "raise-120",
+        "action": "raise",
+        "amount": 120,
+        "label": "Raise to 120",
+        "ev": 109.95428973277075,
+        "basis": "fold model",
+        "equity_when_called": 0.7996952648851383,
+        "fold_rate": 0.5,
+        "detail": "fold 50% \u00d7 100 + continue 50% \u00d7 (0.800 \u00d7 300 \u2212 120) = +110.0 chips"
+       },
+       {
+        "key": "raise-145",
+        "action": "raise",
+        "amount": 145,
+        "label": "Raise to 145",
+        "ev": 117.4466713548992,
+        "basis": "fold model",
+        "equity_when_called": 0.7996952648851383,
+        "fold_rate": 0.5,
+        "detail": "fold 50% \u00d7 100 + continue 50% \u00d7 (0.800 \u00d7 350 \u2212 145) = +117.4 chips"
+       }
+      ],
+      "hand_percentile": null,
+      "range_check": [
+       {
+        "name": "tighter",
+        "label": "Tighter range",
+        "description": "they bet, raise and call only with stronger hands (about a quarter fewer)",
+        "range_size": 294,
+        "equity": 0.8434566755995327,
+        "evs": {
+         "fold": 0.0,
+         "call": 78.08393458393458,
+         "raise-120": 104.78509585652444,
+         "raise-145": 111.41594516594517
+        }
+       },
+       {
+        "name": "looser",
+        "label": "Looser range",
+        "description": "they bet, raise and call with more hands, including weaker ones and bluffs (about a third more)",
+        "range_size": 761,
+        "equity": 0.9116666666666666,
+        "evs": {
+         "fold": 0.0,
+         "call": 87.63333333333333,
+         "raise-120": 107.75,
+         "raise-145": 126.54166666666666
+        }
+       }
+      ],
+      "robust": false,
+      "betting_closed": false,
+      "realization_needed": 0.32223415682062295,
+      "opponent": {
+       "evidence": [],
+       "used": [],
+       "style": [],
+       "note": "Nothing is known yet about this opponent's tendencies, so their range is estimated from default tendencies."
+      },
+      "lesson": {
+       "did": "You raised (Raise to 120) on the flop with Pair of Kings, as the big blind.",
+       "known": [
+        "Your cards: Ah Kh",
+        "The board: Kd 7c 2h",
+        "Pot 100, 40 to call"
+       ],
+       "estimated": [
+        "Their range: about 474 hand combinations, estimated from their actions",
+        "Nothing is known yet about this opponent's tendencies, so their range is estimated from default tendencies."
+       ],
+       "math": [
+        {
+         "text": "Price: you needed 29% equity (40 to win 140).",
+         "kind": "exact"
+        },
+        {
+         "text": "Your equity against their estimated range: about 89% (84%\u201391% if their range is tighter or looser).",
+         "kind": "estimate"
+        },
+        {
+         "text": "With betting still to come, a call must realise at least 32% of that equity to pay.",
+         "kind": "assumption"
+        },
+        {
+         "text": "Bet and raise values also assume how often they fold.",
+         "kind": "model"
+        }
+       ],
+       "alternative": "Raise to 145 scored about +0.7 bb better (this rests on an assumed fold rate).",
+       "principle": "A bet earns when worse hands call or better hands fold; this one does both often enough.",
+       "also": [
+        "When the answer changes with their range, ask what this opponent really bets and calls with: that read decides it."
+       ]
+      },
+      "best": [
+       "raise-145"
+      ],
+      "chosen": "raise-120",
+      "grade": "close",
+      "confidence": "low",
+      "ev_loss": 7.492381622128448,
+      "tags": [],
+      "headline": "Close call",
+      "explanation": "You needed 29% equity to call 40 into 100. Against the hands the opponent is likely to have here, your Pair of Kings has about 89%. Raise to 120 is expected to win the pot right away 50% of the time, and you have about 80% against the hands that continue. Raise to 145 scored about +0.7 bb more. This verdict depends on the range assumption: if they bet, raise and call with more hands, including weaker ones and bluffs (about a third more), your Pair of Kings has about 91% and raise to 145 would score clearly better.",
+      "details": [
+       "Your Pair of Kings has 88.7% equity against the estimated range (474 combos, Monte Carlo, \u00b13.5%).",
+       "Pot odds: call \u00f7 (pot + call) = 40 \u00f7 (100 + 40) = 28.6% equity needed.",
+       "Break-even realisation: 28.6% \u00f7 88.7% = 32% of your equity must be won on later streets for the call to pay.",
+       "EV(Fold) = 0 (nothing more invested) = +0.0 bb",
+       "EV(Call 40) = 0.887 \u00d7 140 \u2212 40 = +84.1 chips = +8.4 bb",
+       "EV(Raise to 120) = fold 50% \u00d7 100 + continue 50% \u00d7 (0.800 \u00d7 300 \u2212 120) = +110.0 chips = +11.0 bb",
+       "EV(Raise to 145) = fold 50% \u00d7 100 + continue 50% \u00d7 (0.800 \u00d7 350 \u2212 145) = +117.4 chips = +11.7 bb"
+      ],
+      "caveats": [
+       "These are one-street estimates: they ignore betting on later streets (implied odds, or being bet off your hand).",
+       "Bet and raise values assume the opponent continues with the strongest part of their range at the minimum-defence frequency."
+      ],
+      "grade_label": "Close call",
+      "spot_data": {
+       "hero": "AhKh",
+       "board": "Kd7c2h",
+       "actions": [
+        [
+         "raise",
+         30
+        ],
+        [
+         "call",
+         null
+        ],
+        [
+         "check",
+         null
+        ],
+        [
+         "bet",
+         40
+        ]
+       ],
+       "button": 1,
+       "stacks": [
+        1000,
+        1000
+       ],
+       "blinds": [
+        5,
+        10
+       ],
+       "hero_seat": 0,
+       "villain_stats": {}
+      }
+     },
+     {
+      "street": "turn",
+      "hole": [
+       "Ah",
+       "Kh"
+      ],
+      "board": [
+       "Kd",
+       "7c",
+       "2h",
+       "4s"
+      ],
+      "hand": "Pair of Kings",
+      "position": "big blind",
+      "pot": 300,
+      "to_call": 0,
+      "stack": 850,
+      "big_blind": 10,
+      "history": [
+       "Preflop: Opponent raises to 30",
+       "Preflop: You call 20",
+       "Flop: You check",
+       "Flop: Opponent bets 40",
+       "Flop: You raise to 120",
+       "Flop: Opponent calls 80"
+      ],
+      "spot": "unbet",
+      "concept": "value_betting",
+      "equity": 0.8605651105651105,
+      "equity_se": 0.0,
+      "equity_method": "exact",
+      "required_equity": null,
+      "range_size": 370,
+      "range_steps": [
+       "Preflop: the top 70% of hands (from their raise)",
+       "Flop bet: keeps their strongest 65%, plus strong draws",
+       "Flop call: keeps their strongest 80%, plus strong draws"
+      ],
+      "reads": [],
+      "options": [
+       {
+        "key": "check",
+        "action": "check",
+        "amount": null,
+        "label": "Check",
+        "ev": 258.16953316953317,
+        "basis": "pot odds",
+        "equity_when_called": null,
+        "fold_rate": null,
+        "detail": "0.861 \u00d7 300 = +258.2 chips (if checked down)"
+       },
+       {
+        "key": "bet-99",
+        "action": "bet",
+        "amount": 99,
+        "label": "Bet 99 (33% pot)",
+        "ev": 307.88736065146514,
+        "basis": "fold model",
+        "equity_when_called": 0.8222694571615435,
+        "fold_rate": 0.24812030075187969,
+        "detail": "fold 25% \u00d7 300 + continue 75% \u00d7 (0.822 \u00d7 498 \u2212 99) = +307.9 chips"
+       },
+       {
+        "key": "bet-198",
+        "action": "bet",
+        "amount": 198,
+        "label": "Bet 198 (66% pot)",
+        "ev": 333.5158817086528,
+        "basis": "fold model",
+        "equity_when_called": 0.7954545454545454,
+        "fold_rate": 0.39759036144578314,
+        "detail": "fold 40% \u00d7 300 + continue 60% \u00d7 (0.795 \u00d7 696 \u2212 198) = +333.5 chips"
+       },
+       {
+        "key": "bet-200",
+        "action": "bet",
+        "amount": 200,
+        "label": "Bet 200 (67% pot)",
+        "ev": 333.78992628992626,
+        "basis": "fold model",
+        "equity_when_called": 0.7947379197379197,
+        "fold_rate": 0.4,
+        "detail": "fold 40% \u00d7 300 + continue 60% \u00d7 (0.795 \u00d7 700 \u2212 200) = +333.8 chips"
+       },
+       {
+        "key": "bet-300",
+        "action": "bet",
+        "amount": 300,
+        "label": "Bet 300 (100% pot)",
+        "ev": 346.2346437346438,
+        "basis": "fold model",
+        "equity_when_called": 0.7694103194103195,
+        "fold_rate": 0.5,
+        "detail": "fold 50% \u00d7 300 + continue 50% \u00d7 (0.769 \u00d7 900 \u2212 300) = +346.2 chips"
+       }
+      ],
+      "hand_percentile": null,
+      "range_check": [
+       {
+        "name": "tighter",
+        "label": "Tighter range",
+        "description": "they bet, raise and call only with stronger hands (about a quarter fewer)",
+        "range_size": 173,
+        "equity": 0.7766684182869154,
+        "evs": {
+         "check": 233.0005254860746,
+         "bet-99": 275.85204269414794,
+         "bet-198": 286.0540062347291,
+         "bet-200": 286.5472027972028,
+         "bet-300": 282.79598308668074
+        }
+       },
+       {
+        "name": "looser",
+        "label": "Looser range",
+        "description": "they bet, raise and call with more hands, including weaker ones and bluffs (about a third more)",
+        "range_size": 738,
+        "equity": 0.9149421039664942,
+        "evs": {
+         "check": 274.4826311899483,
+         "bet-99": 332.0858657700762,
+         "bet-198": 360.38987410315417,
+         "bet-200": 360.9172994048841,
+         "bet-300": 376.1086474501109
+        }
+       }
+      ],
+      "robust": true,
+      "betting_closed": false,
+      "realization_needed": null,
+      "opponent": {
+       "evidence": [],
+       "used": [],
+       "style": [],
+       "note": "Nothing is known yet about this opponent's tendencies, so their range is estimated from default tendencies."
+      },
+      "lesson": {
+       "did": "You bet (Bet 200 (67% pot)) on the turn with Pair of Kings, as the big blind.",
+       "known": [
+        "Your cards: Ah Kh",
+        "The board: Kd 7c 2h 4s",
+        "Pot 300, nothing to call"
+       ],
+       "estimated": [
+        "Their range: about 370 hand combinations, estimated from their actions",
+        "Nothing is known yet about this opponent's tendencies, so their range is estimated from default tendencies."
+       ],
+       "math": [
+        {
+         "text": "Your equity against their estimated range: about 86% (78%\u201391% if their range is tighter or looser).",
+         "kind": "estimate"
+        },
+        {
+         "text": "Bet and raise values also assume how often they fold.",
+         "kind": "model"
+        }
+       ],
+       "alternative": "Bet 300 (100% pot) scored about +1.2 bb better (this rests on an assumed fold rate).",
+       "principle": "A bet earns when worse hands call or better hands fold; this one does both often enough.",
+       "also": []
+      },
+      "best": [
+       "bet-300"
+      ],
+      "chosen": "bet-200",
+      "grade": "close",
+      "confidence": "low",
+      "ev_loss": 12.444717444717526,
+      "tags": [],
+      "headline": "Close call",
+      "explanation": "Your Pair of Kings has about 86% equity against their likely hands. Bet 200 (67% pot) is expected to win the pot right away 40% of the time, and you have about 79% against the hands that continue. Bet 300 (100% pot) scored about +1.2 bb more.",
+      "details": [
+       "Your Pair of Kings has 86.1% equity against the estimated range (370 combos, exact).",
+       "EV(Check) = 0.861 \u00d7 300 = +258.2 chips (if checked down) = +25.8 bb",
+       "EV(Bet 99 (33% pot)) = fold 25% \u00d7 300 + continue 75% \u00d7 (0.822 \u00d7 498 \u2212 99) = +307.9 chips = +30.8 bb",
+       "EV(Bet 198 (66% pot)) = fold 40% \u00d7 300 + continue 60% \u00d7 (0.795 \u00d7 696 \u2212 198) = +333.5 chips = +33.4 bb",
+       "EV(Bet 200 (67% pot)) = fold 40% \u00d7 300 + continue 60% \u00d7 (0.795 \u00d7 700 \u2212 200) = +333.8 chips = +33.4 bb",
+       "EV(Bet 300 (100% pot)) = fold 50% \u00d7 300 + continue 50% \u00d7 (0.769 \u00d7 900 \u2212 300) = +346.2 chips = +34.6 bb"
+      ],
+      "caveats": [
+       "These are one-street estimates: they ignore betting on later streets (implied odds, or being bet off your hand).",
+       "Bet and raise values assume the opponent continues with the strongest part of their range at the minimum-defence frequency."
+      ],
+      "grade_label": "Close call",
+      "spot_data": {
+       "hero": "AhKh",
+       "board": "Kd7c2h4s",
+       "actions": [
+        [
+         "raise",
+         30
+        ],
+        [
+         "call",
+         null
+        ],
+        [
+         "check",
+         null
+        ],
+        [
+         "bet",
+         40
+        ],
+        [
+         "raise",
+         120
+        ],
+        [
+         "call",
+         null
+        ]
+       ],
+       "button": 1,
+       "stacks": [
+        1000,
+        1000
+       ],
+       "blinds": [
+        5,
+        10
+       ],
+       "hero_seat": 0,
+       "villain_stats": {}
+      }
+     }
+    ],
+    "counts": {
+     "good": 1,
+     "close": 2,
+     "questionable": 1,
+     "mistake": 0,
+     "ungraded": 0
+    },
+    "net": 150,
+    "net_bb": 15.0,
+    "ev_loss_bb": 4.263709906684598,
+    "quality": "mixed",
+    "verdict": "You won 150 chips, but 1 decision gave up value by these estimates. Winning the pot does not make a decision right: over many hands, spots like these cost chips.",
+    "hindsight": null,
+    "tags": [
+     "missed_value"
+    ]
+   }
+  },
+  "frames": [
+   {
+    "index": 0,
+    "type": "hand_start",
+    "text": "Hand #1 \u2014 Dealer Bot has the button",
+    "street": "preflop",
+    "board": [],
+    "pot": 0,
+    "bets": [
+     0,
+     0
+    ],
+    "stacks": [
+     1000,
+     1000
+    ],
+    "folded": [
+     false,
+     false
+    ],
+    "actor": null,
+    "decision": null,
+    "to_call": null,
+    "visible": {},
+    "awarded": null
+   },
+   {
+    "index": 1,
+    "type": "post_blind",
+    "text": "Dealer Bot posts small blind 5",
+    "street": "preflop",
+    "board": [],
+    "pot": 5,
+    "bets": [
+     0,
+     5
+    ],
+    "stacks": [
+     1000,
+     995
+    ],
+    "folded": [
+     false,
+     false
+    ],
+    "actor": 1,
+    "decision": null,
+    "to_call": null,
+    "visible": {},
+    "awarded": null
+   },
+   {
+    "index": 2,
+    "type": "post_blind",
+    "text": "You post big blind 10",
+    "street": "preflop",
+    "board": [],
+    "pot": 15,
+    "bets": [
+     10,
+     5
+    ],
+    "stacks": [
+     990,
+     995
+    ],
+    "folded": [
+     false,
+     false
+    ],
+    "actor": 0,
+    "decision": null,
+    "to_call": null,
+    "visible": {},
+    "awarded": null
+   },
+   {
+    "index": 3,
+    "type": "action",
+    "text": "Dealer Bot raises to 30",
+    "street": "preflop",
+    "board": [],
+    "pot": 40,
+    "bets": [
+     10,
+     30
+    ],
+    "stacks": [
+     990,
+     970
+    ],
+    "folded": [
+     false,
+     false
+    ],
+    "actor": 1,
+    "decision": null,
+    "to_call": 5,
+    "visible": {},
+    "awarded": null
+   },
+   {
+    "index": 4,
+    "type": "action",
+    "text": "You call 20",
+    "street": "preflop",
+    "board": [],
+    "pot": 60,
+    "bets": [
+     30,
+     30
+    ],
+    "stacks": [
+     970,
+     970
+    ],
+    "folded": [
+     false,
+     false
+    ],
+    "actor": 0,
+    "decision": 0,
+    "to_call": 20,
+    "visible": {},
+    "awarded": null
+   },
+   {
+    "index": 5,
+    "type": "bets_collected",
+    "text": null,
+    "street": "preflop",
+    "board": [],
+    "pot": 60,
+    "bets": [
+     0,
+     0
+    ],
+    "stacks": [
+     970,
+     970
+    ],
+    "folded": [
+     false,
+     false
+    ],
+    "actor": null,
+    "decision": null,
+    "to_call": null,
+    "visible": {},
+    "awarded": null
+   },
+   {
+    "index": 6,
+    "type": "street",
+    "text": "Flop: Kd 7c 2h",
+    "street": "flop",
+    "board": [
+     "Kd",
+     "7c",
+     "2h"
+    ],
+    "pot": 60,
+    "bets": [
+     0,
+     0
+    ],
+    "stacks": [
+     970,
+     970
+    ],
+    "folded": [
+     false,
+     false
+    ],
+    "actor": null,
+    "decision": null,
+    "to_call": null,
+    "visible": {},
+    "awarded": null
+   },
+   {
+    "index": 7,
+    "type": "action",
+    "text": "You check",
+    "street": "flop",
+    "board": [
+     "Kd",
+     "7c",
+     "2h"
+    ],
+    "pot": 60,
+    "bets": [
+     0,
+     0
+    ],
+    "stacks": [
+     970,
+     970
+    ],
+    "folded": [
+     false,
+     false
+    ],
+    "actor": 0,
+    "decision": 1,
+    "to_call": 0,
+    "visible": {},
+    "awarded": null
+   },
+   {
+    "index": 8,
+    "type": "action",
+    "text": "Dealer Bot bets 40",
+    "street": "flop",
+    "board": [
+     "Kd",
+     "7c",
+     "2h"
+    ],
+    "pot": 100,
+    "bets": [
+     0,
+     40
+    ],
+    "stacks": [
+     970,
+     930
+    ],
+    "folded": [
+     false,
+     false
+    ],
+    "actor": 1,
+    "decision": null,
+    "to_call": 0,
+    "visible": {},
+    "awarded": null
+   },
+   {
+    "index": 9,
+    "type": "action",
+    "text": "You raise to 120",
+    "street": "flop",
+    "board": [
+     "Kd",
+     "7c",
+     "2h"
+    ],
+    "pot": 220,
+    "bets": [
+     120,
+     40
+    ],
+    "stacks": [
+     850,
+     930
+    ],
+    "folded": [
+     false,
+     false
+    ],
+    "actor": 0,
+    "decision": 2,
+    "to_call": 40,
+    "visible": {},
+    "awarded": null
+   },
+   {
+    "index": 10,
+    "type": "action",
+    "text": "Dealer Bot calls 80",
+    "street": "flop",
+    "board": [
+     "Kd",
+     "7c",
+     "2h"
+    ],
+    "pot": 300,
+    "bets": [
+     120,
+     120
+    ],
+    "stacks": [
+     850,
+     850
+    ],
+    "folded": [
+     false,
+     false
+    ],
+    "actor": 1,
+    "decision": null,
+    "to_call": 80,
+    "visible": {},
+    "awarded": null
+   },
+   {
+    "index": 11,
+    "type": "bets_collected",
+    "text": null,
+    "street": "flop",
+    "board": [
+     "Kd",
+     "7c",
+     "2h"
+    ],
+    "pot": 300,
+    "bets": [
+     0,
+     0
+    ],
+    "stacks": [
+     850,
+     850
+    ],
+    "folded": [
+     false,
+     false
+    ],
+    "actor": null,
+    "decision": null,
+    "to_call": null,
+    "visible": {},
+    "awarded": null
+   },
+   {
+    "index": 12,
+    "type": "street",
+    "text": "Turn: Kd 7c 2h 4s",
+    "street": "turn",
+    "board": [
+     "Kd",
+     "7c",
+     "2h",
+     "4s"
+    ],
+    "pot": 300,
+    "bets": [
+     0,
+     0
+    ],
+    "stacks": [
+     850,
+     850
+    ],
+    "folded": [
+     false,
+     false
+    ],
+    "actor": null,
+    "decision": null,
+    "to_call": null,
+    "visible": {},
+    "awarded": null
+   },
+   {
+    "index": 13,
+    "type": "action",
+    "text": "You bet 200",
+    "street": "turn",
+    "board": [
+     "Kd",
+     "7c",
+     "2h",
+     "4s"
+    ],
+    "pot": 500,
+    "bets": [
+     200,
+     0
+    ],
+    "stacks": [
+     650,
+     850
+    ],
+    "folded": [
+     false,
+     false
+    ],
+    "actor": 0,
+    "decision": 3,
+    "to_call": 0,
+    "visible": {},
+    "awarded": null
+   },
+   {
+    "index": 14,
+    "type": "action",
+    "text": "Dealer Bot folds",
+    "street": "turn",
+    "board": [
+     "Kd",
+     "7c",
+     "2h",
+     "4s"
+    ],
+    "pot": 500,
+    "bets": [
+     200,
+     0
+    ],
+    "stacks": [
+     650,
+     850
+    ],
+    "folded": [
+     false,
+     true
+    ],
+    "actor": 1,
+    "decision": null,
+    "to_call": 200,
+    "visible": {},
+    "awarded": null
+   },
+   {
+    "index": 15,
+    "type": "uncalled_returned",
+    "text": "Uncalled 200 returned to You",
+    "street": "turn",
+    "board": [
+     "Kd",
+     "7c",
+     "2h",
+     "4s"
+    ],
+    "pot": 300,
+    "bets": [
+     0,
+     0
+    ],
+    "stacks": [
+     850,
+     850
+    ],
+    "folded": [
+     false,
+     true
+    ],
+    "actor": 0,
+    "decision": null,
+    "to_call": null,
+    "visible": {},
+    "awarded": null
+   },
+   {
+    "index": 16,
+    "type": "pot_awarded",
+    "text": "You win 300",
+    "street": "turn",
+    "board": [
+     "Kd",
+     "7c",
+     "2h",
+     "4s"
+    ],
+    "pot": 0,
+    "bets": [
+     0,
+     0
+    ],
+    "stacks": [
+     1150,
+     850
+    ],
+    "folded": [
+     false,
+     true
+    ],
+    "actor": null,
+    "decision": null,
+    "to_call": null,
+    "visible": {},
+    "awarded": {
+     "0": 300
+    }
+   },
+   {
+    "index": 17,
+    "type": "hand_complete",
+    "text": "Hand over",
+    "street": "turn",
+    "board": [
+     "Kd",
+     "7c",
+     "2h",
+     "4s"
+    ],
+    "pot": 0,
+    "bets": [
+     0,
+     0
+    ],
+    "stacks": [
+     1150,
+     850
+    ],
+    "folded": [
+     false,
+     true
+    ],
+    "actor": null,
+    "decision": null,
+    "to_call": null,
+    "visible": {},
+    "awarded": null
+   }
+  ],
+  "summary": {
+   "id": "ha8ed7d667ef6bc4aef1b1e4",
+   "t": 1762600000000.0,
+   "hand_number": 1,
+   "session": "fixture-a",
+   "difficulty": "beginner",
+   "position": "big blind",
+   "big_blind": 10,
+   "hero_cards": [
+    "Ah",
+    "Kh"
+   ],
+   "opponent_cards": null,
+   "board": [
+    "Kd",
+    "7c",
+    "2h",
+    "4s"
+   ],
+   "hand_class": "AKs",
+   "hand_percentile": 0.03167420814479638,
+   "final_hand": "Pair of Kings",
+   "final_category": "One Pair",
+   "net": 150,
+   "net_bb": 15.0,
+   "pot": 300,
+   "pot_bb": 30.0,
+   "result": "won",
+   "showdown": false,
+   "last_street": "turn",
+   "flagged": 1,
+   "quality": "mixed",
+   "ev_loss_bb": 4.263709906684598,
+   "tags": [
+    "missed_value"
+   ],
+   "decisions": [
+    {
+     "i": 0,
+     "street": "preflop",
+     "spot": "facing_bet",
+     "action": "call",
+     "grade": "good",
+     "confidence": "low",
+     "tags": [],
+     "concept": "preflop",
+     "pot": 40,
+     "to_call": 20,
+     "stack": 990,
+     "equity": 0.72,
+     "required": 0.3333333333333333,
+     "ev_loss": 0.0
+    },
+    {
+     "i": 1,
+     "street": "flop",
+     "spot": "unbet",
+     "action": "check",
+     "grade": "questionable",
+     "confidence": "low",
+     "tags": [
+      "missed_value"
+     ],
+     "concept": "value_betting",
+     "pot": 60,
+     "to_call": 0,
+     "stack": 970,
+     "equity": 0.8966666666666666,
+     "required": null,
+     "ev_loss": 22.700000000000003
+    },
+    {
+     "i": 2,
+     "street": "flop",
+     "spot": "facing_bet",
+     "action": "raise",
+     "grade": "close",
+     "confidence": "low",
+     "tags": [],
+     "concept": "pot_odds",
+     "pot": 100,
+     "to_call": 40,
+     "stack": 970,
+     "equity": 0.8866666666666667,
+     "required": 0.2857142857142857,
+     "ev_loss": 7.492381622128448
+    },
+    {
+     "i": 3,
+     "street": "turn",
+     "spot": "unbet",
+     "action": "bet",
+     "grade": "close",
+     "confidence": "low",
+     "tags": [],
+     "concept": "value_betting",
+     "pot": 300,
+     "to_call": 0,
+     "stack": 850,
+     "equity": 0.8605651105651105,
+     "required": null,
+     "ev_loss": 12.444717444717526
+    }
+   ]
+  }
+ },
+ "showdown": {
+  "record": {
+   "v": 1,
+   "id": "h63f5006d1b7cc4ce5a4e8ea",
+   "t": 1762600000000.0,
+   "session": "fixture-b",
+   "hand_number": 1,
+   "mode": "play",
+   "difficulty": "beginner",
+   "adaptive": true,
+   "hero": 0,
+   "names": [
+    "You",
+    "Dealer Bot"
+   ],
+   "hero_cards": [
+    "Ah",
+    "Kc"
+   ],
+   "opponent_cards": {
+    "1": [
+     "9d",
+     "9s"
+    ]
+   },
+   "board": [
+    "2s",
+    "7h",
+    "3c",
+    "Jd",
+    "Qs"
+   ],
+   "events": [
+    {
+     "type": "hand_start",
+     "button": 1,
+     "small_blind": 5,
+     "big_blind": 10,
+     "stacks": [
+      1000,
+      1000
+     ]
+    },
+    {
+     "type": "post_blind",
+     "seat": 1,
+     "blind": "small_blind",
+     "amount": 5,
+     "all_in": false
+    },
+    {
+     "type": "post_blind",
+     "seat": 0,
+     "blind": "big_blind",
+     "amount": 10,
+     "all_in": false
+    },
+    {
+     "type": "action",
+     "seat": 1,
+     "action": "call",
+     "amount": 5,
+     "all_in": false,
+     "label": "call",
+     "stack": 990,
+     "bet": 10
+    },
+    {
+     "type": "action",
+     "seat": 0,
+     "action": "check",
+     "amount": 0,
+     "all_in": false,
+     "label": "check",
+     "stack": 990,
+     "bet": 10,
+     "decision": 0
+    },
+    {
+     "type": "bets_collected",
+     "pot": 20
+    },
+    {
+     "type": "street",
+     "street": "flop",
+     "cards": [
+      "2s",
+      "7h",
+      "3c"
+     ],
+     "board": [
+      "2s",
+      "7h",
+      "3c"
+     ]
+    },
+    {
+     "type": "action",
+     "seat": 0,
+     "action": "check",
+     "amount": 0,
+     "all_in": false,
+     "label": "check",
+     "stack": 990,
+     "bet": 0,
+     "decision": 1
+    },
+    {
+     "type": "action",
+     "seat": 1,
+     "action": "bet",
+     "amount": 20,
+     "all_in": false,
+     "label": "bet",
+     "stack": 970,
+     "bet": 20
+    },
+    {
+     "type": "action",
+     "seat": 0,
+     "action": "call",
+     "amount": 20,
+     "all_in": false,
+     "label": "call",
+     "stack": 970,
+     "bet": 20,
+     "decision": 2
+    },
+    {
+     "type": "bets_collected",
+     "pot": 60
+    },
+    {
+     "type": "street",
+     "street": "turn",
+     "cards": [
+      "Jd"
+     ],
+     "board": [
+      "2s",
+      "7h",
+      "3c",
+      "Jd"
+     ]
+    },
+    {
+     "type": "action",
+     "seat": 0,
+     "action": "check",
+     "amount": 0,
+     "all_in": false,
+     "label": "check",
+     "stack": 970,
+     "bet": 0,
+     "decision": 3
+    },
+    {
+     "type": "action",
+     "seat": 1,
+     "action": "check",
+     "amount": 0,
+     "all_in": false,
+     "label": "check",
+     "stack": 970,
+     "bet": 0
+    },
+    {
+     "type": "bets_collected",
+     "pot": 60
+    },
+    {
+     "type": "street",
+     "street": "river",
+     "cards": [
+      "Qs"
+     ],
+     "board": [
+      "2s",
+      "7h",
+      "3c",
+      "Jd",
+      "Qs"
+     ]
+    },
+    {
+     "type": "action",
+     "seat": 0,
+     "action": "check",
+     "amount": 0,
+     "all_in": false,
+     "label": "check",
+     "stack": 970,
+     "bet": 0,
+     "decision": 4
+    },
+    {
+     "type": "action",
+     "seat": 1,
+     "action": "check",
+     "amount": 0,
+     "all_in": false,
+     "label": "check",
+     "stack": 970,
+     "bet": 0
+    },
+    {
+     "type": "bets_collected",
+     "pot": 60
+    },
+    {
+     "type": "showdown",
+     "hands": {
+      "0": {
+       "cards": [
+        "Ah",
+        "Kc"
+       ],
+       "category": "High Card",
+       "description": "High Card, Ace"
+      },
+      "1": {
+       "cards": [
+        "9d",
+        "9s"
+       ],
+       "category": "One Pair",
+       "description": "Pair of Nines"
+      }
+     }
+    },
+    {
+     "type": "pot_awarded",
+     "pot_index": 0,
+     "amount": 60,
+     "winners": [
+      1
+     ],
+     "payouts": {
+      "1": 60
+     },
+     "hand": "Pair of Nines"
+    },
+    {
+     "type": "hand_complete",
+     "winnings": {
+      "1": 60
+     },
+     "stacks": [
+      970,
+      1030
+     ],
+     "uncontested": false
+    }
+   ],
+   "decisions_linked": true,
+   "coaching": {
+    "hand_number": 1,
+    "decisions": [
+     {
+      "street": "preflop",
+      "hole": [
+       "Ah",
+       "Kc"
+      ],
+      "board": [],
+      "hand": "AKo",
+      "position": "big blind",
+      "pot": 20,
+      "to_call": 0,
+      "stack": 990,
+      "big_blind": 10,
+      "history": [
+       "Preflop: Opponent calls 5"
+      ],
+      "spot": "unopened",
+      "concept": "preflop",
+      "equity": null,
+      "equity_se": null,
+      "equity_method": null,
+      "required_equity": null,
+      "range_size": null,
+      "range_steps": [],
+      "reads": [],
+      "options": [
+       {
+        "key": "check",
+        "action": "check",
+        "amount": null,
+        "label": "Check",
+        "ev": null,
+        "basis": "guideline",
+        "equity_when_called": null,
+        "fold_rate": null,
+        "detail": ""
+       },
+       {
+        "key": "raise-40",
+        "action": "raise",
+        "amount": 40,
+        "label": "Raise to 40",
+        "ev": null,
+        "basis": "guideline",
+        "equity_when_called": null,
+        "fold_rate": null,
+        "detail": ""
+       }
+      ],
+      "hand_percentile": 0.042232277526395176,
+      "range_check": [],
+      "robust": null,
+      "betting_closed": false,
+      "realization_needed": null,
+      "opponent": {
+       "evidence": [],
+       "used": [],
+       "style": [],
+       "note": "Nothing is known yet about this opponent's tendencies, so their range is estimated from default tendencies."
+      },
+      "lesson": {
+       "did": "You checked (Check) preflop with AKo, as the big blind.",
+       "known": [
+        "Your cards: Ah Kc",
+        "Pot 20, nothing to call"
+       ],
+       "estimated": [
+        "Nothing is known yet about this opponent's tendencies, so their range is estimated from default tendencies.",
+        "No range to calculate against yet (nobody has bet)."
+       ],
+       "math": [
+        {
+         "text": "AKo ranks in the top 4% of starting hands; the advice follows an opening guideline, not a computed EV.",
+         "kind": "guideline"
+        }
+       ],
+       "alternative": "The guideline suggests raise to 40 instead.",
+       "principle": "Preflop, hand strength and position decide: play strong hands for value, and give up the weakest ones from out of position.",
+       "also": []
+      },
+      "best": [
+       "raise-40"
+      ],
+      "chosen": "check",
+      "grade": "close",
+      "confidence": "low",
+      "ev_loss": 0.0,
+      "tags": [],
+      "headline": "Close call (guideline)",
+      "explanation": "AKo is strong: raising builds a pot you are likely to win.",
+      "details": [
+       "AKo ranks above 96% of starting hands (by equity against a random hand).",
+       "Guideline: after a limp, raise roughly the top 30% of hands for value and check the rest (checking is free)."
+      ],
+      "caveats": [
+       "Nobody has bet yet, so there is no range to calculate against. This is graded against a simple heads-up guideline, not a computed EV."
+      ],
+      "grade_label": "Close call",
+      "spot_data": {
+       "hero": "AhKc",
+       "board": "",
+       "actions": [
+        [
+         "call",
+         null
+        ]
+       ],
+       "button": 1,
+       "stacks": [
+        1000,
+        1000
+       ],
+       "blinds": [
+        5,
+        10
+       ],
+       "hero_seat": 0,
+       "villain_stats": {}
+      }
+     },
+     {
+      "street": "flop",
+      "hole": [
+       "Ah",
+       "Kc"
+      ],
+      "board": [
+       "2s",
+       "7h",
+       "3c"
+      ],
+      "hand": "High Card, Ace",
+      "position": "big blind",
+      "pot": 20,
+      "to_call": 0,
+      "stack": 990,
+      "big_blind": 10,
+      "history": [
+       "Preflop: Opponent calls 5",
+       "Preflop: You check"
+      ],
+      "spot": "unbet",
+      "concept": "value_betting",
+      "equity": 0.6266666666666667,
+      "equity_se": 0.02787267328435417,
+      "equity_method": "monte_carlo",
+      "required_equity": null,
+      "range_size": 933,
+      "range_steps": [
+       "Preflop: the top 85% of hands (from their call)"
+      ],
+      "reads": [],
+      "options": [
+       {
+        "key": "check",
+        "action": "check",
+        "amount": null,
+        "label": "Check",
+        "ev": 12.533333333333335,
+        "basis": "pot odds",
+        "equity_when_called": null,
+        "fold_rate": null,
+        "detail": "0.627 \u00d7 20 = +12.5 chips (if checked down)"
+       },
+       {
+        "key": "bet-10",
+        "action": "bet",
+        "amount": 10,
+        "label": "Bet 10 (50% pot)",
+        "ev": 14.48888888888889,
+        "basis": "fold model",
+        "equity_when_called": 0.5433333333333333,
+        "fold_rate": 0.3333333333333333,
+        "detail": "fold 33% \u00d7 20 + continue 67% \u00d7 (0.543 \u00d7 40 \u2212 10) = +14.5 chips"
+       },
+       {
+        "key": "bet-13",
+        "action": "bet",
+        "amount": 13,
+        "label": "Bet 13 (65% pot)",
+        "ev": 14.636363636363637,
+        "basis": "fold model",
+        "equity_when_called": 0.525,
+        "fold_rate": 0.3939393939393939,
+        "detail": "fold 39% \u00d7 20 + continue 61% \u00d7 (0.525 \u00d7 46 \u2212 13) = +14.6 chips"
+       },
+       {
+        "key": "bet-20",
+        "action": "bet",
+        "amount": 20,
+        "label": "Bet 20 (100% pot)",
+        "ev": 11.299999999999999,
+        "basis": "fold model",
+        "equity_when_called": 0.37666666666666665,
+        "fold_rate": 0.5,
+        "detail": "fold 50% \u00d7 20 + continue 50% \u00d7 (0.377 \u00d7 60 \u2212 20) = +11.3 chips"
+       }
+      ],
+      "hand_percentile": null,
+      "range_check": [
+       {
+        "name": "tighter",
+        "label": "Tighter range",
+        "description": "they bet, raise and call only with stronger hands (about a quarter fewer)",
+        "range_size": 790,
+        "equity": 0.605,
+        "evs": {
+         "check": 12.1,
+         "bet-10": 14.177777777777777,
+         "bet-13": 14.35757575757576,
+         "bet-20": 13.1
+        }
+       },
+       {
+        "name": "looser",
+        "label": "Looser range",
+        "description": "they bet, raise and call with more hands, including weaker ones and bluffs (about a third more)",
+        "range_size": 1081,
+        "equity": 0.5166666666666667,
+        "evs": {
+         "check": 10.333333333333334,
+         "bet-10": 10.933333333333334,
+         "bet-13": 12.034343434343434,
+         "bet-20": 9.95
+        }
+       }
+      ],
+      "robust": false,
+      "betting_closed": false,
+      "realization_needed": null,
+      "opponent": {
+       "evidence": [],
+       "used": [],
+       "style": [],
+       "note": "Nothing is known yet about this opponent's tendencies, so their range is estimated from default tendencies."
+      },
+      "lesson": {
+       "did": "You checked (Check) on the flop with High Card, Ace, as the big blind.",
+       "known": [
+        "Your cards: Ah Kc",
+        "The board: 2s 7h 3c",
+        "Pot 20, nothing to call"
+       ],
+       "estimated": [
+        "Their range: about 933 hand combinations, estimated from their actions",
+        "Nothing is known yet about this opponent's tendencies, so their range is estimated from default tendencies."
+       ],
+       "math": [
+        {
+         "text": "Your equity against their estimated range: about 63% (52%\u201360% if their range is tighter or looser).",
+         "kind": "estimate"
+        },
+        {
+         "text": "Bet and raise values also assume how often they fold.",
+         "kind": "model"
+        }
+       ],
+       "alternative": "Bet 13 (65% pot) scored about +0.2 bb better (this rests on an assumed fold rate).",
+       "principle": "When betting would mostly be called by better hands, checking is fine: not every hand needs a bet.",
+       "also": [
+        "When the answer changes with their range, ask what this opponent really bets and calls with: that read decides it."
+       ]
+      },
+      "best": [
+       "bet-10",
+       "bet-13"
+      ],
+      "chosen": "check",
+      "grade": "close",
+      "confidence": "low",
+      "ev_loss": 2.1030303030303017,
+      "tags": [],
+      "headline": "Close call",
+      "explanation": "Your High Card, Ace has about 63% equity against their likely hands. Bet 13 (65% pot) scored about +0.2 bb more: hands that call are worse often enough (52% equity when called) to bet for value. This verdict depends on the range assumption: if they bet, raise and call only with stronger hands (about a quarter fewer), your High Card, Ace has about 60% and bet 13 (65% pot) would score clearly better.",
+      "details": [
+       "Your High Card, Ace has 62.7% equity against the estimated range (933 combos, Monte Carlo, \u00b15.5%).",
+       "EV(Check) = 0.627 \u00d7 20 = +12.5 chips (if checked down) = +1.3 bb",
+       "EV(Bet 10 (50% pot)) = fold 33% \u00d7 20 + continue 67% \u00d7 (0.543 \u00d7 40 \u2212 10) = +14.5 chips = +1.4 bb",
+       "EV(Bet 13 (65% pot)) = fold 39% \u00d7 20 + continue 61% \u00d7 (0.525 \u00d7 46 \u2212 13) = +14.6 chips = +1.5 bb",
+       "EV(Bet 20 (100% pot)) = fold 50% \u00d7 20 + continue 50% \u00d7 (0.377 \u00d7 60 \u2212 20) = +11.3 chips = +1.1 bb"
+      ],
+      "caveats": [
+       "These are one-street estimates: they ignore betting on later streets (implied odds, or being bet off your hand).",
+       "Bet and raise values assume the opponent continues with the strongest part of their range at the minimum-defence frequency."
+      ],
+      "grade_label": "Close call",
+      "spot_data": {
+       "hero": "AhKc",
+       "board": "2s7h3c",
+       "actions": [
+        [
+         "call",
+         null
+        ],
+        [
+         "check",
+         null
+        ]
+       ],
+       "button": 1,
+       "stacks": [
+        1000,
+        1000
+       ],
+       "blinds": [
+        5,
+        10
+       ],
+       "hero_seat": 0,
+       "villain_stats": {}
+      }
+     },
+     {
+      "street": "flop",
+      "hole": [
+       "Ah",
+       "Kc"
+      ],
+      "board": [
+       "2s",
+       "7h",
+       "3c"
+      ],
+      "hand": "High Card, Ace",
+      "position": "big blind",
+      "pot": 40,
+      "to_call": 20,
+      "stack": 990,
+      "big_blind": 10,
+      "history": [
+       "Preflop: Opponent calls 5",
+       "Preflop: You check",
+       "Flop: You check",
+       "Flop: Opponent bets 20"
+      ],
+      "spot": "facing_bet",
+      "concept": "pot_odds",
+      "equity": 0.5316666666666666,
+      "equity_se": 0.028321526820719034,
+      "equity_method": "monte_carlo",
+      "required_equity": 0.3333333333333333,
+      "range_size": 610,
+      "range_steps": [
+       "Preflop: the top 85% of hands (from their call)",
+       "Flop bet: keeps their strongest 65%, plus strong draws"
+      ],
+      "reads": [],
+      "options": [
+       {
+        "key": "fold",
+        "action": "fold",
+        "amount": null,
+        "label": "Fold",
+        "ev": 0.0,
+        "basis": "pot odds",
+        "equity_when_called": null,
+        "fold_rate": null,
+        "detail": ""
+       },
+       {
+        "key": "call",
+        "action": "call",
+        "amount": null,
+        "label": "Call 20",
+        "ev": 11.899999999999999,
+        "basis": "pot odds",
+        "equity_when_called": null,
+        "fold_rate": null,
+        "detail": "0.532 \u00d7 60 \u2212 20 = +11.9 chips"
+       },
+       {
+        "key": "raise-65",
+        "action": "raise",
+        "amount": 65,
+        "label": "Raise to 65",
+        "ev": 7.0,
+        "basis": "fold model",
+        "equity_when_called": 0.26,
+        "fold_rate": 0.5,
+        "detail": "fold 50% \u00d7 40 + continue 50% \u00d7 (0.260 \u00d7 150 \u2212 65) = +7.0 chips"
+       }
+      ],
+      "hand_percentile": null,
+      "range_check": [
+       {
+        "name": "tighter",
+        "label": "Tighter range",
+        "description": "they bet, raise and call only with stronger hands (about a quarter fewer)",
+        "range_size": 385,
+        "equity": 0.43,
+        "evs": {
+         "fold": 0.0,
+         "call": 5.800000000000001,
+         "raise-65": 2.8225615530303045
+        }
+       },
+       {
+        "name": "looser",
+        "label": "Looser range",
+        "description": "they bet, raise and call with more hands, including weaker ones and bluffs (about a third more)",
+        "range_size": 929,
+        "equity": 0.5216666666666666,
+        "evs": {
+         "fold": 0.0,
+         "call": 11.299999999999997,
+         "raise-65": 6.8750000000000036
+        }
+       }
+      ],
+      "robust": true,
+      "betting_closed": false,
+      "realization_needed": 0.6269592476489029,
+      "opponent": {
+       "evidence": [],
+       "used": [],
+       "style": [],
+       "note": "Nothing is known yet about this opponent's tendencies, so their range is estimated from default tendencies."
+      },
+      "lesson": {
+       "did": "You called (Call 20) on the flop with High Card, Ace, as the big blind.",
+       "known": [
+        "Your cards: Ah Kc",
+        "The board: 2s 7h 3c",
+        "Pot 40, 20 to call"
+       ],
+       "estimated": [
+        "Their range: about 610 hand combinations, estimated from their actions",
+        "Nothing is known yet about this opponent's tendencies, so their range is estimated from default tendencies."
+       ],
+       "math": [
+        {
+         "text": "Price: you needed 33% equity (20 to win 60).",
+         "kind": "exact"
+        },
+        {
+         "text": "Your equity against their estimated range: about 53% (43%\u201352% if their range is tighter or looser).",
+         "kind": "estimate"
+        },
+        {
+         "text": "With betting still to come, a call must realise at least 63% of that equity to pay.",
+         "kind": "assumption"
+        }
+       ],
+       "alternative": "No option scored clearly better by these estimates.",
+       "principle": "Call when your equity against the hands they are likely to have beats the price the pot offers.",
+       "also": []
+      },
+      "best": [
+       "call"
+      ],
+      "chosen": "call",
+      "grade": "good",
+      "confidence": "medium",
+      "ev_loss": 0.0,
+      "tags": [],
+      "headline": "Good",
+      "explanation": "You needed 33% equity to call 20 into 40. Against the hands the opponent is likely to have here, your High Card, Ace has about 53%. Calling was worth about +1.2 bb by this estimate.",
+      "details": [
+       "Your High Card, Ace has 53.2% equity against the estimated range (610 combos, Monte Carlo, \u00b15.6%).",
+       "Pot odds: call \u00f7 (pot + call) = 20 \u00f7 (40 + 20) = 33.3% equity needed.",
+       "Break-even realisation: 33.3% \u00f7 53.2% = 63% of your equity must be won on later streets for the call to pay.",
+       "EV(Fold) = 0 (nothing more invested) = +0.0 bb",
+       "EV(Call 20) = 0.532 \u00d7 60 \u2212 20 = +11.9 chips = +1.2 bb",
+       "EV(Raise to 65) = fold 50% \u00d7 40 + continue 50% \u00d7 (0.260 \u00d7 150 \u2212 65) = +7.0 chips = +0.7 bb"
+      ],
+      "caveats": [
+       "These are one-street estimates: they ignore betting on later streets (implied odds, or being bet off your hand).",
+       "Bet and raise values assume the opponent continues with the strongest part of their range at the minimum-defence frequency."
+      ],
+      "grade_label": "Good",
+      "spot_data": {
+       "hero": "AhKc",
+       "board": "2s7h3c",
+       "actions": [
+        [
+         "call",
+         null
+        ],
+        [
+         "check",
+         null
+        ],
+        [
+         "check",
+         null
+        ],
+        [
+         "bet",
+         20
+        ]
+       ],
+       "button": 1,
+       "stacks": [
+        1000,
+        1000
+       ],
+       "blinds": [
+        5,
+        10
+       ],
+       "hero_seat": 0,
+       "villain_stats": {}
+      }
+     },
+     {
+      "street": "turn",
+      "hole": [
+       "Ah",
+       "Kc"
+      ],
+      "board": [
+       "2s",
+       "7h",
+       "3c",
+       "Jd"
+      ],
+      "hand": "High Card, Ace",
+      "position": "big blind",
+      "pot": 60,
+      "to_call": 0,
+      "stack": 970,
+      "big_blind": 10,
+      "history": [
+       "Preflop: Opponent calls 5",
+       "Preflop: You check",
+       "Flop: You check",
+       "Flop: Opponent bets 20",
+       "Flop: You call 20"
+      ],
+      "spot": "unbet",
+      "concept": "value_betting",
+      "equity": 0.4456657800031294,
+      "equity_se": 0.0,
+      "equity_method": "exact",
+      "required_equity": null,
+      "range_size": 581,
+      "range_steps": [
+       "Preflop: the top 85% of hands (from their call)",
+       "Flop bet: keeps their strongest 65%, plus strong draws"
+      ],
+      "reads": [],
+      "options": [
+       {
+        "key": "check",
+        "action": "check",
+        "amount": null,
+        "label": "Check",
+        "ev": 26.739946800187763,
+        "basis": "pot odds",
+        "equity_when_called": null,
+        "fold_rate": null,
+        "detail": "0.446 \u00d7 60 = +26.7 chips (if checked down)"
+       },
+       {
+        "key": "bet-20",
+        "action": "bet",
+        "amount": 20,
+        "label": "Bet 20 (33% pot)",
+        "ev": 22.600723140495866,
+        "basis": "fold model",
+        "equity_when_called": 0.3013429752066116,
+        "fold_rate": 0.25,
+        "detail": "fold 25% \u00d7 60 + continue 75% \u00d7 (0.301 \u00d7 100 \u2212 20) = +22.6 chips"
+       },
+       {
+        "key": "bet-40",
+        "action": "bet",
+        "amount": 40,
+        "label": "Bet 40 (67% pot)",
+        "ev": 12.77955189286634,
+        "basis": "fold model",
+        "equity_when_called": 0.1521375225341231,
+        "fold_rate": 0.4,
+        "detail": "fold 40% \u00d7 60 + continue 60% \u00d7 (0.152 \u00d7 140 \u2212 40) = +12.8 chips"
+       },
+       {
+        "key": "bet-60",
+        "action": "bet",
+        "amount": 60,
+        "label": "Bet 60 (100% pot)",
+        "ev": 9.566326530612244,
+        "basis": "fold model",
+        "equity_when_called": 0.10629251700680271,
+        "fold_rate": 0.5,
+        "detail": "fold 50% \u00d7 60 + continue 50% \u00d7 (0.106 \u00d7 180 \u2212 60) = +9.6 chips"
+       }
+      ],
+      "hand_percentile": null,
+      "range_check": [
+       {
+        "name": "tighter",
+        "label": "Tighter range",
+        "description": "they bet, raise and call only with stronger hands (about a quarter fewer)",
+        "range_size": 363,
+        "equity": 0.35274229902329074,
+        "evs": {
+         "check": 21.164537941397445,
+         "bet-20": 12.527155748663102,
+         "bet-40": 7.540033361134277,
+         "bet-60": 7.957042957042958
+        }
+       },
+       {
+        "name": "looser",
+        "label": "Looser range",
+        "description": "they bet, raise and call with more hands, including weaker ones and bluffs (about a third more)",
+        "range_size": 891,
+        "equity": 0.42187021732476276,
+        "evs": {
+         "check": 25.312213039485766,
+         "bet-20": 21.70055821371611,
+         "bet-40": 11.610460320079195,
+         "bet-60": 11.214580873671785
+        }
+       }
+      ],
+      "robust": true,
+      "betting_closed": false,
+      "realization_needed": null,
+      "opponent": {
+       "evidence": [],
+       "used": [],
+       "style": [],
+       "note": "Nothing is known yet about this opponent's tendencies, so their range is estimated from default tendencies."
+      },
+      "lesson": {
+       "did": "You checked (Check) on the turn with High Card, Ace, as the big blind.",
+       "known": [
+        "Your cards: Ah Kc",
+        "The board: 2s 7h 3c Jd",
+        "Pot 60, nothing to call"
+       ],
+       "estimated": [
+        "Their range: about 581 hand combinations, estimated from their actions",
+        "Nothing is known yet about this opponent's tendencies, so their range is estimated from default tendencies."
+       ],
+       "math": [
+        {
+         "text": "Your equity against their estimated range: about 45% (35%\u201342% if their range is tighter or looser).",
+         "kind": "estimate"
+        }
+       ],
+       "alternative": "No option scored clearly better by these estimates.",
+       "principle": "When betting would mostly be called by better hands, checking is fine: not every hand needs a bet.",
+       "also": []
+      },
+      "best": [
+       "check"
+      ],
+      "chosen": "check",
+      "grade": "good",
+      "confidence": "medium",
+      "ev_loss": 0.0,
+      "tags": [],
+      "headline": "Good",
+      "explanation": "Your High Card, Ace has about 45% equity against their likely hands. Checking is reasonable: betting did not score clearly better.",
+      "details": [
+       "Your High Card, Ace has 44.6% equity against the estimated range (581 combos, exact).",
+       "EV(Check) = 0.446 \u00d7 60 = +26.7 chips (if checked down) = +2.7 bb",
+       "EV(Bet 20 (33% pot)) = fold 25% \u00d7 60 + continue 75% \u00d7 (0.301 \u00d7 100 \u2212 20) = +22.6 chips = +2.3 bb",
+       "EV(Bet 40 (67% pot)) = fold 40% \u00d7 60 + continue 60% \u00d7 (0.152 \u00d7 140 \u2212 40) = +12.8 chips = +1.3 bb",
+       "EV(Bet 60 (100% pot)) = fold 50% \u00d7 60 + continue 50% \u00d7 (0.106 \u00d7 180 \u2212 60) = +9.6 chips = +1.0 bb"
+      ],
+      "caveats": [
+       "These are one-street estimates: they ignore betting on later streets (implied odds, or being bet off your hand).",
+       "Bet and raise values assume the opponent continues with the strongest part of their range at the minimum-defence frequency."
+      ],
+      "grade_label": "Good",
+      "spot_data": {
+       "hero": "AhKc",
+       "board": "2s7h3cJd",
+       "actions": [
+        [
+         "call",
+         null
+        ],
+        [
+         "check",
+         null
+        ],
+        [
+         "check",
+         null
+        ],
+        [
+         "bet",
+         20
+        ],
+        [
+         "call",
+         null
+        ]
+       ],
+       "button": 1,
+       "stacks": [
+        1000,
+        1000
+       ],
+       "blinds": [
+        5,
+        10
+       ],
+       "hero_seat": 0,
+       "villain_stats": {}
+      }
+     },
+     {
+      "street": "river",
+      "hole": [
+       "Ah",
+       "Kc"
+      ],
+      "board": [
+       "2s",
+       "7h",
+       "3c",
+       "Jd",
+       "Qs"
+      ],
+      "hand": "High Card, Ace (on the board)",
+      "position": "big blind",
+      "pot": 60,
+      "to_call": 0,
+      "stack": 970,
+      "big_blind": 10,
+      "history": [
+       "Preflop: Opponent calls 5",
+       "Preflop: You check",
+       "Flop: You check",
+       "Flop: Opponent bets 20",
+       "Flop: You call 20",
+       "Turn: You check",
+       "Turn: Opponent checks"
+      ],
+      "spot": "unbet",
+      "concept": "value_betting",
+      "equity": 0.2767695099818512,
+      "equity_se": 0.0,
+      "equity_method": "exact",
+      "required_equity": null,
+      "range_size": 551,
+      "range_steps": [
+       "Preflop: the top 85% of hands (from their call)",
+       "Flop bet: keeps their strongest 65%, plus strong draws"
+      ],
+      "reads": [],
+      "options": [
+       {
+        "key": "check",
+        "action": "check",
+        "amount": null,
+        "label": "Check",
+        "ev": 16.60617059891107,
+        "basis": "pot odds",
+        "equity_when_called": null,
+        "fold_rate": null,
+        "detail": "0.277 \u00d7 60 = +16.6 chips (if checked down)"
+       },
+       {
+        "key": "bet-20",
+        "action": "bet",
+        "amount": 20,
+        "label": "Bet 20 (33% pot)",
+        "ev": 2.6331719128329283,
+        "basis": "fold model",
+        "equity_when_called": 0.035108958837772396,
+        "fold_rate": 0.25,
+        "detail": "fold 25% \u00d7 60 + continue 75% \u00d7 (0.035 \u00d7 100 \u2212 20) = +2.6 chips"
+       },
+       {
+        "key": "bet-40",
+        "action": "bet",
+        "amount": 40,
+        "label": "Bet 40 (67% pot)",
+        "ev": 0.0,
+        "basis": "fold model",
+        "equity_when_called": 0.0,
+        "fold_rate": 0.4,
+        "detail": "fold 40% \u00d7 60 + continue 60% \u00d7 (0.000 \u00d7 140 \u2212 40) = +0.0 chips"
+       },
+       {
+        "key": "bet-60",
+        "action": "bet",
+        "amount": 60,
+        "label": "Bet 60 (100% pot)",
+        "ev": 0.0,
+        "basis": "fold model",
+        "equity_when_called": 0.0,
+        "fold_rate": 0.5,
+        "detail": "fold 50% \u00d7 60 + continue 50% \u00d7 (0.000 \u00d7 180 \u2212 60) = +0.0 chips"
+       }
+      ],
+      "hand_percentile": null,
+      "range_check": [
+       {
+        "name": "tighter",
+        "label": "Tighter range",
+        "description": "they bet, raise and call only with stronger hands (about a quarter fewer)",
+        "range_size": 341,
+        "equity": 0.2565982404692082,
+        "evs": {
+         "check": 15.395894428152491,
+         "bet-20": 1.025390625,
+         "bet-40": 0.0,
+         "bet-60": 0.0
+        }
+       },
+       {
+        "name": "looser",
+        "label": "Looser range",
+        "description": "they bet, raise and call with more hands, including weaker ones and bluffs (about a third more)",
+        "range_size": 853,
+        "equity": 0.29484173505275496,
+        "evs": {
+         "check": 17.6905041031653,
+         "bet-20": 4.51171875,
+         "bet-40": 0.0,
+         "bet-60": 0.0
+        }
+       }
+      ],
+      "robust": true,
+      "betting_closed": false,
+      "realization_needed": null,
+      "opponent": {
+       "evidence": [],
+       "used": [],
+       "style": [],
+       "note": "Nothing is known yet about this opponent's tendencies, so their range is estimated from default tendencies."
+      },
+      "lesson": {
+       "did": "You checked (Check) on the river with High Card, Ace (on the board), as the big blind.",
+       "known": [
+        "Your cards: Ah Kc",
+        "The board: 2s 7h 3c Jd Qs",
+        "Pot 60, nothing to call"
+       ],
+       "estimated": [
+        "Their range: about 551 hand combinations, estimated from their actions",
+        "Nothing is known yet about this opponent's tendencies, so their range is estimated from default tendencies."
+       ],
+       "math": [
+        {
+         "text": "Your equity against their estimated range: about 28% (26%\u201329% if their range is tighter or looser).",
+         "kind": "estimate"
+        }
+       ],
+       "alternative": "No option scored clearly better by these estimates.",
+       "principle": "When betting would mostly be called by better hands, checking is fine: not every hand needs a bet.",
+       "also": []
+      },
+      "best": [
+       "check"
+      ],
+      "chosen": "check",
+      "grade": "good",
+      "confidence": "high",
+      "ev_loss": 0.0,
+      "tags": [],
+      "headline": "Good",
+      "explanation": "Your High Card, Ace (on the board) has about 28% equity against their likely hands. Checking is reasonable: betting did not score clearly better.",
+      "details": [
+       "Your High Card, Ace (on the board) has 27.7% equity against the estimated range (551 combos, exact).",
+       "EV(Check) = 0.277 \u00d7 60 = +16.6 chips (if checked down) = +1.7 bb",
+       "EV(Bet 20 (33% pot)) = fold 25% \u00d7 60 + continue 75% \u00d7 (0.035 \u00d7 100 \u2212 20) = +2.6 chips = +0.3 bb",
+       "EV(Bet 40 (67% pot)) = fold 40% \u00d7 60 + continue 60% \u00d7 (0.000 \u00d7 140 \u2212 40) = +0.0 chips = +0.0 bb",
+       "EV(Bet 60 (100% pot)) = fold 50% \u00d7 60 + continue 50% \u00d7 (0.000 \u00d7 180 \u2212 60) = +0.0 chips = +0.0 bb"
+      ],
+      "caveats": [
+       "Bet and raise values assume the opponent continues with the strongest part of their range at the minimum-defence frequency."
+      ],
+      "grade_label": "Good",
+      "spot_data": {
+       "hero": "AhKc",
+       "board": "2s7h3cJdQs",
+       "actions": [
+        [
+         "call",
+         null
+        ],
+        [
+         "check",
+         null
+        ],
+        [
+         "check",
+         null
+        ],
+        [
+         "bet",
+         20
+        ],
+        [
+         "call",
+         null
+        ],
+        [
+         "check",
+         null
+        ],
+        [
+         "check",
+         null
+        ]
+       ],
+       "button": 1,
+       "stacks": [
+        1000,
+        1000
+       ],
+       "blinds": [
+        5,
+        10
+       ],
+       "hero_seat": 0,
+       "villain_stats": {}
+      }
+     }
+    ],
+    "counts": {
+     "good": 3,
+     "close": 2,
+     "questionable": 0,
+     "mistake": 0,
+     "ungraded": 0
+    },
+    "net": -30,
+    "net_bb": -3.0,
+    "ev_loss_bb": 0.21030303030303016,
+    "quality": "sound",
+    "verdict": "You lost 30 chips, but your decisions held up by these estimates. Good decisions still lose often in the short run: judge them by the reasoning, not the result.",
+    "hindsight": "The opponent's cards shown at showdown were not used: these grades use only what you could see when you decided.",
+    "tags": []
+   }
+  },
+  "frames": [
+   {
+    "index": 0,
+    "type": "hand_start",
+    "text": "Hand #1 \u2014 Dealer Bot has the button",
+    "street": "preflop",
+    "board": [],
+    "pot": 0,
+    "bets": [
+     0,
+     0
+    ],
+    "stacks": [
+     1000,
+     1000
+    ],
+    "folded": [
+     false,
+     false
+    ],
+    "actor": null,
+    "decision": null,
+    "to_call": null,
+    "visible": {},
+    "awarded": null
+   },
+   {
+    "index": 1,
+    "type": "post_blind",
+    "text": "Dealer Bot posts small blind 5",
+    "street": "preflop",
+    "board": [],
+    "pot": 5,
+    "bets": [
+     0,
+     5
+    ],
+    "stacks": [
+     1000,
+     995
+    ],
+    "folded": [
+     false,
+     false
+    ],
+    "actor": 1,
+    "decision": null,
+    "to_call": null,
+    "visible": {},
+    "awarded": null
+   },
+   {
+    "index": 2,
+    "type": "post_blind",
+    "text": "You post big blind 10",
+    "street": "preflop",
+    "board": [],
+    "pot": 15,
+    "bets": [
+     10,
+     5
+    ],
+    "stacks": [
+     990,
+     995
+    ],
+    "folded": [
+     false,
+     false
+    ],
+    "actor": 0,
+    "decision": null,
+    "to_call": null,
+    "visible": {},
+    "awarded": null
+   },
+   {
+    "index": 3,
+    "type": "action",
+    "text": "Dealer Bot calls 5",
+    "street": "preflop",
+    "board": [],
+    "pot": 20,
+    "bets": [
+     10,
+     10
+    ],
+    "stacks": [
+     990,
+     990
+    ],
+    "folded": [
+     false,
+     false
+    ],
+    "actor": 1,
+    "decision": null,
+    "to_call": 5,
+    "visible": {},
+    "awarded": null
+   },
+   {
+    "index": 4,
+    "type": "action",
+    "text": "You check",
+    "street": "preflop",
+    "board": [],
+    "pot": 20,
+    "bets": [
+     10,
+     10
+    ],
+    "stacks": [
+     990,
+     990
+    ],
+    "folded": [
+     false,
+     false
+    ],
+    "actor": 0,
+    "decision": 0,
+    "to_call": 0,
+    "visible": {},
+    "awarded": null
+   },
+   {
+    "index": 5,
+    "type": "bets_collected",
+    "text": null,
+    "street": "preflop",
+    "board": [],
+    "pot": 20,
+    "bets": [
+     0,
+     0
+    ],
+    "stacks": [
+     990,
+     990
+    ],
+    "folded": [
+     false,
+     false
+    ],
+    "actor": null,
+    "decision": null,
+    "to_call": null,
+    "visible": {},
+    "awarded": null
+   },
+   {
+    "index": 6,
+    "type": "street",
+    "text": "Flop: 2s 7h 3c",
+    "street": "flop",
+    "board": [
+     "2s",
+     "7h",
+     "3c"
+    ],
+    "pot": 20,
+    "bets": [
+     0,
+     0
+    ],
+    "stacks": [
+     990,
+     990
+    ],
+    "folded": [
+     false,
+     false
+    ],
+    "actor": null,
+    "decision": null,
+    "to_call": null,
+    "visible": {},
+    "awarded": null
+   },
+   {
+    "index": 7,
+    "type": "action",
+    "text": "You check",
+    "street": "flop",
+    "board": [
+     "2s",
+     "7h",
+     "3c"
+    ],
+    "pot": 20,
+    "bets": [
+     0,
+     0
+    ],
+    "stacks": [
+     990,
+     990
+    ],
+    "folded": [
+     false,
+     false
+    ],
+    "actor": 0,
+    "decision": 1,
+    "to_call": 0,
+    "visible": {},
+    "awarded": null
+   },
+   {
+    "index": 8,
+    "type": "action",
+    "text": "Dealer Bot bets 20",
+    "street": "flop",
+    "board": [
+     "2s",
+     "7h",
+     "3c"
+    ],
+    "pot": 40,
+    "bets": [
+     0,
+     20
+    ],
+    "stacks": [
+     990,
+     970
+    ],
+    "folded": [
+     false,
+     false
+    ],
+    "actor": 1,
+    "decision": null,
+    "to_call": 0,
+    "visible": {},
+    "awarded": null
+   },
+   {
+    "index": 9,
+    "type": "action",
+    "text": "You call 20",
+    "street": "flop",
+    "board": [
+     "2s",
+     "7h",
+     "3c"
+    ],
+    "pot": 60,
+    "bets": [
+     20,
+     20
+    ],
+    "stacks": [
+     970,
+     970
+    ],
+    "folded": [
+     false,
+     false
+    ],
+    "actor": 0,
+    "decision": 2,
+    "to_call": 20,
+    "visible": {},
+    "awarded": null
+   },
+   {
+    "index": 10,
+    "type": "bets_collected",
+    "text": null,
+    "street": "flop",
+    "board": [
+     "2s",
+     "7h",
+     "3c"
+    ],
+    "pot": 60,
+    "bets": [
+     0,
+     0
+    ],
+    "stacks": [
+     970,
+     970
+    ],
+    "folded": [
+     false,
+     false
+    ],
+    "actor": null,
+    "decision": null,
+    "to_call": null,
+    "visible": {},
+    "awarded": null
+   },
+   {
+    "index": 11,
+    "type": "street",
+    "text": "Turn: 2s 7h 3c Jd",
+    "street": "turn",
+    "board": [
+     "2s",
+     "7h",
+     "3c",
+     "Jd"
+    ],
+    "pot": 60,
+    "bets": [
+     0,
+     0
+    ],
+    "stacks": [
+     970,
+     970
+    ],
+    "folded": [
+     false,
+     false
+    ],
+    "actor": null,
+    "decision": null,
+    "to_call": null,
+    "visible": {},
+    "awarded": null
+   },
+   {
+    "index": 12,
+    "type": "action",
+    "text": "You check",
+    "street": "turn",
+    "board": [
+     "2s",
+     "7h",
+     "3c",
+     "Jd"
+    ],
+    "pot": 60,
+    "bets": [
+     0,
+     0
+    ],
+    "stacks": [
+     970,
+     970
+    ],
+    "folded": [
+     false,
+     false
+    ],
+    "actor": 0,
+    "decision": 3,
+    "to_call": 0,
+    "visible": {},
+    "awarded": null
+   },
+   {
+    "index": 13,
+    "type": "action",
+    "text": "Dealer Bot checks",
+    "street": "turn",
+    "board": [
+     "2s",
+     "7h",
+     "3c",
+     "Jd"
+    ],
+    "pot": 60,
+    "bets": [
+     0,
+     0
+    ],
+    "stacks": [
+     970,
+     970
+    ],
+    "folded": [
+     false,
+     false
+    ],
+    "actor": 1,
+    "decision": null,
+    "to_call": 0,
+    "visible": {},
+    "awarded": null
+   },
+   {
+    "index": 14,
+    "type": "bets_collected",
+    "text": null,
+    "street": "turn",
+    "board": [
+     "2s",
+     "7h",
+     "3c",
+     "Jd"
+    ],
+    "pot": 60,
+    "bets": [
+     0,
+     0
+    ],
+    "stacks": [
+     970,
+     970
+    ],
+    "folded": [
+     false,
+     false
+    ],
+    "actor": null,
+    "decision": null,
+    "to_call": null,
+    "visible": {},
+    "awarded": null
+   },
+   {
+    "index": 15,
+    "type": "street",
+    "text": "River: 2s 7h 3c Jd Qs",
+    "street": "river",
+    "board": [
+     "2s",
+     "7h",
+     "3c",
+     "Jd",
+     "Qs"
+    ],
+    "pot": 60,
+    "bets": [
+     0,
+     0
+    ],
+    "stacks": [
+     970,
+     970
+    ],
+    "folded": [
+     false,
+     false
+    ],
+    "actor": null,
+    "decision": null,
+    "to_call": null,
+    "visible": {},
+    "awarded": null
+   },
+   {
+    "index": 16,
+    "type": "action",
+    "text": "You check",
+    "street": "river",
+    "board": [
+     "2s",
+     "7h",
+     "3c",
+     "Jd",
+     "Qs"
+    ],
+    "pot": 60,
+    "bets": [
+     0,
+     0
+    ],
+    "stacks": [
+     970,
+     970
+    ],
+    "folded": [
+     false,
+     false
+    ],
+    "actor": 0,
+    "decision": 4,
+    "to_call": 0,
+    "visible": {},
+    "awarded": null
+   },
+   {
+    "index": 17,
+    "type": "action",
+    "text": "Dealer Bot checks",
+    "street": "river",
+    "board": [
+     "2s",
+     "7h",
+     "3c",
+     "Jd",
+     "Qs"
+    ],
+    "pot": 60,
+    "bets": [
+     0,
+     0
+    ],
+    "stacks": [
+     970,
+     970
+    ],
+    "folded": [
+     false,
+     false
+    ],
+    "actor": 1,
+    "decision": null,
+    "to_call": 0,
+    "visible": {},
+    "awarded": null
+   },
+   {
+    "index": 18,
+    "type": "bets_collected",
+    "text": null,
+    "street": "river",
+    "board": [
+     "2s",
+     "7h",
+     "3c",
+     "Jd",
+     "Qs"
+    ],
+    "pot": 60,
+    "bets": [
+     0,
+     0
+    ],
+    "stacks": [
+     970,
+     970
+    ],
+    "folded": [
+     false,
+     false
+    ],
+    "actor": null,
+    "decision": null,
+    "to_call": null,
+    "visible": {},
+    "awarded": null
+   },
+   {
+    "index": 19,
+    "type": "showdown",
+    "text": "You show Ah Kc (High Card, Ace); Dealer Bot shows 9d 9s (Pair of Nines)",
+    "street": "showdown",
+    "board": [
+     "2s",
+     "7h",
+     "3c",
+     "Jd",
+     "Qs"
+    ],
+    "pot": 60,
+    "bets": [
+     0,
+     0
+    ],
+    "stacks": [
+     970,
+     970
+    ],
+    "folded": [
+     false,
+     false
+    ],
+    "actor": null,
+    "decision": null,
+    "to_call": null,
+    "visible": {
+     "1": [
+      "9d",
+      "9s"
+     ]
+    },
+    "awarded": null
+   },
+   {
+    "index": 20,
+    "type": "pot_awarded",
+    "text": "Dealer Bot wins 60 with Pair of Nines",
+    "street": "showdown",
+    "board": [
+     "2s",
+     "7h",
+     "3c",
+     "Jd",
+     "Qs"
+    ],
+    "pot": 0,
+    "bets": [
+     0,
+     0
+    ],
+    "stacks": [
+     970,
+     1030
+    ],
+    "folded": [
+     false,
+     false
+    ],
+    "actor": null,
+    "decision": null,
+    "to_call": null,
+    "visible": {
+     "1": [
+      "9d",
+      "9s"
+     ]
+    },
+    "awarded": {
+     "1": 60
+    }
+   },
+   {
+    "index": 21,
+    "type": "hand_complete",
+    "text": "Hand over",
+    "street": "showdown",
+    "board": [
+     "2s",
+     "7h",
+     "3c",
+     "Jd",
+     "Qs"
+    ],
+    "pot": 0,
+    "bets": [
+     0,
+     0
+    ],
+    "stacks": [
+     970,
+     1030
+    ],
+    "folded": [
+     false,
+     false
+    ],
+    "actor": null,
+    "decision": null,
+    "to_call": null,
+    "visible": {
+     "1": [
+      "9d",
+      "9s"
+     ]
+    },
+    "awarded": null
+   }
+  ],
+  "summary": {
+   "id": "h63f5006d1b7cc4ce5a4e8ea",
+   "t": 1762600000000.0,
+   "hand_number": 1,
+   "session": "fixture-b",
+   "difficulty": "beginner",
+   "position": "big blind",
+   "big_blind": 10,
+   "hero_cards": [
+    "Ah",
+    "Kc"
+   ],
+   "opponent_cards": [
+    "9d",
+    "9s"
+   ],
+   "board": [
+    "2s",
+    "7h",
+    "3c",
+    "Jd",
+    "Qs"
+   ],
+   "hand_class": "AKo",
+   "hand_percentile": 0.042232277526395176,
+   "final_hand": "High Card, Ace",
+   "final_category": "High Card",
+   "net": -30,
+   "net_bb": -3.0,
+   "pot": 60,
+   "pot_bb": 6.0,
+   "result": "lost",
+   "showdown": true,
+   "last_street": "river",
+   "flagged": 0,
+   "quality": "sound",
+   "ev_loss_bb": 0.21030303030303016,
+   "tags": [],
+   "decisions": [
+    {
+     "i": 0,
+     "street": "preflop",
+     "spot": "unopened",
+     "action": "check",
+     "grade": "close",
+     "confidence": "low",
+     "tags": [],
+     "concept": "preflop",
+     "pot": 20,
+     "to_call": 0,
+     "stack": 990,
+     "equity": null,
+     "required": null,
+     "ev_loss": 0.0
+    },
+    {
+     "i": 1,
+     "street": "flop",
+     "spot": "unbet",
+     "action": "check",
+     "grade": "close",
+     "confidence": "low",
+     "tags": [],
+     "concept": "value_betting",
+     "pot": 20,
+     "to_call": 0,
+     "stack": 990,
+     "equity": 0.6266666666666667,
+     "required": null,
+     "ev_loss": 2.1030303030303017
+    },
+    {
+     "i": 2,
+     "street": "flop",
+     "spot": "facing_bet",
+     "action": "call",
+     "grade": "good",
+     "confidence": "medium",
+     "tags": [],
+     "concept": "pot_odds",
+     "pot": 40,
+     "to_call": 20,
+     "stack": 990,
+     "equity": 0.5316666666666666,
+     "required": 0.3333333333333333,
+     "ev_loss": 0.0
+    },
+    {
+     "i": 3,
+     "street": "turn",
+     "spot": "unbet",
+     "action": "check",
+     "grade": "good",
+     "confidence": "medium",
+     "tags": [],
+     "concept": "value_betting",
+     "pot": 60,
+     "to_call": 0,
+     "stack": 970,
+     "equity": 0.4456657800031294,
+     "required": null,
+     "ev_loss": 0.0
+    },
+    {
+     "i": 4,
+     "street": "river",
+     "spot": "unbet",
+     "action": "check",
+     "grade": "good",
+     "confidence": "high",
+     "tags": [],
+     "concept": "value_betting",
+     "pot": 60,
+     "to_call": 0,
+     "stack": 970,
+     "equity": 0.2767695099818512,
+     "required": null,
+     "ev_loss": 0.0
+    }
+   ]
+  }
+ }
+}

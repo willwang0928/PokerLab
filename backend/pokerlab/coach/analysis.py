@@ -1223,7 +1223,7 @@ def build_lesson(
     if a.opponent is not None:
         estimates.append(a.opponent["note"])
     if a.equity is None:
-        estimates.append("No range to calculate against yet (nobody has bet).")
+        estimates.append("No range to calculate against yet (the pot is unopened).")
 
     math: list[dict[str, str]] = []
 

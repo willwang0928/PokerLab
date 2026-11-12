@@ -18,6 +18,11 @@ startup the file is checked (``PRAGMA quick_check``). If it is unreadable or cor
 store reports itself unavailable, and the file is left untouched for recovery, rather
 than being replaced with an empty one.
 
+**Hand histories** (schema 2, v0.4.3) live in their own table: one completed hand per
+row, with the full record and a small summary for listing and filtering. They are
+validated (and replayed) before they reach the store, see :mod:`pokerlab.history`.
+Opening a schema-1 database adds the table and keeps every existing record.
+
 Only the standard library is used.
 """
 
@@ -38,8 +43,9 @@ from typing import Any
 
 log = logging.getLogger(__name__)
 
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
 MAX_RECORDS_PER_PROFILE = 200_000  # per table; far beyond any realistic history
+MAX_HANDS_PER_PROFILE = 50_000  # hand records are larger (a few KB to 20 KB each)
 
 _SCHEMA = """
 CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);
@@ -67,6 +73,15 @@ CREATE TABLE IF NOT EXISTS decisions (
     PRIMARY KEY (profile_id, id)
 ) WITHOUT ROWID;
 CREATE INDEX IF NOT EXISTS decisions_by_time ON decisions(profile_id, t);
+CREATE TABLE IF NOT EXISTS hands (
+    profile_id INTEGER NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+    id TEXT NOT NULL,
+    t REAL NOT NULL,
+    data TEXT NOT NULL,
+    summary TEXT NOT NULL,
+    PRIMARY KEY (profile_id, id)
+) WITHOUT ROWID;
+CREATE INDEX IF NOT EXISTS hands_by_time ON hands(profile_id, t);
 """
 
 TABLES = ("answers", "decisions")
@@ -156,6 +171,13 @@ class ProgressStore:
                 raise sqlite3.DatabaseError(
                     f"database schema {row[0]} is newer than this server ({SCHEMA_VERSION})"
                 )
+            elif int(row[0]) < SCHEMA_VERSION:
+                # 1 -> 2 only adds the hands table (created above); records are untouched.
+                log.info("Progress database migrated from schema %s to %s", row[0], SCHEMA_VERSION)
+                db.execute(
+                    "UPDATE meta SET value = ? WHERE key = 'schema_version'",
+                    (str(SCHEMA_VERSION),),
+                )
         except BaseException:
             db.close()
             raise
@@ -223,7 +245,7 @@ class ProgressStore:
             db = self._conn()
             db.execute("BEGIN IMMEDIATE")
             try:
-                for table in TABLES:
+                for table in (*TABLES, "hands"):
                     db.execute(f"DELETE FROM {table} WHERE profile_id = ?", (profile.id,))  # noqa: S608
                 db.execute("DELETE FROM profiles WHERE id = ?", (profile.id,))
                 db.execute("COMMIT")
@@ -241,7 +263,7 @@ class ProgressStore:
                         (profile.id,),
                     ).fetchone()[0]
                 )
-                for t in TABLES
+                for t in (*TABLES, "hands")
             }
 
     # ------------------------------------------------------------------ records
@@ -306,3 +328,77 @@ class ProgressStore:
                 ).fetchall()
                 out[table] = [json.loads(r[0]) for r in reversed(rows)]
         return out
+
+    # ------------------------------------------------------------------ hand histories
+
+    def add_hands(self, profile: Profile, hands: Sequence[tuple[dict[str, Any], dict]]) -> int:
+        """Insert validated ``(record, summary)`` pairs in one transaction; repeats are
+        skipped. Returns how many were new."""
+        if not hands:
+            return 0
+        with self._lock:
+            db = self._conn()
+            db.execute("BEGIN IMMEDIATE")
+            try:
+                have = db.execute(
+                    "SELECT COUNT(*) FROM hands WHERE profile_id = ?", (profile.id,)
+                ).fetchone()[0]
+                if have + len(hands) > MAX_HANDS_PER_PROFILE:
+                    raise QuotaExceeded("Too many hands for one profile")
+                before = db.total_changes
+                db.executemany(
+                    "INSERT OR IGNORE INTO hands(profile_id, id, t, data, summary)"
+                    " VALUES (?, ?, ?, ?, ?)",
+                    [
+                        (
+                            profile.id,
+                            r["id"],
+                            float(r["t"]),
+                            json.dumps(r, separators=(",", ":"), sort_keys=True),
+                            json.dumps(s, separators=(",", ":"), sort_keys=True),
+                        )
+                        for r, s in hands
+                    ],
+                )
+                added = db.total_changes - before
+                db.execute(
+                    "UPDATE profiles SET updated_at = ? WHERE id = ?", (time.time(), profile.id)
+                )
+                db.execute("COMMIT")
+            except BaseException:
+                db.execute("ROLLBACK")
+                raise
+        return added
+
+    def hand_summaries(self, profile: Profile, limit: int) -> list[dict[str, Any]]:
+        """Summaries of the most recent ``limit`` hands, newest first. A row that cannot
+        be read is skipped (and logged) rather than failing the whole list."""
+        with self._lock:
+            rows = (
+                self._conn()
+                .execute(
+                    "SELECT id, summary FROM hands WHERE profile_id = ?"
+                    " ORDER BY t DESC, id DESC LIMIT ?",
+                    (profile.id, limit),
+                )
+                .fetchall()
+            )
+        out = []
+        for hid, raw in rows:
+            try:
+                out.append(json.loads(raw))
+            except ValueError:
+                log.warning("Unreadable hand summary %s skipped", hid)
+        return out
+
+    def hand(self, profile: Profile, hand_id: str) -> dict[str, Any] | None:
+        with self._lock:
+            row = (
+                self._conn()
+                .execute(
+                    "SELECT data FROM hands WHERE profile_id = ? AND id = ?",
+                    (profile.id, hand_id),
+                )
+                .fetchone()
+            )
+        return None if row is None else json.loads(row[0])

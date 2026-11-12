@@ -10,6 +10,7 @@ import type { Plan } from "./components/TrainingView";
 
 // Loaded on first use: most sessions start at the table.
 const TrainingView = lazy(() => import("./components/TrainingView").then((m) => ({ default: m.TrainingView })));
+const HistoryView = lazy(() => import("./components/HistoryView").then((m) => ({ default: m.HistoryView })));
 const ProgressDashboard = lazy(() =>
   import("./components/ProgressDashboard").then((m) => ({ default: m.ProgressDashboard })),
 );
@@ -28,7 +29,8 @@ import { useProgressStore } from "./hooks/useProgressStore";
 import { recordAnswer, recordHandReview } from "./lib/skills";
 import type { DecisionReview, GameConfig, GameState, HandReview, TrainingScenario } from "./types";
 
-type Mode = "play" | "train" | "progress";
+type Mode = "play" | "train" | "history" | "progress";
+const MODE_LABEL: Record<Mode, string> = { play: "Play", train: "Train", history: "History", progress: "Progress" };
 const COACH_DETAIL_KEY = "pokerlab.coach.detailed";
 
 const DEFAULT_CONFIG: GameConfig = {
@@ -84,6 +86,7 @@ export default function App() {
   const store = useProgressStore();
   const { progress } = store;
   const updateProgress = store.record;
+  const saveHand = store.saveHand;
   const [detailed, setDetailed] = useState(() => {
     try {
       return localStorage.getItem(COACH_DETAIL_KEY) === "1";
@@ -130,6 +133,16 @@ export default function App() {
         if (cancelled) return;
         const gone = e instanceof ApiError && e.status === 404;
         setReviewState({ key: reviewKey, loading: false, error: gone ? null : "The review could not be loaded." });
+      })
+      // Then save the hand to the history (its record reuses the review just computed).
+      // Not cancelled by a new hand: the server keeps recent hands for exactly this.
+      .finally(() => {
+        coachApi
+          .record(sessionId, hand)
+          .then(saveHand)
+          .catch(() => {
+            /* the hand is too old or the server is gone: nothing to save */
+          });
       });
     return () => {
       cancelled = true;
@@ -190,7 +203,7 @@ export default function App() {
         </div>
         <div className="flex items-center gap-2 sm:gap-2.5">
           <div className="surface flex rounded-xl p-0.5" role="tablist" aria-label="Mode">
-            {(["play", "train", "progress"] as const).map((m) => (
+            {(["play", "train", "history", "progress"] as const).map((m) => (
               <button
                 key={m}
                 type="button"
@@ -208,7 +221,7 @@ export default function App() {
                   mode === m ? "bg-amber-300 text-slate-950" : "text-slate-300 hover:text-white"
                 }`}
               >
-                {m === "play" ? "Play" : m === "train" ? "Train" : "Progress"}
+                {MODE_LABEL[m]}
               </button>
             ))}
           </div>
@@ -284,6 +297,24 @@ export default function App() {
                 }),
               )
             }
+          />
+          </Suspense>
+        </main>
+      )}
+      {mode === "history" && (
+        <main className="mx-auto flex w-full max-w-[1440px] flex-1 flex-col px-3 pb-5 sm:px-6">
+          <Suspense fallback={<div className="surface rounded-2xl p-6 text-slate-400">Loading…</div>}>
+          <HistoryView
+            store={store}
+            progress={progress}
+            detailed={detailed}
+            onToggleDetailed={toggleDetailed}
+            onPractice={(d) => void practise(d)}
+            onTrain={(plan) => {
+              setPractice(null);
+              setStartPlan(plan);
+              setMode("train");
+            }}
           />
           </Suspense>
         </main>

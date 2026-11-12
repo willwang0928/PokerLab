@@ -19,9 +19,13 @@ from .coach.review import HandCoach
 from .engine import Action, Event, HoldemHand, IllegalActionError
 from .equity import STREET_BOARD_SIZES, EquityResult, calculate_equity
 from .evaluator import best_five, evaluate
+from .history import build_record, describe
 
 HUMAN = 0
 AI = 1
+# Finished hands kept for their hand-history record, so the record can still be fetched
+# after the next hand has been dealt (auto-deal, a slow network).
+RECENT_HANDS = 5
 
 
 class SessionStatus(StrEnum):
@@ -93,6 +97,8 @@ class HeadsUpSession:
             names={AI: self.config.ai_name},
         )
         # Serialises requests for this session (the API runs handlers on a threadpool).
+        # hand number -> what is needed to build its history record (see hand_record)
+        self._recent: dict[int, dict[str, Any]] = {}
         self.lock = threading.RLock()
         self.last_active = time.monotonic()
 
@@ -212,6 +218,14 @@ class HeadsUpSession:
             self.agent.observe_hand(self.hand.events, AI)
         start = next(e.data["stacks"] for e in self.hand.events if e.type == "hand_start")
         self.coach.finish_hand(self.hand.events, self.stacks[HUMAN] - start[HUMAN])
+        self._recent[self.hand_number] = {
+            "events": list(self.hand.events),
+            "hero_cards": [c.code for c in self.hand.players[HUMAN].hole],
+            "coach_hand": self.coach.pending(self.hand_number),
+            "t": time.time() * 1000,
+        }
+        for old in sorted(self._recent)[:-RECENT_HANDS]:
+            del self._recent[old]
         self.status = SessionStatus.GAME_OVER if min(self.stacks) == 0 else SessionStatus.WAITING
 
     def _equity_rows(self, board_size: int) -> list[dict[str, Any]]:
@@ -317,46 +331,41 @@ class HeadsUpSession:
     def _name(self, seat: int) -> str:
         return self.config.player_name if seat == HUMAN else self.config.ai_name
 
-    def _say(self, seat: int, verb: str, rest: str = "") -> str:
-        """Conjugate ``verb`` for the seat ("You call" vs "Dealer Bot calls")."""
-        name = self._name(seat)
-        second_person = name.lower() == "you"
-        if not second_person:
-            verb = {"have": "has"}.get(verb, verb + ("es" if verb.endswith("sh") else "s"))
-        return f"{name} {verb}" + (f" {rest}" if rest else "")
-
     def _describe(self, event: Event) -> str | None:
-        d = event.data
-        t = event.type
-        if t == "hand_start":
-            return f"Hand #{self.hand_number} — " + self._say(d["button"], "have", "the button")
-        if t == "post_blind":
-            kind = "small" if d["blind"] == "small_blind" else "big"
-            return self._say(d["seat"], "post", f"{kind} blind {d['amount']}")
-        if t == "action":
-            verb, rest = {
-                "fold": ("fold", ""),
-                "check": ("check", ""),
-                "call": ("call", str(d["amount"])),
-                "bet": ("bet", str(d["amount"])),
-                "raise": ("raise", f"to {d['amount']}"),
-            }[d["action"]]
-            return self._say(d["seat"], verb, rest) + (" (all-in)" if d["all_in"] else "")
-        if t == "street":
-            return f"{d['street'].title()}: {' '.join(d['board'])}"
-        if t == "uncalled_returned":
-            return f"Uncalled {d['amount']} returned to {self._name(d['seat'])}"
-        if t == "showdown":
-            return "; ".join(
-                self._say(int(s), "show", f"{' '.join(h['cards'])} ({h['description']})")
-                for s, h in d["hands"].items()
-            )
-        if t == "pot_awarded":
-            hand = f" with {d['hand']}" if d["hand"] else ""
-            if len(d["winners"]) > 1:
-                return f"Split pot: {d['amount']} shared{hand}"
-            return self._say(d["winners"][0], "win", f"{d['amount']}{hand}")
-        return None
+        if event.type == "reveal":  # the live log shows revealed cards on the table instead
+            return None
+        names = [self._name(HUMAN), self._name(AI)]
+        return describe(event.type, event.data, names, self.hand_number)
+
+    # ------------------------------------------------------------------ history
+
+    def finished_hand(self, number: int) -> dict[str, Any] | None:
+        """What is kept of a recently finished hand (``None`` if unknown or too old)."""
+        with self.lock:
+            return self._recent.get(number)
+
+    def hand_record(self, number: int) -> dict[str, Any] | None:
+        """The hand-history record of a recently finished hand, with its coaching review.
+
+        Slow the first time (the review is computed): call it outside the session lock.
+        """
+        kept = self.finished_hand(number)
+        if kept is None:
+            return None
+        coach_hand = kept["coach_hand"]
+        review = self.coach.review_hand(coach_hand) if coach_hand is not None else None
+        return build_record(
+            session_id=self.id,
+            hand_number=number,
+            events=kept["events"],
+            hero=HUMAN,
+            hero_cards=kept["hero_cards"],
+            names=[self._name(HUMAN), self._name(AI)],
+            t_ms=kept["t"],
+            difficulty=self.config.difficulty.value,
+            adaptive=self.config.adaptive,
+            review=review,
+        )
 
     # ------------------------------------------------------------------ views
 

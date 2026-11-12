@@ -3,11 +3,15 @@ import type {
   Concept,
   GameConfig,
   GameState,
+  HandFrame,
+  HandRecord,
   HandReview,
+  HandSummary,
   PlayResponse,
   TrainingAnswer,
   TrainingDifficulty,
   TrainingScenario,
+  Weaknesses,
 } from "../types";
 
 const BASE = (import.meta.env.VITE_API_BASE_URL ?? "").replace(/\/$/, "");
@@ -60,6 +64,8 @@ export const api = {
 export const coachApi = {
   review: (sessionId: string, hand: number) =>
     request<HandReview>(`/api/sessions/${sessionId}/hands/${hand}/review`),
+  /** The finished hand as a history record (public information only), for saving. */
+  record: (sessionId: string, hand: number) => request<HandRecord>(`/api/sessions/${sessionId}/hands/${hand}/record`),
   scenario: (difficulty: TrainingDifficulty, concept: Concept, seed?: number) =>
     request<TrainingScenario>(
       `/api/training/scenario?difficulty=${difficulty}&concept=${concept}` + (seed === undefined ? "" : `&seed=${seed}`),
@@ -80,7 +86,7 @@ export interface ServerProfile {
   name: string;
   created_at: number;
   updated_at: number;
-  counts?: { answers: number; decisions: number };
+  counts?: { answers: number; decisions: number; hands?: number };
 }
 
 export interface UploadResult {
@@ -104,4 +110,14 @@ export const profileApi = {
     request<{ answers: unknown[]; decisions: unknown[]; truncated: boolean }>("/api/profile/records", authed(token)),
   upload: (token: string, answers: unknown[], decisions: unknown[]) =>
     request<UploadResult>("/api/profile/records", authed(token, { method: "POST", body: JSON.stringify({ answers, decisions }) })),
+  // Hand histories (v0.4.3)
+  uploadHands: (token: string, hands: HandRecord[]) =>
+    request<{ added: number; accepted: number; rejected: { id: string | null; error: string }[] }>(
+      "/api/profile/hands",
+      authed(token, { method: "POST", body: JSON.stringify({ hands }) }),
+    ),
+  hands: (token: string, limit = 500) =>
+    request<{ hands: HandSummary[]; total: number; weaknesses: Weaknesses }>(`/api/profile/hands?limit=${limit}`, authed(token)),
+  hand: (token: string, id: string) =>
+    request<{ record: HandRecord; frames: HandFrame[] }>(`/api/profile/hands/${encodeURIComponent(id)}`, authed(token)),
 };

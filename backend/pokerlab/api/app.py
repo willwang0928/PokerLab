@@ -15,9 +15,11 @@ from pydantic import TypeAdapter, ValidationError
 
 from .. import __version__
 from ..coach import training
+from ..coach.patterns import find_weaknesses
 from ..coach.spot import Spot, SpotError
 from ..engine import Action, IllegalActionError
 from ..equity import calculate_equity
+from ..history import HistoryError, replay, summarize, validate_record
 from ..session import HeadsUpSession, SessionConfig, SessionStateError
 from ..storage import (
     Profile,
@@ -35,6 +37,7 @@ from .schemas import (
     DecisionRecord,
     EquityRequest,
     EquityResponse,
+    HandUpload,
     PlayResponse,
     PracticeRequest,
     ProfileCreate,
@@ -187,6 +190,62 @@ def create_app(
             "rejected": rejected,
         }
 
+    # ------------------------------------------------------------------ hand histories
+
+    @app.post("/api/profile/hands")
+    def add_hands(req: HandUpload, authorization: str | None = Header(None)) -> dict:
+        """Store completed hands. Each record is validated and replayed first; a record
+        that does not add up, or that shows opponent cards that were never revealed, is
+        refused with the reason, without blocking the others."""
+        db, profile = _authed(authorization)
+        valid: list[tuple[dict, dict]] = []
+        rejected: list[dict] = []
+        for item in req.hands:
+            rid = item.get("id") if isinstance(item, dict) else None
+            try:
+                rec = validate_record(item)
+                valid.append((rec, summarize(rec)))
+            except (HistoryError, KeyError, TypeError, ValueError) as exc:
+                rejected.append({"id": rid if isinstance(rid, str) else None, "error": str(exc)})
+        try:
+            added = db.add_hands(profile, valid)
+        except QuotaExceeded as exc:
+            raise HTTPException(status_code=413, detail=str(exc)) from exc
+        return {"added": added, "accepted": len(valid), "rejected": rejected}
+
+    @app.get("/api/profile/hands")
+    def list_hands(
+        limit: int = Query(500, ge=1, le=5000),
+        authorization: str | None = Header(None),
+    ) -> dict:
+        """Summaries of saved hands (newest first) and the recurring weaknesses in them."""
+        db, profile = _authed(authorization)
+        recent = db.hand_summaries(profile, max(limit, 2000))
+        total = db.counts(profile)["hands"]
+        return {
+            "hands": recent[:limit],
+            "total": total,
+            "weaknesses": find_weaknesses(recent[:2000]),
+        }
+
+    @app.get("/api/profile/hands/{hand_id}")
+    def get_hand(hand_id: str, authorization: str | None = Header(None)) -> dict:
+        """One saved hand with its replay: the table after every event."""
+        db, profile = _authed(authorization)
+        try:
+            record = db.hand(profile, hand_id)
+        except ValueError as exc:
+            raise HTTPException(status_code=422, detail="This saved hand is unreadable.") from exc
+        if record is None:
+            raise HTTPException(status_code=404, detail="No such hand")
+        try:
+            frames = replay(record)
+        except (HistoryError, KeyError, TypeError) as exc:
+            raise HTTPException(
+                status_code=422, detail=f"This saved hand is damaged and cannot be replayed: {exc}"
+            ) from exc
+        return {"record": record, "frames": frames}
+
     @app.post("/api/sessions", status_code=201, response_model=PlayResponse)
     def create_session(req: CreateSessionRequest) -> PlayResponse:
         if req.seed is not None and not allow_seed:
@@ -248,6 +307,17 @@ def create_app(
             raise HTTPException(status_code=404, detail="No finished hand to review")
         # The analysis is slow; it runs outside the lock so play is never blocked.
         return session.coach.review_hand(hand)
+
+    @app.get("/api/sessions/{session_id}/hands/{hand_number}/record")
+    def hand_record(session_id: str, hand_number: int) -> dict:
+        """The hand-history record of a recently finished hand, for saving to a profile.
+
+        Only public information: the opponent's cards appear only if they were shown."""
+        session = _get(session_id)
+        record = session.hand_record(hand_number)  # slow the first time: outside the lock
+        if record is None:
+            raise HTTPException(status_code=404, detail="No recently finished hand")
+        return record
 
     # Training scenarios contain no hidden cards, so seeds are always allowed here.
     @app.get("/api/training/scenario")
