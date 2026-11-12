@@ -39,6 +39,9 @@ from .cards import parse_cards
 from .evaluator import evaluate
 
 RECORD_VERSION = 1
+# Summary format: 2 (v0.4.4) adds each decision's range robustness. Older stored summaries
+# are rebuilt from their record when read (see api.app), the record itself is unchanged.
+SUMMARY_VERSION = 2
 MAX_EVENTS = 400
 MAX_RECORD_BYTES = 400_000
 MAX_DECISIONS = 60
@@ -504,6 +507,7 @@ def _compact(d: Mapping[str, Any], i: int) -> dict[str, Any]:
         "action": chosen.get("action") if chosen else None,
         "grade": d.get("grade"),
         "confidence": d.get("confidence"),
+        "robust": d.get("robust"),
         "tags": list(d.get("tags") or []),
         "concept": d.get("concept"),
         "pot": d.get("pot"),
@@ -535,6 +539,7 @@ def summarize(record: Mapping[str, Any], frames: list[dict[str, Any]] | None = N
     flagged = sum(1 for d in decisions if d["grade"] in ("questionable", "mistake"))
     streets = [f["street"] for f in frames if f["street"] in STREETS]
     return {
+        "sv": SUMMARY_VERSION,
         "id": record["id"],
         "t": record["t"],
         "hand_number": record["hand_number"],

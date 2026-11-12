@@ -10,10 +10,10 @@ import {
   STRENGTH_LABEL,
   type Strength,
 } from "../lib/hands";
-import { CONCEPT_LABEL, type Progress } from "../lib/progress";
-import { adaptiveLevel, estimateSkill, observationsFor } from "../lib/skills";
-import type { DecisionReview, HandFrame, HandRecord, HandSummary, Weakness, Weaknesses } from "../types";
-import { formatPercent } from "./EquityPanel";
+import { reportOf, type LeakState } from "../hooks/useLeakReport";
+import { findingsFor, leakPlan } from "../lib/leaks";
+import type { Progress } from "../lib/progress";
+import type { DecisionReview, HandFrame, HandRecord, HandSummary, LeakItem } from "../types";
 import { HandReplayer } from "./HandReplayer";
 import { MiniCard } from "./HandLog";
 import type { Plan } from "./TrainingView";
@@ -25,22 +25,45 @@ interface Props {
   onToggleDetailed: () => void;
   onPractice: (d: DecisionReview) => void;
   onTrain: (plan: Plan) => void;
+  /** The leak report (v0.4.4), shared with the Progress tab. */
+  leaks?: LeakState;
+  /** A hand to open (from a leak's evidence on the Progress tab); ``n`` changes per request. */
+  openHand?: { id: string; decision: number | null; n: number } | null;
+  onShowLeak?: (key: string) => void;
 }
 
 type ListState =
   | { status: "loading" }
-  | { status: "ready"; hands: HandSummary[]; total: number; weaknesses: Weaknesses }
+  | { status: "ready"; hands: HandSummary[]; total: number }
   | { status: "error"; message: string };
 
 /**
- * Saved hands: what to practise next (recurring weaknesses, with their evidence), a
- * searchable, filterable list, and the replayer with each decision's coaching.
+ * Saved hands: a searchable, filterable list and the replayer with each decision's
+ * coaching. Decisions that support a recurring leak link to it; the leaks themselves,
+ * with their evidence and practice, live on the Progress tab.
  */
-export function HistoryView({ store, progress, detailed, onToggleDetailed, onPractice, onTrain }: Props) {
+export function HistoryView({
+  store,
+  progress,
+  detailed,
+  onToggleDetailed,
+  onPractice,
+  onTrain,
+  leaks = { status: "none" },
+  openHand = null,
+  onShowLeak,
+}: Props) {
   const token = store.active.token;
   const [list, setList] = useState<ListState>({ status: "loading" });
   const [filters, setFilters] = useState<HistoryFilters>(NO_FILTERS);
-  const [selected, setSelected] = useState<{ id: string; decision: number | null } | null>(null);
+  const [selected, setSelected] = useState<{ id: string; decision: number | null } | null>(
+    openHand ? { id: openHand.id, decision: openHand.decision } : null,
+  );
+  // A link from the Progress tab while this view is open.
+  useEffect(() => {
+    if (openHand) setSelected({ id: openHand.id, decision: openHand.decision });
+  }, [openHand]);
+  const report = reportOf(leaks);
   const [hand, setHand] = useState<
     { status: "loading" } | { status: "ready"; record: HandRecord; frames: HandFrame[] } | { status: "error"; message: string } | null
   >(null);
@@ -90,10 +113,7 @@ export function HistoryView({ store, progress, detailed, onToggleDetailed, onPra
   const hands = list.status === "ready" ? list.hands : [];
   const shown = useMemo(() => filterHands(hands, filters), [hands, filters]);
 
-  const train = (w: Weakness) => {
-    const level = adaptiveLevel(estimateSkill(observationsFor(progress, w.concept)));
-    onTrain({ concept: w.concept, difficulty: level, reason: `From your hand history: ${w.title.toLowerCase()}`, review: false });
-  };
+  const train = (w: LeakItem) => onTrain(leakPlan(w, progress));
 
   if (!token) {
     return (
@@ -110,7 +130,7 @@ export function HistoryView({ store, progress, detailed, onToggleDetailed, onPra
 
   return (
     <div className="flex w-full flex-col gap-4" data-testid="history-view">
-      <WeaknessPanel state={list} onOpen={(id, decision) => setSelected({ id, decision })} onTrain={train} />
+      {report && list.status === "ready" && list.total > 0 && <LeakSummary leaks={report.leaks} needed={report.status === "insufficient" ? report.needed : 0} onShowLeak={onShowLeak} />}
 
       <div className="grid gap-4 lg:grid-cols-[minmax(0,22rem)_minmax(0,1fr)]">
         <section className="surface rounded-2xl p-4" aria-labelledby="history-title">
@@ -171,6 +191,9 @@ export function HistoryView({ store, progress, detailed, onToggleDetailed, onPra
               detailed={detailed}
               onToggleDetailed={onToggleDetailed}
               onPractice={onPractice}
+              findings={(i) => findingsFor(report, hand.record.id, i)}
+              onShowLeak={onShowLeak}
+              onTrainLeak={train}
             />
           )}
         </section>
@@ -291,88 +314,32 @@ function Filters({ value, onChange }: { value: HistoryFilters; onChange: (f: His
   );
 }
 
-function WeaknessPanel({
-  state,
-  onOpen,
-  onTrain,
-}: {
-  state: ListState;
-  onOpen: (id: string, decision: number | null) => void;
-  onTrain: (w: Weakness) => void;
-}) {
-  if (state.status !== "ready" || state.total === 0) return null;
-  const w = state.weaknesses;
+/** One line about recurring leaks: the evidence and practice are on the Progress tab. */
+function LeakSummary({ leaks, needed, onShowLeak }: { leaks: LeakItem[]; needed: number; onShowLeak?: (key: string) => void }) {
   return (
-    <section className="surface rounded-2xl p-4" aria-labelledby="weakness-title" data-testid="weakness-panel">
-      <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h2 id="weakness-title" className="font-display text-[18px] font-bold text-amber-50">
-          What to practise next
-        </h2>
-        <span className="text-[11.5px] text-slate-400">
-          From {w.decisions} graded decisions in {w.hands} hands
-        </span>
-      </div>
-      {w.patterns.length === 0 ? (
-        <p className="mt-1 text-[12.5px] text-slate-300" data-testid="no-patterns">
-          No recurring weakness yet. A pattern is only reported after at least {w.rules.min_opportunities} chances to make
-          the same kind of decision, {w.rules.min_flagged} confidently flagged ones, and a rate that stays above{" "}
-          {formatPercent(w.rules.min_rate)} even read pessimistically.
+    <section className="surface rounded-2xl px-4 py-3 text-[12.5px] text-slate-300" data-testid="leak-summary" aria-label="Recurring leaks">
+      {leaks.length ? (
+        <p>
+          <b className="font-semibold text-amber-200">
+            {leaks.length} recurring leak{leaks.length === 1 ? "" : "s"} in your hands:
+          </b>{" "}
+          {leaks.map((l, i) => (
+            <span key={l.key}>
+              {i > 0 && ", "}
+              <button type="button" className="underline decoration-amber-300/50 hover:text-white" onClick={() => onShowLeak?.(l.key)}>
+                {l.title.toLowerCase()}
+              </button>
+            </span>
+          ))}
+          . Decisions that are part of one are marked in the replayer.
+        </p>
+      ) : needed > 0 ? (
+        <p>
+          Recurring leaks are looked for once there are enough graded decisions: {needed} more to go. Until then each hand's
+          review stands on its own.
         </p>
       ) : (
-        <ul className="mt-2 grid gap-2 md:grid-cols-2" data-testid="patterns">
-          {w.patterns.map((p) => (
-            <li key={p.key} className="rounded-xl bg-white/[0.03] p-3 ring-1 ring-amber-400/20" data-testid="pattern">
-              <div className="flex items-start justify-between gap-2">
-                <h3 className="text-[13.5px] font-semibold text-slate-100">{p.title}</h3>
-                <button type="button" onClick={() => onTrain(p)} className="btn-gold shrink-0 rounded-lg px-2.5 py-1 text-[12px] font-bold">
-                  Practise {CONCEPT_LABEL[p.concept].toLowerCase()}
-                </button>
-              </div>
-              <p className="mt-0.5 text-[12px] text-slate-400">{p.description}</p>
-              <p className="mt-1 text-[12.5px] text-slate-200">
-                {p.flagged} of {p.opportunities} such decisions flagged ({formatPercent(p.rate)}; likely between{" "}
-                {formatPercent(p.low)} and {formatPercent(p.high)}).
-              </p>
-              {p.conditions?.map((c) => (
-                <p key={c.key} className="mt-0.5 text-[12px] text-amber-200/90">
-                  Mostly {c.label}: {c.flagged} of {c.opportunities} ({formatPercent(c.rate)}, versus{" "}
-                  {formatPercent(c.rate_elsewhere)} otherwise).
-                </p>
-              ))}
-              <div className="mt-1.5 flex flex-wrap items-center gap-1 text-[11.5px] text-slate-400">
-                <span>Hands:</span>
-                {p.hands.map((h) => (
-                  <button
-                    key={`${h.id}-${h.decision}`}
-                    type="button"
-                    onClick={() => onOpen(h.id, h.decision)}
-                    className="rounded-md bg-white/[0.06] px-1.5 py-0.5 tabular-nums text-slate-200 hover:bg-white/10"
-                  >
-                    #{h.hand_number}
-                  </button>
-                ))}
-              </div>
-            </li>
-          ))}
-        </ul>
-      )}
-      {w.early.length > 0 && (
-        <details className="mt-2 text-[12px] text-slate-400" data-testid="early-signals">
-          <summary className="cursor-pointer text-slate-300">Too early to tell ({w.early.length})</summary>
-          <ul className="mt-1 space-y-1">
-            {w.early.map((e) => (
-              <li key={e.key}>
-                <b className="font-semibold text-slate-300">{e.title}</b>: {e.flagged} flagged of {e.opportunities}. Not a pattern
-                yet: needs {e.missing?.join(" and ")}.{" "}
-                {e.hands.slice(0, 4).map((h) => (
-                  <button key={`${h.id}-${h.decision}`} type="button" className="mr-1 underline" onClick={() => onOpen(h.id, h.decision)}>
-                    #{h.hand_number}
-                  </button>
-                ))}
-              </li>
-            ))}
-          </ul>
-        </details>
+        <p>No recurring leak is supported by your hands so far. Strengths and early signals are on the Progress tab.</p>
       )}
     </section>
   );

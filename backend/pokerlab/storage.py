@@ -402,3 +402,38 @@ class ProgressStore:
                 .fetchone()
             )
         return None if row is None else json.loads(row[0])
+
+    def update_summaries(self, profile: Profile, summaries: dict[str, dict[str, Any]]) -> None:
+        """Replace stored hand summaries (a summary format upgrade; records untouched)."""
+        if not summaries:
+            return
+        with self._lock:
+            db = self._conn()
+            db.execute("BEGIN IMMEDIATE")
+            try:
+                db.executemany(
+                    "UPDATE hands SET summary = ? WHERE profile_id = ? AND id = ?",
+                    [
+                        (json.dumps(s, separators=(",", ":"), sort_keys=True), profile.id, hid)
+                        for hid, s in summaries.items()
+                    ],
+                )
+                db.execute("COMMIT")
+            except BaseException:
+                db.execute("ROLLBACK")
+                raise
+
+    def focused_answers(self, profile: Profile, limit: int = 20_000) -> list[dict[str, Any]]:
+        """Training answers aimed at a leak (v0.4.4 ``leak`` field), oldest first."""
+        with self._lock:
+            rows = (
+                self._conn()
+                .execute(
+                    "SELECT data FROM answers WHERE profile_id = ?"
+                    " AND json_extract(data, '$.leak') IS NOT NULL"
+                    " ORDER BY t DESC, id DESC LIMIT ?",
+                    (profile.id, limit),
+                )
+                .fetchall()
+            )
+        return [json.loads(r[0]) for r in reversed(rows)]

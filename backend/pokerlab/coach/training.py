@@ -74,6 +74,18 @@ MARGIN = {"beginner": 0.20, "intermediate": 0.08, "advanced": 0.03}
 CONCEPT_MARGIN = {("bluffing", "beginner"): 0.10}
 
 
+# Focused scenarios (v0.4.4): the *situation* is fixed to match a player's leak, never the
+# answer. Each focus lists the concepts whose generator can produce it exactly.
+FOCUSES: dict[str, tuple[str, ...]] = {
+    "large_bets": ("pot_odds", "draws"),  # the bet faced is ¾ pot or a pot-sized bet
+    "river": ("pot_odds", "value_betting", "bet_sizing"),  # the decision is on the river
+}
+FOCUS_LABEL = {
+    "large_bets": "facing a large bet (¾ pot or more)",
+    "river": "on the river",
+}
+
+
 def margin(concept: str, difficulty: str) -> float:
     return CONCEPT_MARGIN.get((concept, difficulty), MARGIN[difficulty])
 
@@ -131,6 +143,7 @@ class Scenario:
     choices: list[str]  # option keys offered
     profile: str | None  # reads profile name, if any
     analysis: DecisionAnalysis  # ungraded; never sent before the answer
+    focus: str | None = None  # the situation was fixed to practise a leak (FOCUSES)
 
 
 # --------------------------------------------------------------------------- ids
@@ -215,7 +228,13 @@ def _cards_fit(concept: str, hero: tuple[Card, Card], board: tuple[Card, ...]) -
     return True
 
 
-def _make_spot(rng: random.Random, concept: str, difficulty: str, profile: str | None) -> Spot:
+def _make_spot(
+    rng: random.Random,
+    concept: str,
+    difficulty: str,
+    profile: str | None,
+    focus: str | None = None,
+) -> Spot:
     deck = list(FULL_DECK)
     rng.shuffle(deck)
     hero_cards = (deck[0], deck[1])
@@ -244,6 +263,8 @@ def _make_spot(rng: random.Random, concept: str, difficulty: str, profile: str |
     else:  # reads
         facing = rng.random() < 0.6
         target_street = rng.choice((3, 4, 5))
+    if focus == "river":
+        target_street = 5
     board = tuple(deck[2 : 2 + target_street])
     # Cheap pre-filters: re-deal until the cards can teach the concept at all.
     for _ in range(300):
@@ -278,7 +299,11 @@ def _make_spot(rng: random.Random, concept: str, difficulty: str, profile: str |
     if target_street:
         hero_first = not hero_button  # the big blind acts first after the flop
         size = rng.choice(
-            (0.33, 0.5, 0.66, 0.75, 1.0) if difficulty != "beginner" else (0.5, 0.75, 1.0)
+            (0.75, 1.0)
+            if focus == "large_bets"
+            else (0.33, 0.5, 0.66, 0.75, 1.0)
+            if difficulty != "beginner"
+            else (0.5, 0.75, 1.0)
         )
         if facing:
             plan += ([("check", None)] if hero_first else []) + [("bet", size)]
@@ -398,21 +423,24 @@ def _acceptable(
     return True
 
 
-def generate(difficulty: str, concept: str, seed: int) -> Scenario:
+def generate(difficulty: str, concept: str, seed: int, focus: str | None = None) -> Scenario:
     if difficulty not in DIFFICULTIES:
         raise ScenarioError(f"Unknown difficulty {difficulty!r}")
     if concept not in CONCEPTS:
         raise ScenarioError(f"Unknown concept {concept!r}")
-    return _generate(difficulty, concept, seed)
+    if focus is not None and concept not in FOCUSES.get(focus, ()):
+        raise ScenarioError(f"Focus {focus!r} is not available for {concept!r}")
+    return _generate(difficulty, concept, seed, focus)
 
 
 @lru_cache(maxsize=256)
-def _generate(difficulty: str, concept: str, seed: int) -> Scenario:
-    rng = random.Random(f"{difficulty}:{concept}:{seed}")
+def _generate(difficulty: str, concept: str, seed: int, focus: str | None = None) -> Scenario:
+    # Unfocused scenarios keep their v0.4.1 seeds and ids.
+    rng = random.Random(f"{difficulty}:{concept}:{seed}" + (f":{focus}" if focus else ""))
     for _ in range(MAX_ATTEMPTS):
         profile = rng.choice(sorted(READ_PROFILES)) if concept == "reads" else None
         try:
-            spot = _make_spot(rng, concept, difficulty, profile)
+            spot = _make_spot(rng, concept, difficulty, profile, focus)
         except SpotError:
             continue
         # A cheap, low-precision pass first; the full analysis must then agree.
@@ -420,8 +448,8 @@ def _generate(difficulty: str, concept: str, seed: int) -> Scenario:
             continue
         ok, a, keys = _fits(spot, concept, difficulty, ITERATIONS)
         if ok:
-            sid = f"{ID_VERSION}.{difficulty}.{concept}.{seed}"
-            return Scenario(sid, difficulty, concept, spot, keys, profile, a)
+            sid = f"{ID_VERSION}.{difficulty}.{concept}.{seed}" + (f".{focus}" if focus else "")
+            return Scenario(sid, difficulty, concept, spot, keys, profile, a, focus)
     raise ScenarioError("Could not generate a scenario; try another seed")
 
 
@@ -495,13 +523,15 @@ def load(sid: str) -> Scenario:
     if sid.startswith("spot."):
         return _from_spot_cached(sid)
     parts = sid.split(".")
-    if len(parts) != 4 or parts[0] not in ("v1", ID_VERSION):
+    if len(parts) not in (4, 5) or parts[0] not in ("v1", ID_VERSION):
+        raise ScenarioError("Unknown scenario")
+    if len(parts) == 5 and (parts[0] != ID_VERSION or parts[4] not in FOCUSES):
         raise ScenarioError("Unknown scenario")
     try:
         seed = int(parts[3])
     except ValueError as exc:
         raise ScenarioError("Unknown scenario") from exc
-    s = generate(parts[1], parts[2], seed)
+    s = generate(parts[1], parts[2], seed, parts[4] if len(parts) == 5 else None)
     return s if s.id == sid else dataclasses.replace(s, id=sid)  # keep an old id stable
 
 
@@ -566,6 +596,8 @@ def scenario_view(s: Scenario) -> dict[str, Any]:
         "opponent": _profile_text(s.profile, s.spot),
         "hints": _hints(s),
         "spot_data": s.spot.to_dict(),
+        "focus": s.focus,
+        "focus_label": FOCUS_LABEL.get(s.focus or ""),
     }
     return view
 

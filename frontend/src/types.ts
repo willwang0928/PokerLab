@@ -292,6 +292,9 @@ export interface TrainingScenario {
     stats: { key: string; label: string; rate: number | null; opportunities: number; baseline: number }[];
   } | null;
   hints: string[];
+  /** Set when the situation was fixed to practise a leak (v0.4.4). */
+  focus?: Focus | null;
+  focus_label?: string | null;
 }
 
 export interface TrainingAlternative {
@@ -368,6 +371,8 @@ export interface HandSummaryDecision {
   action: string | null;
   grade: Grade;
   confidence: "low" | "medium" | "high";
+  /** Whether the verdict held for the tighter and looser range (v0.4.4 summaries). */
+  robust?: boolean | null;
   tags: string[];
   concept: Concept;
   pot: number;
@@ -407,25 +412,97 @@ export interface HandSummary {
   decisions: HandSummaryDecision[];
 }
 
-export interface Weakness {
+// ------------------------------------------------------------------ leaks (v0.4.4)
+
+/** A focus fixes a generated scenario's situation (never its answer). */
+export type Focus = "large_bets" | "river";
+
+export type LeakStatus = "leak" | "uncertain" | "possible" | "strength" | "ok" | "insufficient";
+
+/** A decision that supports (or weakens) a finding: decision-time facts only. */
+export interface LeakHand {
+  id: string;
+  hand_number: number;
+  t: number;
+  decision: number | null;
+  street: string;
+  action: string | null;
+  grade: Grade;
+  confidence: "low" | "medium" | "high";
+  equity: number | null;
+  required: number | null;
+  pot: number;
+  to_call: number;
+  big_blind: number;
+  hero_cards: string[];
+  /** "flagged" (counts as evidence) or "uncertain" (depended on an assumption). */
+  kind: "flagged" | "uncertain";
+}
+
+export interface RateComparison {
+  before: { flagged: number; opportunities: number; rate: number | null };
+  after: { flagged: number; opportunities: number; rate: number | null };
+  change: "improving" | "worsening" | "no_clear_change" | "insufficient";
+}
+
+export interface LeakItem {
   key: string;
   title: string;
   description: string;
   concept: Concept;
+  status: LeakStatus;
   opportunities: number;
   flagged: number;
-  rate: number;
+  uncertain: number;
+  /** Opportunities the coach graded with medium or high confidence. */
+  judged: number;
+  rate: number | null;
   low: number;
   high: number;
-  hands: { id: string; decision: number | null; hand_number: number; t: number }[];
-  conditions?: { key: string; label: string; flagged: number; opportunities: number; rate: number; rate_elsewhere: number }[];
+  hands: LeakHand[];
   missing?: string[];
+  split?: { calls: number; folds: number };
+  conditions?: {
+    key: string;
+    label: string;
+    flagged: number;
+    opportunities: number;
+    rate: number;
+    rate_elsewhere: number;
+    opportunities_elsewhere: number;
+    focus: Focus | null;
+  }[];
+  trend?: RateComparison;
+  practice?: {
+    answers: number;
+    score: number | null;
+    recent_score: number | null;
+    first_at: number | null;
+    last_at: number | null;
+    since: RateComparison | null;
+  };
+  recommendation?: { concept: Concept; focus: Focus | null; focus_label: string | null; text: string; hands: LeakHand[] };
 }
 
-export interface Weaknesses {
+export interface LeakReport {
   hands: number;
   decisions: number;
-  patterns: Weakness[];
-  early: Weakness[];
-  rules: { min_opportunities: number; min_flagged: number; min_rate: number; interval: string };
+  confident_decisions: number;
+  status: "ready" | "insufficient";
+  needed: number;
+  leaks: LeakItem[];
+  strengths: LeakItem[];
+  watch: LeakItem[];
+  other: LeakItem[];
+  window: number;
+  rules: {
+    min_opportunities: number;
+    min_flagged: number;
+    min_rate: number;
+    strength_min_opportunities: number;
+    strength_max_rate: number;
+    trend_min: number;
+    interval: string;
+    min_graded: number;
+  };
 }

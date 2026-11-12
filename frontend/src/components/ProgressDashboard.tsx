@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import type { LeakState } from "../hooks/useLeakReport";
 import type { ProgressStore } from "../hooks/useProgressStore";
 import { CONCEPT_LABEL, clearChange, decisionTrend, type Progress } from "../lib/progress";
 import {
@@ -12,6 +13,7 @@ import {
 } from "../lib/skills";
 import type { Grade, TrainingDifficulty } from "../types";
 import { GradeChip } from "./DecisionDetail";
+import { LeakPanel } from "./LeakPanel";
 import { measuredText, SkillMeter } from "./SkillMeter";
 import { StoragePanel } from "./StoragePanel";
 import type { Plan } from "./TrainingView";
@@ -36,6 +38,11 @@ interface Props {
   /** Storage, sync and profile controls (omitted in isolated tests). */
   store?: ProgressStore;
   now?: number;
+  /** The leak report from saved hands (v0.4.4); omitted or "none" without a server profile. */
+  leaks?: LeakState;
+  onRetryLeaks?: () => void;
+  onShowHand?: (id: string, decision: number | null) => void;
+  focusLeak?: { key: string; n: number } | null;
 }
 
 /**
@@ -43,9 +50,19 @@ interface Props {
  * next to the raw counts it comes from, the trend, recurring mistakes explained, the
  * spaced-repetition schedule and the practice history.
  */
-export function ProgressDashboard({ progress, onStart, store, now = Date.now() }: Props) {
+export function ProgressDashboard({
+  progress,
+  onStart,
+  store,
+  now = Date.now(),
+  leaks = { status: "none" },
+  onRetryLeaks,
+  onShowHand,
+  focusLeak = null,
+}: Props) {
+  const report = leaks.status === "none" ? null : leaks.report;
   const skills = useMemo(() => conceptSkills(progress), [progress]);
-  const next = useMemo(() => nextPractice(progress, now), [progress, now]);
+  const next = useMemo(() => nextPractice(progress, now, undefined, report?.leaks), [progress, now, report]);
   const guides = useMemo(() => mistakeGuides(progress), [progress]);
   const trend = useMemo(() => answerTrend(progress), [progress]);
   const table = decisionTrend(progress);
@@ -56,7 +73,7 @@ export function ProgressDashboard({ progress, onStart, store, now = Date.now() }
     onStart({ concept, difficulty, reason, review });
 
   return (
-    <div className="grid w-full gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]" data-testid="progress-dashboard">
+    <div className="grid w-full grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]" data-testid="progress-dashboard">
       {/* Next practice */}
       <section className="surface rounded-2xl p-4 lg:col-span-2" aria-labelledby="next-title" data-testid="next-practice">
         <h2 id="next-title" className="eyebrow text-slate-400">
@@ -76,7 +93,15 @@ export function ProgressDashboard({ progress, onStart, store, now = Date.now() }
           </div>
           <button
             type="button"
-            onClick={() => start(next.concept, next.difficulty, next.reason, next.kind === "review")}
+            onClick={() =>
+              onStart({
+                concept: next.concept,
+                difficulty: next.difficulty,
+                reason: next.reason,
+                review: next.kind === "review",
+                ...(next.leak ? { leak: next.leak, focus: next.focus ?? null } : {}),
+              })
+            }
             className="btn-gold rounded-xl px-5 py-2.5 text-[14px] font-bold"
           >
             Start practice
@@ -88,6 +113,11 @@ export function ProgressDashboard({ progress, onStart, store, now = Date.now() }
           <Stat label="Reviews due" value={String(due)} />
         </dl>
       </section>
+
+      {/* Strengths and leaks, from the saved hands (needs the server) */}
+      {leaks.status !== "none" && (
+        <LeakPanel state={leaks} progress={progress} onStart={onStart} onShowHand={onShowHand} onRetry={onRetryLeaks} focus={focusLeak} />
+      )}
 
       {/* Skills */}
       <section className="surface rounded-2xl p-4" aria-labelledby="skills-dash-title" data-testid="dashboard-skills">
@@ -156,14 +186,19 @@ export function ProgressDashboard({ progress, onStart, store, now = Date.now() }
           )}
         </section>
 
-        {/* Mistakes */}
+        {/* Recent flags on this device: only without the server's leak report */}
+        {leaks.status === "none" && (
         <section className="surface rounded-2xl p-4" aria-labelledby="mistakes-title" data-testid="dashboard-mistakes">
           <h2 id="mistakes-title" className="eyebrow text-slate-400">
-            Recurring mistakes
+            Recent flags
           </h2>
+          <p className="mt-1 text-[11.5px] text-slate-500">
+            Counted on this device only. Once your hands are saved on the server, they are checked for recurring leaks with
+            sample-size safeguards instead.
+          </p>
           {guides.length === 0 ? (
             <p className="mt-2 text-[12.5px] text-slate-400">
-              None yet. A mistake shows up here once it recurs in your reviewed hands.
+              None yet. A mistake shows up here once it has been flagged twice in your reviewed hands.
             </p>
           ) : (
             <ul className="mt-2 space-y-3">
@@ -171,7 +206,7 @@ export function ProgressDashboard({ progress, onStart, store, now = Date.now() }
                 <li key={g.tag} className="rounded-xl bg-white/[0.03] p-3 ring-1 ring-white/5" data-testid="mistake-guide">
                   <div className="flex items-baseline justify-between gap-2">
                     <span className="text-[13px] font-semibold text-amber-200">{g.label}</span>
-                    <span className="text-[11.5px] text-slate-400">{g.count} times recently</span>
+                    <span className="text-[11.5px] text-slate-400">flagged {g.count} times recently</span>
                   </div>
                   <p className="mt-1 text-[12.5px] leading-snug text-slate-300">{g.principle}</p>
                   {g.evidence && <p className="mt-1 text-[12px] text-slate-400">{g.evidence}</p>}
@@ -196,6 +231,7 @@ export function ProgressDashboard({ progress, onStart, store, now = Date.now() }
             </ul>
           )}
         </section>
+        )}
 
         {/* Reviews */}
         <section className="surface rounded-2xl p-4" aria-labelledby="reviews-title" data-testid="dashboard-reviews">

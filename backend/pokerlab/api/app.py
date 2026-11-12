@@ -7,6 +7,7 @@ import os
 import random
 import sqlite3
 import threading
+from typing import Any, Literal
 
 from fastapi import FastAPI, Header, HTTPException, Query, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
@@ -15,11 +16,11 @@ from pydantic import TypeAdapter, ValidationError
 
 from .. import __version__
 from ..coach import training
-from ..coach.patterns import find_weaknesses
+from ..coach.leaks import find_leaks
 from ..coach.spot import Spot, SpotError
 from ..engine import Action, IllegalActionError
 from ..equity import calculate_equity
-from ..history import HistoryError, replay, summarize, validate_record
+from ..history import SUMMARY_VERSION, HistoryError, replay, summarize, validate_record
 from ..session import HeadsUpSession, SessionConfig, SessionStateError
 from ..storage import (
     Profile,
@@ -49,6 +50,9 @@ from .schemas import (
 from .store import SessionStore
 
 log = logging.getLogger(__name__)
+
+# Hands the leak report looks at (the most recent ones).
+LEAK_WINDOW = 2000
 
 _VALIDATORS = {"answers": TypeAdapter(AnswerRecord), "decisions": TypeAdapter(DecisionRecord)}
 
@@ -213,20 +217,55 @@ def create_app(
             raise HTTPException(status_code=413, detail=str(exc)) from exc
         return {"added": added, "accepted": len(valid), "rejected": rejected}
 
+    def _summaries(db: ProgressStore, profile: Profile, limit: int) -> list[dict[str, Any]]:
+        """Hand summaries, newest first. Summaries stored by an older version are rebuilt
+        from their record once and saved (a lazy, per-row migration)."""
+        rows = db.hand_summaries(profile, limit)
+        stale = [s for s in rows if s.get("sv", 1) < SUMMARY_VERSION]
+        if not stale:
+            return rows
+        fresh: dict[str, dict[str, Any]] = {}
+        for s in stale:
+            try:
+                record = db.hand(profile, s["id"])
+                if record is not None:
+                    fresh[s["id"]] = summarize(record)
+            except (HistoryError, KeyError, TypeError, ValueError):
+                log.warning("Hand %s could not be re-summarised; kept as it was", s.get("id"))
+        db.update_summaries(profile, fresh)
+        return [fresh.get(s["id"], s) for s in rows]
+
     @app.get("/api/profile/hands")
     def list_hands(
         limit: int = Query(500, ge=1, le=5000),
         authorization: str | None = Header(None),
     ) -> dict:
-        """Summaries of saved hands (newest first) and the recurring weaknesses in them."""
+        """Summaries of saved hands, newest first. (The leak report moved to
+        ``/api/profile/leaks`` in v0.4.4.)"""
         db, profile = _authed(authorization)
-        recent = db.hand_summaries(profile, max(limit, 2000))
-        total = db.counts(profile)["hands"]
-        return {
-            "hands": recent[:limit],
-            "total": total,
-            "weaknesses": find_weaknesses(recent[:2000]),
-        }
+        return {"hands": _summaries(db, profile, limit), "total": db.counts(profile)["hands"]}
+
+    # The report only changes when the profile does (new hands or answers): cache it by
+    # the profile's last update, so opening History and Progress does not recompute it.
+    leak_cache: dict[int, tuple[float, dict[str, Any]]] = {}
+    leak_lock = threading.Lock()
+
+    @app.get("/api/profile/leaks")
+    def leaks(authorization: str | None = Header(None)) -> dict:
+        """Recurring weaknesses in the most recent hands, with their evidence, strengths,
+        what lacks data, trends and practice follow-up (see ``coach.leaks``)."""
+        db, profile = _authed(authorization)
+        with leak_lock:
+            hit = leak_cache.get(profile.id)
+        if hit is not None and hit[0] == profile.updated_at:
+            return hit[1]
+        report = find_leaks(_summaries(db, profile, LEAK_WINDOW), db.focused_answers(profile))
+        report["window"] = LEAK_WINDOW
+        with leak_lock:
+            if len(leak_cache) > 256:
+                leak_cache.clear()
+            leak_cache[profile.id] = (profile.updated_at, report)
+        return report
 
     @app.get("/api/profile/hands/{hand_id}")
     def get_hand(hand_id: str, authorization: str | None = Header(None)) -> dict:
@@ -325,10 +364,11 @@ def create_app(
         difficulty: TrainingDifficulty = "beginner",
         concept: TrainingConcept = "pot_odds",
         seed: int | None = Query(None, ge=0, lt=2**31),
+        focus: Literal["large_bets", "river"] | None = None,
     ) -> dict:
         seed = random.SystemRandom().randrange(2**31) if seed is None else seed
         try:
-            return training.scenario_view(training.generate(difficulty, concept, seed))
+            return training.scenario_view(training.generate(difficulty, concept, seed, focus))
         except training.ScenarioError as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
 

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { shortcutBlocked } from "../lib/keys";
-import type { DecisionReview, HandFrame, HandRecord } from "../types";
+import type { DecisionReview, HandFrame, HandRecord, LeakItem } from "../types";
 import { DecisionDetail, GradeChip } from "./DecisionDetail";
 import { PlayingCard } from "./PlayingCard";
 
@@ -24,6 +24,10 @@ interface Props {
   detailed: boolean;
   onToggleDetailed: () => void;
   onPractice?: (d: DecisionReview) => void;
+  /** Leak-report findings this decision (by index) is evidence for (v0.4.4). */
+  findings?: (decision: number) => LeakItem[];
+  onShowLeak?: (key: string) => void;
+  onTrainLeak?: (item: LeakItem) => void;
 }
 
 /**
@@ -31,7 +35,17 @@ interface Props {
  * recorded events; nothing is reconstructed or guessed here. Opponent cards appear only
  * from the moment they were shown in the hand.
  */
-export function HandReplayer({ record, frames, startDecision = null, detailed, onToggleDetailed, onPractice }: Props) {
+export function HandReplayer({
+  record,
+  frames,
+  startDecision = null,
+  detailed,
+  onToggleDetailed,
+  onPractice,
+  findings,
+  onShowLeak,
+  onTrainLeak,
+}: Props) {
   const decisions = record.coaching?.decisions ?? [];
   // Steps: every event except the silent collection of bets into the pot.
   const nav = useMemo(() => frames.map((f, i) => (f.type === "bets_collected" ? -1 : i)).filter((i) => i >= 0), [frames]);
@@ -246,6 +260,9 @@ export function HandReplayer({ record, frames, startDecision = null, detailed, o
               detailed={detailed}
               onToggleDetailed={onToggleDetailed}
               onPractice={onPractice}
+              findings={findings?.(frame.decision!) ?? []}
+              onShowLeak={onShowLeak}
+              onTrainLeak={onTrainLeak}
             />
           ) : step === last ? (
             <ResultPanel record={record} net={net} bb={bb} />
@@ -274,6 +291,9 @@ function DecisionPanel({
   detailed,
   onToggleDetailed,
   onPractice,
+  findings = [],
+  onShowLeak,
+  onTrainLeak,
 }: {
   d: DecisionReview;
   record: HandRecord;
@@ -281,6 +301,9 @@ function DecisionPanel({
   detailed: boolean;
   onToggleDetailed: () => void;
   onPractice?: (d: DecisionReview) => void;
+  findings?: LeakItem[];
+  onShowLeak?: (key: string) => void;
+  onTrainLeak?: (item: LeakItem) => void;
 }) {
   return (
     <section className="rounded-xl bg-white/[0.03] p-3 ring-1 ring-white/5" data-testid="replay-decision" aria-label="Your decision">
@@ -300,6 +323,35 @@ function DecisionPanel({
       <div className="mt-2">
         <DecisionDetail review={d} detailed={detailed} />
       </div>
+      {findings.map((f) => (
+        <div key={f.key} className="mt-3 rounded-lg bg-amber-500/10 p-2.5 text-[12px] ring-1 ring-amber-400/25" data-testid="decision-finding">
+          <p className="text-amber-100">
+            {f.status === "leak" ? (
+              <>
+                <b className="font-semibold">Part of a recurring leak:</b> {f.title.toLowerCase()} ({f.flagged} of {f.opportunities}{" "}
+                such decisions flagged).
+              </>
+            ) : (
+              <>
+                <b className="font-semibold">Early signal, not a leak yet:</b> {f.title.toLowerCase()} ({f.flagged} flagged of{" "}
+                {f.opportunities}).
+              </>
+            )}
+          </p>
+          <div className="mt-1.5 flex flex-wrap gap-1.5">
+            {onShowLeak && (
+              <button type="button" className="btn-dark rounded-md px-2 py-1 text-[11.5px] font-semibold" onClick={() => onShowLeak(f.key)}>
+                See the evidence
+              </button>
+            )}
+            {onTrainLeak && f.status === "leak" && (
+              <button type="button" className="btn-gold rounded-md px-2 py-1 text-[11.5px] font-bold" onClick={() => onTrainLeak(f)}>
+                Practise this leak
+              </button>
+            )}
+          </div>
+        </div>
+      ))}
       {onPractice && d.spot_data && (
         <button type="button" onClick={() => onPractice(d)} className="btn-dark mt-3 rounded-lg px-3 py-1.5 text-[12.5px] font-semibold">
           Practise this spot

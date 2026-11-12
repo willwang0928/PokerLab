@@ -71,7 +71,21 @@ export interface AnswerRecord {
   grade: Grade;
   /** True when the scenario was a scheduled spaced-repetition review. */
   review?: boolean;
+  /** The weakness this practice was aimed at (v0.4.4, see LEAK_KEYS). */
+  leak?: string;
 }
+
+/** Weaknesses the leak report can name (backend ``coach/leaks.py``). */
+export const LEAK_KEYS = [
+  "called_without_odds",
+  "folded_with_odds",
+  "pot_odds_mixed",
+  "missed_value",
+  "overaggressive",
+  "bet_sizing",
+  "preflop_loose",
+  "preflop_tight",
+];
 
 /** A concept due to come back (spaced repetition), at a level or "auto". */
 export interface ReviewItem {
@@ -130,7 +144,8 @@ export function answerProblem(a: unknown): string | null {
   if (typeof r.difficulty !== "string" || !LEVEL_NAMES.includes(r.difficulty)) return "difficulty";
   if (!isGrade(r.grade)) return "grade";
   if (r.review !== undefined && typeof r.review !== "boolean") return "review";
-  const known = new Set(["id", "t", "concept", "difficulty", "grade", "review"]);
+  if (r.leak !== undefined && !(typeof r.leak === "string" && LEAK_KEYS.includes(r.leak))) return "leak";
+  const known = new Set(["id", "t", "concept", "difficulty", "grade", "review", "leak"]);
   if (Object.keys(r).some((k) => !known.has(k))) return "unknown field";
   return null;
 }

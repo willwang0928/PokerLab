@@ -3,7 +3,8 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import type { ProgressStore } from "../hooks/useProgressStore";
 import { EMPTY_PROGRESS } from "../lib/progress";
 import fixture from "../test/hands.fixture.json";
-import type { HandFrame, HandRecord, HandSummary, Weaknesses } from "../types";
+import { callingLeak, leakReport } from "../test/leaks";
+import type { HandFrame, HandRecord, HandSummary } from "../types";
 import { HandReplayer } from "./HandReplayer";
 import { HistoryView } from "./HistoryView";
 
@@ -115,42 +116,6 @@ describe("HandReplayer", () => {
 
 // ------------------------------------------------------------------ the History tab
 
-const weaknesses: Weaknesses = {
-  hands: 2,
-  decisions: 9,
-  patterns: [
-    {
-      key: "called_without_odds",
-      title: "Calling bets without the odds",
-      description: "Calls where your equity was below the price.",
-      concept: "pot_odds",
-      opportunities: 12,
-      flagged: 6,
-      rate: 0.5,
-      low: 0.27,
-      high: 0.73,
-      hands: [{ id: folded.record.id, decision: 2, hand_number: 1, t: 0 }],
-      conditions: [{ key: "large_bets", label: "facing large bets (¾ pot or more)", flagged: 4, opportunities: 5, rate: 0.8, rate_elsewhere: 0.29 }],
-    },
-  ],
-  early: [
-    {
-      key: "missed_value",
-      title: "Checking or calling strong hands",
-      description: "",
-      concept: "value_betting",
-      opportunities: 4,
-      flagged: 2,
-      rate: 0.5,
-      low: 0.1,
-      high: 0.9,
-      hands: [],
-      missing: ["6 more chances to make this decision", "at least 3 flagged decisions"],
-    },
-  ],
-  rules: { min_opportunities: 10, min_flagged: 3, min_rate: 0.15, interval: "90% Wilson" },
-};
-
 function fakeStore(over: Partial<ProgressStore> = {}): ProgressStore {
   return { active: { key: "k", name: "A", token: "tok" }, handsVersion: 0, pendingHands: 0, ...over } as ProgressStore;
 }
@@ -158,7 +123,7 @@ function fakeStore(over: Partial<ProgressStore> = {}): ProgressStore {
 function api(handStatus = 200) {
   const fn = vi.fn(async (url: string) => {
     if (url.includes("/api/profile/hands?"))
-      return new Response(JSON.stringify({ hands: [showdown.summary, folded.summary], total: 2, weaknesses }));
+      return new Response(JSON.stringify({ hands: [showdown.summary, folded.summary], total: 2 }));
     if (url.includes("/api/profile/hands/")) {
       if (handStatus !== 200) return new Response(JSON.stringify({ detail: "This saved hand is damaged and cannot be replayed: pot" }), { status: handStatus });
       const id = decodeURIComponent(url.split("/").pop()!);
@@ -171,9 +136,17 @@ function api(handStatus = 200) {
   return fn;
 }
 
-function history(store = fakeStore(), onTrain = vi.fn()) {
+function history(store = fakeStore(), onTrain = vi.fn(), extra: Partial<Parameters<typeof HistoryView>[0]> = {}) {
   render(
-    <HistoryView store={store} progress={EMPTY_PROGRESS} detailed={false} onToggleDetailed={() => {}} onPractice={() => {}} onTrain={onTrain} />,
+    <HistoryView
+      store={store}
+      progress={EMPTY_PROGRESS}
+      detailed={false}
+      onToggleDetailed={() => {}}
+      onPractice={() => {}}
+      onTrain={onTrain}
+      {...extra}
+    />,
   );
   return onTrain;
 }
@@ -195,34 +168,45 @@ describe("HistoryView", () => {
     expect(screen.getByRole("heading", { name: "Hand #1" })).toBeInTheDocument();
   });
 
-  it("shows patterns with their evidence, links their hands, and starts practice", async () => {
+  it("links recurring leaks to the Progress tab", async () => {
     api();
-    const onTrain = history();
-    const panel = await screen.findByTestId("weakness-panel");
-    const p = within(panel).getByTestId("pattern");
-    expect(p).toHaveTextContent("6 of 12 such decisions flagged (50%; likely between 27% and 73%)");
-    expect(p).toHaveTextContent("Mostly facing large bets (¾ pot or more): 4 of 5 (80%, versus 29% otherwise)");
-    expect(within(panel).getByTestId("early-signals")).toHaveTextContent(
-      "Not a pattern yet: needs 6 more chances to make this decision and at least 3 flagged decisions",
-    );
-    fireEvent.click(within(p).getByRole("button", { name: "#1" }));
-    await waitFor(() => expect(screen.getByTestId("replay-decision")).toHaveTextContent("You raise to 120"));
-    fireEvent.click(within(p).getByRole("button", { name: /Practise pot odds/ }));
-    expect(onTrain).toHaveBeenCalledWith(
-      expect.objectContaining({ concept: "pot_odds", difficulty: "beginner", reason: "From your hand history: calling bets without the odds" }),
-    );
+    const onShowLeak = vi.fn();
+    history(fakeStore(), vi.fn(), { leaks: { status: "ready", report: leakReport }, onShowLeak });
+    const summary = await screen.findByTestId("leak-summary");
+    expect(summary).toHaveTextContent("1 recurring leak in your hands: calling bets without the odds");
+    fireEvent.click(within(summary).getByRole("button", { name: "calling bets without the odds" }));
+    expect(onShowLeak).toHaveBeenCalledWith("called_without_odds");
   });
 
-  it("says plainly when there is not enough evidence for a pattern", async () => {
+  it("opens a hand at a decision that supports a leak, with links to its evidence and practice", async () => {
     api();
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(async () => new Response(JSON.stringify({ hands: [folded.summary], total: 1, weaknesses: { ...weaknesses, patterns: [], early: [] } }))),
+    const onShowLeak = vi.fn();
+    const onTrain = history(fakeStore(), vi.fn(), {
+      leaks: { status: "ready", report: leakReport },
+      onShowLeak,
+      openHand: { id: folded.record.id, decision: 2, n: 1 },
+    });
+    await waitFor(() => expect(screen.getByTestId("replay-decision")).toHaveTextContent("You raise to 120"));
+    const finding = screen.getByTestId("decision-finding");
+    expect(finding).toHaveTextContent("Part of a recurring leak: calling bets without the odds (6 of 12 such decisions flagged)");
+    fireEvent.click(within(finding).getByRole("button", { name: "Practise this leak" }));
+    expect(onTrain).toHaveBeenCalledWith(
+      expect.objectContaining({ concept: "pot_odds", difficulty: "beginner", focus: "river", leak: "called_without_odds" }),
     );
-    history();
-    expect(await screen.findByTestId("no-patterns")).toHaveTextContent(
-      "No recurring weakness yet. A pattern is only reported after at least 10 chances",
-    );
+    fireEvent.click(within(finding).getByRole("button", { name: "See the evidence" }));
+    expect(onShowLeak).toHaveBeenCalledWith("called_without_odds");
+    // Another decision in the same hand supports nothing.
+    fireEvent.click(screen.getByRole("button", { name: /Your previous decision/ }));
+    expect(screen.queryByTestId("decision-finding")).toBeNull();
+  });
+
+  it("says plainly when there are not enough decisions to look for leaks", async () => {
+    api();
+    history(fakeStore(), vi.fn(), {
+      leaks: { status: "ready", report: { ...leakReport, status: "insufficient", needed: 7, leaks: [] } },
+    });
+    expect(await screen.findByTestId("leak-summary")).toHaveTextContent("7 more to go");
+    expect(callingLeak.status).toBe("leak");
   });
 
   it("reports a damaged hand instead of replaying it", async () => {

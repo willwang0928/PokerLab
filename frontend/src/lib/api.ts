@@ -7,11 +7,12 @@ import type {
   HandRecord,
   HandReview,
   HandSummary,
+  LeakReport,
+  Focus,
   PlayResponse,
   TrainingAnswer,
   TrainingDifficulty,
   TrainingScenario,
-  Weaknesses,
 } from "../types";
 
 const BASE = (import.meta.env.VITE_API_BASE_URL ?? "").replace(/\/$/, "");
@@ -66,9 +67,11 @@ export const coachApi = {
     request<HandReview>(`/api/sessions/${sessionId}/hands/${hand}/review`),
   /** The finished hand as a history record (public information only), for saving. */
   record: (sessionId: string, hand: number) => request<HandRecord>(`/api/sessions/${sessionId}/hands/${hand}/record`),
-  scenario: (difficulty: TrainingDifficulty, concept: Concept, seed?: number) =>
+  scenario: (difficulty: TrainingDifficulty, concept: Concept, seed?: number, focus?: Focus | null) =>
     request<TrainingScenario>(
-      `/api/training/scenario?difficulty=${difficulty}&concept=${concept}` + (seed === undefined ? "" : `&seed=${seed}`),
+      `/api/training/scenario?difficulty=${difficulty}&concept=${concept}` +
+        (seed === undefined ? "" : `&seed=${seed}`) +
+        (focus ? `&focus=${focus}` : ""),
     ),
   practice: (spot: Record<string, unknown>, difficulty: TrainingDifficulty, chosen?: string | null) =>
     request<TrainingScenario>("/api/training/practice", {
@@ -117,7 +120,9 @@ export const profileApi = {
       authed(token, { method: "POST", body: JSON.stringify({ hands }) }),
     ),
   hands: (token: string, limit = 500) =>
-    request<{ hands: HandSummary[]; total: number; weaknesses: Weaknesses }>(`/api/profile/hands?limit=${limit}`, authed(token)),
+    request<{ hands: HandSummary[]; total: number }>(`/api/profile/hands?limit=${limit}`, authed(token)),
+  /** Recurring weaknesses with their evidence, strengths, trends and practice (v0.4.4). */
+  leaks: (token: string) => request<LeakReport>("/api/profile/leaks", authed(token)),
   hand: (token: string, id: string) =>
     request<{ record: HandRecord; frames: HandFrame[] }>(`/api/profile/hands/${encodeURIComponent(id)}`, authed(token)),
 };

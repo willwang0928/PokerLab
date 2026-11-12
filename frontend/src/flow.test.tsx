@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import App from "./App";
 import { gameState } from "./test/fixtures";
 import handFixture from "./test/hands.fixture.json";
+import { leakReport } from "./test/leaks";
 import type { GameState } from "./types";
 
 type Handler = (url: string, init?: RequestInit) => unknown;
@@ -323,5 +324,99 @@ describe("personalised learning", () => {
     expect(await screen.findByTestId("dashboard-reviews")).toHaveTextContent(/Pot odds/);
     expect(screen.getByTestId("dashboard-history")).toHaveTextContent(/Likely mistake/);
     expect(screen.getByTestId("dash-skill-pot_odds")).toHaveTextContent(/Training: 0 of 1 good/);
+  });
+});
+
+describe("leak workflow (v0.4.4)", () => {
+  it("goes from a leak to its hand, the decision, focused practice, and records the answer against the leak", async () => {
+    localStorage.setItem("pokerlab.profiles.v1", JSON.stringify({ active: "k1", profiles: [{ key: "k1", name: "Player", token: "tok" }] }));
+    const scenario = {
+      id: "v2.beginner.pot_odds.7.river",
+      difficulty: "beginner",
+      concept: "pot_odds",
+      concept_label: "Pot odds",
+      concept_blurb: "",
+      hero: ["As", "Kd"],
+      board: ["2c", "7d", "9h", "Jc", "3s"],
+      street: "river",
+      position: "button",
+      pot: 100,
+      to_call: 50,
+      stack: 900,
+      opponent_stack: 900,
+      big_blind: 10,
+      history: [],
+      hand: "AKo",
+      choices: [
+        { key: "fold", label: "Fold" },
+        { key: "call", label: "Call 50" },
+      ],
+      opponent: null,
+      hints: [],
+      focus: "river",
+      focus_label: "on the river",
+    };
+    const answer = {
+      id: scenario.id, concept: "pot_odds", choice: "fold", correct: true, acceptable: true,
+      analysis: {
+        street: "river", hole: [], board: [], hand: "", position: "", pot: 100, to_call: 50, stack: 900, big_blind: 10,
+        history: [], spot: "facing_bet", concept: "pot_odds", equity: 0.2, equity_se: 0, equity_method: "exact",
+        required_equity: 0.33, range_size: 50, range_steps: [], reads: [], options: [], best: ["fold"], chosen: "fold",
+        grade: "good", grade_label: "Good", confidence: "high", ev_loss: 0, tags: [], headline: "",
+        explanation: "", details: [], caveats: [],
+      },
+      alternatives: [],
+    };
+    const uploaded: { leak?: string }[] = [];
+    const scenarioUrls: string[] = [];
+    const folded = handFixture.folded;
+    mockFetch((url, init) => {
+      if (url.includes("/api/profile/leaks")) return leakReport;
+      if (url.includes("/api/profile/hands?")) return { hands: [folded.summary], total: 1 };
+      if (url.includes("/api/profile/hands/")) return { record: folded.record, frames: folded.frames };
+      if (url.endsWith("/api/profile/records") && init?.method === "POST") {
+        const body = JSON.parse(String(init.body));
+        uploaded.push(...body.answers);
+        return { added: { answers: body.answers.length, decisions: 0 }, accepted: { answers: body.answers.length, decisions: 0 }, rejected: [] };
+      }
+      if (url.includes("/api/profile/records")) return { answers: [], decisions: [], truncated: false };
+      if (url.includes("/api/training/scenario")) {
+        scenarioUrls.push(url);
+        return scenario;
+      }
+      if (url.includes("/api/training/answer")) return answer;
+      throw new Error(`unexpected ${url}`);
+    });
+    render(<App />);
+    await userEvent.click(screen.getByRole("button", { name: /training mode/ }));
+    await userEvent.click(screen.getByRole("tab", { name: "Progress" }));
+
+    // 1. The leak, with its evidence.
+    const leak = await screen.findByTestId("leak");
+    expect(leak).toHaveTextContent("6 of 12 such decisions flagged");
+    // 2. Its hand opens in the History tab at the decision.
+    await userEvent.click(within(screen.getByTestId("leak-hands")).getByRole("button", { name: /#1/ }));
+    expect(await screen.findByTestId("hand-replayer")).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByTestId("replay-decision")).toHaveTextContent("You raise to 120"));
+    // Judged with decision-time information only.
+    expect(screen.getByTestId("decision-time-note")).toHaveTextContent("the result of the hand does not change the grade");
+    // 3. The decision links back to the leak and on to practice.
+    const finding = screen.getByTestId("decision-finding");
+    await userEvent.click(within(finding).getByRole("button", { name: "Practise this leak" }));
+    // 4. Focused practice: same concept, the leak's situation.
+    await screen.findByTestId("scenario");
+    expect(scenarioUrls.at(-1)).toContain("concept=pot_odds");
+    expect(scenarioUrls.at(-1)).toContain("focus=river");
+    expect(screen.getByTestId("leak-practice-note")).toHaveTextContent("set on the river");
+    await userEvent.click(screen.getByRole("button", { name: "Fold" }));
+    await screen.findByTestId("training-feedback");
+    // 5. The first answer is recorded against the leak, and reaches the server.
+    const stored = JSON.parse(localStorage.getItem("pokerlab.progress.v2.k1")!);
+    expect(stored.answers).toEqual([expect.objectContaining({ id: scenario.id, leak: "called_without_odds" })]);
+    await waitFor(() => expect(uploaded).toEqual([expect.objectContaining({ leak: "called_without_odds" })]), { timeout: 4000 });
+    // "Next" stays on the leak.
+    await userEvent.click(screen.getByRole("button", { name: "Next scenario" }));
+    await waitFor(() => expect(scenarioUrls.length).toBeGreaterThanOrEqual(2));
+    expect(scenarioUrls.at(-1)).toContain("focus=river");
   });
 });

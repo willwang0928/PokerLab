@@ -114,6 +114,16 @@ TagName = Literal[
     "preflop_loose",
     "preflop_tight",
 ]
+LeakName = Literal[
+    "called_without_odds",
+    "folded_with_odds",
+    "pot_odds_mixed",
+    "missed_value",
+    "overaggressive",
+    "bet_sizing",
+    "preflop_loose",
+    "preflop_tight",
+]
 # Scenario ids, practice-spot ids (base64url) and "<session>#<hand>:<n>" decision ids.
 RecordId = Annotated[str, Field(min_length=1, max_length=1000, pattern=r"^[A-Za-z0-9._:#|=-]+$")]
 # Milliseconds since the epoch: 2001-09-09 to 2096-10-02. Rejects seconds and garbage.
@@ -134,6 +144,8 @@ class AnswerRecord(_Record):
     difficulty: TrainingDifficulty
     grade: GradeName
     review: bool | None = None
+    # v0.4.4: the weakness this practice was aimed at (see coach.leaks.WEAKNESSES).
+    leak: LeakName | None = None
 
 
 class DecisionRecord(_Record):

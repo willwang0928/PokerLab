@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { coachApi } from "../lib/api";
 import { CONCEPT_LABEL, CONCEPTS, type Progress } from "../lib/progress";
 import { conceptSkills, LEVEL_LABEL, nextPractice, type NextPractice } from "../lib/skills";
-import type { Concept, TrainingAnswer, TrainingDifficulty, TrainingScenario } from "../types";
+import type { Concept, Focus, LeakItem, TrainingAnswer, TrainingDifficulty, TrainingScenario } from "../types";
 import { DecisionDetail, formatBb, GradeChip } from "./DecisionDetail";
 import { formatPercent } from "./EquityPanel";
 import { PlayingCard } from "./PlayingCard";
@@ -29,6 +29,10 @@ export interface Plan {
   difficulty: TrainingDifficulty;
   reason: string | null;
   review: boolean;
+  /** v0.4.4: fix the situation to match a leak (never the answer). */
+  focus?: Focus | null;
+  /** v0.4.4: the leak this practice is aimed at; recorded with the answer. */
+  leak?: string | null;
 }
 
 function loadPrefs(): { difficulty: DifficultyChoice; concept: ConceptChoice; detailed: boolean } {
@@ -51,15 +55,22 @@ function randomSeed(): number {
 }
 
 /** Resolve the controls into a concrete concept and level, using the learning model. */
-export function planFor(progress: Progress, difficulty: DifficultyChoice, choice: ConceptChoice, rand = Math.random()): Plan {
+export function planFor(
+  progress: Progress,
+  difficulty: DifficultyChoice,
+  choice: ConceptChoice,
+  rand = Math.random(),
+  leaks?: LeakItem[],
+): Plan {
   if (choice === "recommended") {
-    const rec: NextPractice = nextPractice(progress, Date.now(), rand);
+    const rec: NextPractice = nextPractice(progress, Date.now(), rand, leaks);
     return {
       concept: rec.concept,
       // A due review is practised at its own level: only an answer at that level clears it.
       difficulty: difficulty === "auto" || rec.kind === "review" ? rec.difficulty : difficulty,
       reason: rec.reason,
       review: rec.kind === "review",
+      ...(rec.leak ? { leak: rec.leak, focus: rec.focus ?? null } : {}),
     };
   }
   const level = conceptSkills(progress).find((s) => s.concept === choice)!.level;
@@ -73,6 +84,8 @@ interface Props {
   initial?: TrainingScenario | null;
   /** A plan to start with (the dashboard's "Start" button). */
   startPlan?: Plan | null;
+  /** Leaks from the leak report, for "Recommended for you" (v0.4.4). */
+  leaks?: LeakItem[];
 }
 
 /**
@@ -80,7 +93,7 @@ interface Props {
  * feedback comparing every choice. Scenarios target your weakest concepts unless you pick
  * one. Retries are allowed, but only the first answer counts towards progress.
  */
-export function TrainingView({ progress, onAnswered, initial = null, startPlan = null }: Props) {
+export function TrainingView({ progress, onAnswered, initial = null, startPlan = null, leaks }: Props) {
   const [prefs, setPrefs] = useState(loadPrefs);
   const [scenario, setScenario] = useState<TrainingScenario | null>(initial);
   const [plan, setPlan] = useState<Plan | null>(null);
@@ -90,6 +103,8 @@ export function TrainingView({ progress, onAnswered, initial = null, startPlan =
   const [error, setError] = useState<string | null>(null);
   const progressRef = useRef(progress);
   progressRef.current = progress;
+  const leaksRef = useRef(leaks);
+  leaksRef.current = leaks;
   const feedbackRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -103,7 +118,7 @@ export function TrainingView({ progress, onAnswered, initial = null, startPlan =
   // The next scenario is fetched while the player reads the feedback, so "Next" is quick.
   const prefetched = useRef<{ key: string; plan: Plan; promise: Promise<TrainingScenario> } | null>(null);
   const request = (plan: Plan, key: string) => {
-    const promise = coachApi.scenario(plan.difficulty, plan.concept, randomSeed());
+    const promise = coachApi.scenario(plan.difficulty, plan.concept, randomSeed(), plan.focus);
     promise.catch(() => {}); // a failed prefetch is retried when it is needed
     return { key, plan, promise };
   };
@@ -114,19 +129,24 @@ export function TrainingView({ progress, onAnswered, initial = null, startPlan =
   const loadSeq = useRef(0);
   const scenarioRef = useRef(scenario);
   scenarioRef.current = scenario;
+  // A leak practice session keeps its plan for every "Next" until the controls change.
+  const sticky = useRef<Plan | null>(null);
+  const keyOf = (difficulty: DifficultyChoice, choice: ConceptChoice, fixed?: Plan) =>
+    fixed?.leak ? `leak|${fixed.leak}|${fixed.concept}|${fixed.difficulty}|${fixed.focus ?? ""}` : `${difficulty}|${choice}`;
   const load = useCallback(async (difficulty: DifficultyChoice, choice: ConceptChoice, fixed?: Plan) => {
     const seq = ++loadSeq.current;
-    const key = `${difficulty}|${choice}`;
-    let next = !fixed && prefetched.current?.key === key ? prefetched.current : null;
+    sticky.current = fixed?.leak ? fixed : null;
+    const key = keyOf(difficulty, choice, fixed);
+    let next = (!fixed || fixed.leak) && prefetched.current?.key === key ? prefetched.current : null;
     prefetched.current = null;
     setBusy(true);
     setError(null);
     try {
       let s: TrainingScenario;
       try {
-        s = await (next ?? (next = request(fixed ?? planFor(progressRef.current, difficulty, choice), key))).promise;
+        s = await (next ?? (next = request(fixed ?? planFor(progressRef.current, difficulty, choice, Math.random(), leaksRef.current), key))).promise;
       } catch {
-        next = request(fixed ?? planFor(progressRef.current, difficulty, choice), key);
+        next = request(fixed ?? planFor(progressRef.current, difficulty, choice, Math.random(), leaksRef.current), key);
         s = await next.promise;
       }
       if (seq !== loadSeq.current) return;
@@ -146,8 +166,9 @@ export function TrainingView({ progress, onAnswered, initial = null, startPlan =
   // may have scheduled a review, a streak may have moved the level).
   useEffect(() => {
     if (attempts !== 1 || prefetched.current) return;
-    const key = `${prefs.difficulty}|${prefs.concept}`;
-    prefetched.current = request(planFor(progress, prefs.difficulty, prefs.concept), key);
+    const fixed = sticky.current ?? undefined;
+    const key = keyOf(prefs.difficulty, prefs.concept, fixed);
+    prefetched.current = request(fixed ?? planFor(progress, prefs.difficulty, prefs.concept, Math.random(), leaksRef.current), key);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [attempts, progress]);
 
@@ -160,6 +181,7 @@ export function TrainingView({ progress, onAnswered, initial = null, startPlan =
   // A practice spot replaces the current scenario.
   useEffect(() => {
     if (initial) {
+      sticky.current = null;
       setScenario(initial);
       setPlan(null);
       setAnswer(null);
@@ -311,7 +333,7 @@ export function TrainingView({ progress, onAnswered, initial = null, startPlan =
               </button>
               <button
                 type="button"
-                onClick={() => void load(prefs.difficulty, prefs.concept)}
+                onClick={() => void load(prefs.difficulty, prefs.concept, sticky.current ?? undefined)}
                 disabled={busy}
                 className="btn-gold rounded-lg px-4 py-2 text-[13px] font-bold"
               >
@@ -390,6 +412,13 @@ function ScenarioCard({
           )}
           <span>{LEVEL_LABEL[plan.difficulty]}</span>
           {plan.reason && <span>· {plan.reason}</span>}
+        </p>
+      )}
+      {plan?.leak && (
+        <p className="mt-1 text-[11.5px] text-slate-400" data-testid="leak-practice-note">
+          {s.focus_label ? `This scenario is set ${s.focus_label}, like the spots where your leak shows up. ` : ""}
+          The situation is chosen to match your leak, not the answer: some of these are calls, some folds or bets. Your
+          first answers here are tracked against this leak on the Progress tab.
         </p>
       )}
 

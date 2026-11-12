@@ -26,6 +26,7 @@ import { restoreFocus, shortcutBlocked } from "./lib/keys";
 import { sound } from "./lib/sound";
 import { ApiError, coachApi } from "./lib/api";
 import { useProgressStore } from "./hooks/useProgressStore";
+import { useLeakReport } from "./hooks/useLeakReport";
 import { recordAnswer, recordHandReview } from "./lib/skills";
 import type { DecisionReview, GameConfig, GameState, HandReview, TrainingScenario } from "./types";
 
@@ -87,6 +88,28 @@ export default function App() {
   const { progress } = store;
   const updateProgress = store.record;
   const saveHand = store.saveHand;
+  // The leak report (v0.4.4): one fetch shared by Progress, History and training.
+  const leakReport = useLeakReport(
+    store.active.token,
+    store.handsVersion,
+    store.syncState.status === "synced" ? store.syncState.at : null,
+  );
+  // Links between views: a hand (and decision) to open in History, a leak to show in Progress.
+  const [openHand, setOpenHand] = useState<{ id: string; decision: number | null; n: number } | null>(null);
+  const [focusLeak, setFocusLeak] = useState<{ key: string; n: number } | null>(null);
+  const showHand = (id: string, decision: number | null) => {
+    setOpenHand((o) => ({ id, decision, n: (o?.n ?? 0) + 1 }));
+    setMode("history");
+  };
+  const showLeak = (key: string) => {
+    setFocusLeak((f) => ({ key, n: (f?.n ?? 0) + 1 }));
+    setMode("progress");
+  };
+  const trainPlan = (plan: Plan) => {
+    setPractice(null);
+    setStartPlan({ ...plan });
+    setMode("train");
+  };
   const [detailed, setDetailed] = useState(() => {
     try {
       return localStorage.getItem(COACH_DETAIL_KEY) === "1";
@@ -286,6 +309,7 @@ export default function App() {
             progress={progress}
             initial={practice}
             startPlan={startPlan}
+            leaks={leakReport.state.status === "none" ? undefined : leakReport.state.report?.leaks}
             onAnswered={(sc, a, plan) =>
               updateProgress((p) =>
                 recordAnswer(p, {
@@ -294,6 +318,7 @@ export default function App() {
                   difficulty: sc.difficulty,
                   grade: a.analysis.grade,
                   ...(plan?.review ? { review: true } : {}),
+                  ...(plan?.leak ? { leak: plan.leak } : {}),
                 }),
               )
             }
@@ -310,11 +335,10 @@ export default function App() {
             detailed={detailed}
             onToggleDetailed={toggleDetailed}
             onPractice={(d) => void practise(d)}
-            onTrain={(plan) => {
-              setPractice(null);
-              setStartPlan(plan);
-              setMode("train");
-            }}
+            onTrain={trainPlan}
+            leaks={leakReport.state}
+            openHand={openHand}
+            onShowLeak={showLeak}
           />
           </Suspense>
         </main>
@@ -324,12 +348,12 @@ export default function App() {
           <Suspense fallback={<div className="surface rounded-2xl p-6 text-slate-400">Loading…</div>}>
           <ProgressDashboard
             progress={progress}
-            onStart={(plan) => {
-              setPractice(null);
-              setStartPlan({ ...plan });
-              setMode("train");
-            }}
+            onStart={trainPlan}
             store={store}
+            leaks={leakReport.state}
+            onRetryLeaks={() => void leakReport.reload()}
+            onShowHand={showHand}
+            focusLeak={focusLeak}
           />
           </Suspense>
         </main>

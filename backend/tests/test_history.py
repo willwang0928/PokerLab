@@ -1,4 +1,6 @@
-"""Hand histories (v0.4.3): records, replay, validation, storage, API and weaknesses.
+"""Hand histories (v0.4.3): records, replay, validation, storage and API.
+
+Recurring weaknesses are tested in test_leaks.py (v0.4.4).
 
 Scripted hands use stacked decks, blinds 5/10, and the numbers each test expects are
 worked out by hand in its docstring.
@@ -18,11 +20,6 @@ from pokerlab import storage as S
 from pokerlab.ai.base import Observation
 from pokerlab.ai.random_agent import RandomAgent
 from pokerlab.api.app import create_app
-from pokerlab.coach.patterns import (
-    MIN_OPPORTUNITIES,
-    find_weaknesses,
-    wilson,
-)
 from pokerlab.coach.review import HandCoach
 from pokerlab.engine import Action, HoldemHand
 from pokerlab.history import (
@@ -439,65 +436,3 @@ def test_the_record_endpoint_over_a_real_session(db_path):
     assert rec["hand_number"] == 1 and rec["coaching"] is not None
     h = auth(c)
     assert c.post("/api/profile/hands", json={"hands": [rec]}, headers=h).json()["added"] == 1
-
-
-# ----------------------------------------------------------------- weaknesses
-
-
-def summary(i, decisions, bb=10):
-    return {"id": f"h{i:08d}", "t": T + i, "hand_number": i, "big_blind": bb,
-            "decisions": decisions}  # fmt: skip
-
-
-def call(flagged=False, conf="high", street="flop", pot=80, to_call=30, stack=900):
-    return {"i": 0, "street": street, "spot": "facing_bet", "action": "call",
-            "grade": "mistake" if flagged else "good", "confidence": conf,
-            "tags": ["called_without_odds"] if flagged else [], "pot": pot,
-            "to_call": to_call, "stack": stack, "equity": 0.2}  # fmt: skip
-
-
-def test_wilson_interval_matches_a_hand_computed_value():
-    """k=5, n=10, z=1.6449: centre (0.5 + z²/20)/(1 + z²/10) = 0.5, half-width
-    z sqrt(0.025 + z²/400)/(1 + z²/10) = 1.6449 x 0.17822 / 1.27057 = 0.2307."""
-    low, high = wilson(5, 10)
-    assert low == pytest.approx(0.2693, abs=5e-4) and high == pytest.approx(0.7307, abs=5e-4)
-
-
-def test_a_few_flagged_hands_are_never_presented_as_a_pattern():
-    hands = [summary(i, [call(flagged=i < 3)]) for i in range(6)]  # 3 of 6
-    w = find_weaknesses(hands)
-    assert w["patterns"] == []
-    early = w["early"][0]
-    assert early["key"] == "called_without_odds" and early["flagged"] == 3
-    assert any("more chances" in m for m in early["missing"])
-
-
-def test_a_repeated_weakness_with_enough_hands_is_a_pattern_linked_to_its_hands():
-    hands = [summary(i, [call(flagged=i % 2 == 0)]) for i in range(12)]  # 6 of 12
-    w = find_weaknesses(hands)
-    (p,) = w["patterns"]
-    assert p["opportunities"] == 12 and p["flagged"] == 6 and p["concept"] == "pot_odds"
-    assert p["low"] >= 0.15
-    assert [h["id"] for h in p["hands"]] == [f"h{i:08d}" for i in (10, 8, 6, 4, 2, 0)]
-
-
-def test_low_confidence_grades_do_not_build_a_pattern():
-    hands = [summary(i, [call(flagged=True, conf="low")]) for i in range(MIN_OPPORTUNITIES + 5)]
-    w = find_weaknesses(hands)
-    assert w["patterns"] == [] and w["early"] == []
-
-
-def test_a_low_rate_over_many_hands_is_within_normal_variation():
-    hands = [summary(i, [call(flagged=i < 3)]) for i in range(60)]  # 3 of 60 = 5%
-    w = find_weaknesses(hands)
-    assert w["patterns"] == []
-    assert "normal variation" in w["early"][0]["missing"][0]
-
-
-def test_a_pattern_names_the_condition_it_is_concentrated_in():
-    """Flagged only when facing pot-sized bets (to_call 50 into a pot of 50 before it)."""
-    big = [summary(i, [call(flagged=True, pot=100, to_call=50)]) for i in range(6)]
-    small = [summary(10 + i, [call(flagged=False, pot=80, to_call=20)]) for i in range(10)]
-    (p,) = find_weaknesses(big + small)["patterns"]
-    keys = {c["key"] for c in p["conditions"]}
-    assert "large_bets" in keys and "river" not in keys

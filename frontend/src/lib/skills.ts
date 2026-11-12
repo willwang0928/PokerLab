@@ -19,7 +19,7 @@
  * high. None of this measures poker profitability: it measures agreement with
  * PokerLab's own analysis on its own scenarios.
  */
-import type { Concept, Grade, TrainingDifficulty } from "../types";
+import type { Concept, Focus, Grade, LeakItem, TrainingDifficulty } from "../types";
 import {
   addAnswer,
   addReview,
@@ -286,6 +286,9 @@ export interface NextPractice {
   reason: string;
   /** Set when this practice is a scheduled review. */
   reviewKey?: string;
+  /** Set when this practice targets a leak from the leak report (v0.4.4). */
+  leak?: string;
+  focus?: Focus | null;
 }
 
 function ago(ms: number): string {
@@ -297,11 +300,15 @@ function ago(ms: number): string {
 }
 
 /**
- * The next thing to practise, with the reason. Scheduled reviews come first; then
- * concepts weighted by recurring table leaks, low estimated skill and missing evidence.
+ * The next thing to practise, with the reason. Scheduled reviews come first; then a leak
+ * the leak report supports (``leaks``, from the server's analysis of saved hands); then
+ * concepts weighted by recent table flags, low estimated skill and missing evidence.
  * ``rand`` (0..1) picks among weighted concepts; omit it for the single top choice.
+ *
+ * When ``leaks`` is given (the report is available), its verdict replaces the plain
+ * counts of recent flags on this device, which are not tested for recurrence.
  */
-export function nextPractice(p: Progress, now = Date.now(), rand?: number): NextPractice {
+export function nextPractice(p: Progress, now = Date.now(), rand?: number, leaks?: LeakItem[]): NextPractice {
   const skills = conceptSkills(p);
   const byConcept = new Map(skills.map((s) => [s.concept, s]));
   const due = dueReviews(p, now);
@@ -321,9 +328,22 @@ export function nextPractice(p: Progress, now = Date.now(), rand?: number): Next
           : `Review: ${CONCEPT_LABEL[r.concept].toLowerCase()} is due again (step ${r.box + 1} of ${INTERVALS.length}).`,
     };
   }
-  const leaks = recurringLeaks(p);
+  if (leaks?.length && (rand === undefined || rand < 0.6)) {
+    // The strongest-evidence leak (the report sorts them); with rand, sometimes another.
+    const l = rand === undefined ? leaks[0] : leaks[Math.min(leaks.length - 1, Math.floor((rand / 0.6) * leaks.length))];
+    const concept = l.recommendation?.concept ?? l.concept;
+    return {
+      concept,
+      difficulty: byConcept.get(concept)!.level,
+      kind: "leak",
+      leak: l.key,
+      focus: l.recommendation?.focus ?? null,
+      reason: `Recurring leak in your hands: ${l.title.toLowerCase()} (${l.flagged} of ${l.opportunities} such decisions flagged).`,
+    };
+  }
+  const local = leaks === undefined ? recurringLeaks(p) : [];
   const weights = skills.map((s) => {
-    const leak = leaks.filter((l) => l.concept === s.concept).reduce((n, l) => n + l.count, 0);
+    const leak = local.filter((l) => l.concept === s.concept).reduce((n, l) => n + l.count, 0);
     let w = 1 + Math.min(4, leak * 0.75);
     w += s.enough ? 3 * (1 - s.score.mean) : 1.5;
     return w;
@@ -336,7 +356,7 @@ export function nextPractice(p: Progress, now = Date.now(), rand?: number): Next
     while (i < weights.length - 1 && x >= weights[i]) x -= weights[i++];
   }
   const s = skills[i];
-  const leak = leaks.find((l) => l.concept === s.concept);
+  const leak = local.find((l) => l.concept === s.concept);
   if (leak)
     return {
       concept: s.concept,
