@@ -261,7 +261,7 @@ export function StoragePanel({ store, now = Date.now() }: { store: ProgressStore
         )}
       </div>
       {quarantined().length > 0 && (
-        <p className="mt-1 text-[11px] text-slate-500">Unreadable records are included in exports under "unreadable".</p>
+        <p className="mt-1 text-[11px] text-slate-400">Unreadable records are included in exports under "unreadable".</p>
       )}
     </section>
   );

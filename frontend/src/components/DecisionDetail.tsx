@@ -81,7 +81,7 @@ export function RangeCheckTable({ review }: { review: DecisionReview }) {
       <div className="text-[10.5px] uppercase tracking-wide text-slate-400">If their range is different</div>
       <table className="mt-1 w-full text-[12px]">
         <thead>
-          <tr className="text-left text-[10px] uppercase tracking-wide text-slate-500">
+          <tr className="text-left text-[10px] uppercase tracking-wide text-slate-400">
             <th scope="col" className="py-0.5 font-medium">
               Range
             </th>
@@ -97,7 +97,7 @@ export function RangeCheckTable({ review }: { review: DecisionReview }) {
           {all.map((r) => (
             <tr key={r.key} className="border-t border-white/5" title={r.note || undefined}>
               <th scope="row" className="py-1 text-left font-medium text-slate-300">
-                {r.label} <span className="font-normal text-slate-500">({r.size} combos)</span>
+                {r.label} <span className="font-normal text-slate-400">({r.size} combos)</span>
               </th>
               <td className="py-1 text-right tabular-nums text-slate-200">{formatPercent(r.equity)}</td>
               <td className="py-1 pl-2 text-right text-slate-300">{bestOf(r.evs)}</td>
@@ -269,7 +269,7 @@ export function OpponentEvidence({ info }: { info: OpponentInfo }) {
       {rows.length > 0 && (
         <table className="mt-1 w-full text-[11.5px]">
           <thead>
-            <tr className="text-left text-[10px] uppercase tracking-wide text-slate-500">
+            <tr className="text-left text-[10px] uppercase tracking-wide text-slate-400">
               <th scope="col" className="py-0.5 font-medium">
                 Tendency
               </th>
@@ -286,11 +286,11 @@ export function OpponentEvidence({ info }: { info: OpponentInfo }) {
               <tr key={e.key} className="border-t border-white/5">
                 <th scope="row" className="py-0.5 text-left font-normal text-slate-300">
                   {e.phrase}
-                  <span className="ml-1 text-slate-500">(ref. {formatPercent(e.reference)})</span>
+                  <span className="ml-1 text-slate-400">(ref. {formatPercent(e.reference)})</span>
                 </th>
                 <td className="py-0.5 text-right tabular-nums text-slate-200">
                   {formatPercent(e.estimate)}{" "}
-                  <span className="text-slate-500">
+                  <span className="text-slate-400">
                     ({formatPercent(e.low)}–{formatPercent(e.high)})
                   </span>
                 </td>

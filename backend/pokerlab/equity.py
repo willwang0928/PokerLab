@@ -191,18 +191,115 @@ def _showdown(scores: list[int], shares: list[float], wins: list[int], ties: lis
 
 
 def _exact(problem: _Problem) -> EquityResult:
+    """Enumerate every valid deal.
+
+    Runouts are the outer loop so that each hole combo is scored once per runout and
+    reused for every assignment it appears in (heads-up against a range, the fixed hand
+    was previously re-scored for every opponent combo). The (assignment, runout) pairs
+    visited, and so the counts, are exactly those of a naive double loop.
+    """
     n = len(problem.ranges)
     shares = [0.0] * n
     wins = [0] * n
     ties = [0] * n
     deals = 0
     board = problem.board
+    assignments = []
     for holes in _valid_assignments(problem.ranges):
-        held = {c for h in holes for c in h}
-        rest = [c for c in problem.unseen if c not in held]
-        for runout in combinations(rest, problem.missing):
-            full = board + list(runout)
-            scores = [fasteval.score((a, b, *full)) for a, b in holes]
+        mask = 0
+        for a, b in holes:
+            mask |= (1 << a) | (1 << b)
+        assignments.append((holes, mask))
+    if not assignments:
+        raise ValueError("The ranges leave no possible deal (every combination shares a card)")
+
+    rank_key, suit_key, rank_bit = fasteval.RANK_KEY, fasteval.SUIT_KEY, fasteval.RANK_BIT
+    noflush, flush_table, flush_suit = (
+        fasteval.NOFLUSH_TABLE,
+        fasteval.FLUSH_TABLE,
+        fasteval.FLUSH_SUIT,
+    )
+    board_rank = sum(rank_key[c] for c in board)
+    board_suit = sum(suit_key[c] for c in board)
+
+    def scorer(rk: int, sk: int, cards: tuple[int, ...]):
+        def score(h: IndexCombo) -> int:  # inlined fasteval.score
+            a, b = h
+            s = noflush[rk + rank_key[a] + rank_key[b]]
+            fs = flush_suit[sk + suit_key[a] + suit_key[b]]
+            if fs >= 0:
+                m = 0
+                for c in (a, b, *cards):
+                    if c & 3 == fs:
+                        m |= rank_bit[c]
+                f = flush_table[m]
+                if f > s:
+                    s = f
+            return s
+
+        return score
+
+    if n == 2:
+        # Heads-up fast path (almost every call in PokerLab): integer counters only.
+        # Shares are wins + ties / 2, the same exact values the general path sums.
+        pairs = [(h[0], h[1], mask) for h, mask in assignments]
+        w0 = w1 = tie = 0
+        for runout in combinations(problem.unseen, problem.missing):
+            rmask = 0
+            rk, sk = board_rank, board_suit
+            for c in runout:
+                rmask |= 1 << c
+                rk += rank_key[c]
+                sk += suit_key[c]
+            score = scorer(rk, sk, (*board, *runout))
+            cache: dict[IndexCombo, int] = {}
+            get = cache.get
+            for h0, h1, hmask in pairs:
+                if hmask & rmask:
+                    continue
+                s0 = get(h0)
+                if s0 is None:
+                    s0 = cache[h0] = score(h0)
+                s1 = get(h1)
+                if s1 is None:
+                    s1 = cache[h1] = score(h1)
+                if s0 > s1:
+                    w0 += 1
+                elif s1 > s0:
+                    w1 += 1
+                else:
+                    tie += 1
+        deals = w0 + w1 + tie
+        if deals == 0:
+            raise ValueError("The ranges leave no possible deal (every combination shares a card)")
+        return EquityResult(
+            players=(
+                PlayerEquity((w0 + tie * 0.5) / deals, w0 / deals, tie / deals, 0.0),
+                PlayerEquity((w1 + tie * 0.5) / deals, w1 / deals, tie / deals, 0.0),
+            ),
+            method="exact",
+            trials=deals,
+            seed=None,
+        )
+
+    for runout in combinations(problem.unseen, problem.missing):
+        rmask = 0
+        rk, sk = board_rank, board_suit
+        for c in runout:
+            rmask |= 1 << c
+            rk += rank_key[c]
+            sk += suit_key[c]
+        score = scorer(rk, sk, (*board, *runout))
+        cache = {}
+        for holes, hmask in assignments:
+            if hmask & rmask:
+                continue
+            scores = []
+            for h in holes:
+                s = cache.get(h)
+                if s is None:
+                    s = cache[h] = score(h)
+                scores.append(s)
             _showdown(scores, shares, wins, ties)
             deals += 1
     if deals == 0:

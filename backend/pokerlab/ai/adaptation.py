@@ -100,6 +100,17 @@ def _pct(x: float) -> str:
     return f"{x:.0%}"
 
 
+def _seen(model: PlayerModel, key: str) -> str:
+    """The raw count behind an estimate, as the tendencies table shows it.
+
+    Estimates are shrunk towards the reference (see ``player_model``), so the estimate
+    and the raw rate differ on small samples; quoting both avoids an apparent
+    contradiction such as "you bet 13%" next to "0 of 18".
+    """
+    s = model.stats[key]
+    return f"seen {s.count:.0f} of {s.opportunities:.0f}"
+
+
 def compute_adjustments(model: PlayerModel, weight: float) -> Adjustments:
     """Adjustments for a model, scaled by the difficulty's adaptation ``weight`` (0–1)."""
     if weight <= 0:
@@ -110,6 +121,7 @@ def compute_adjustments(model: PlayerModel, weight: float) -> Adjustments:
 
     if model.reliable("fold_to_bet"):
         est, ref = model.estimate("fold_to_bet"), BASELINES["fold_to_bet"]
+        obs = f"{_seen(model, 'fold_to_bet')}; reference {_pct(ref)}"
         dev = est - ref
         if abs(dev) >= DEADBAND:
             # The calling range always follows the observed fold rate. The assumed fold
@@ -123,21 +135,22 @@ def compute_adjustments(model: PlayerModel, weight: float) -> Adjustments:
             if dev < 0:
                 fold_shift = weight * max(dev, -MAX_FOLD_SHIFT)
                 reasons["value"] = (
-                    f"You fold to only {_pct(est)} of bets (reference {_pct(ref)}), so it "
+                    f"It estimates you fold to only {_pct(est)} of bets ({obs}), so it "
                     "bluffs less, value-bets thinner and reads your calls as wider."
                 )
             else:
                 reasons["defends"] = (
-                    f"You fold to {_pct(est)} of bets (reference {_pct(ref)}), so it reads "
+                    f"It estimates you fold to {_pct(est)} of bets ({obs}), so it reads "
                     "the hands you call with as stronger."
                 )
 
     if model.reliable("bet_unopposed"):
         est, ref = model.estimate("bet_unopposed"), BASELINES["bet_unopposed"]
+        obs = f"{_seen(model, 'bet_unopposed')}; reference {_pct(ref)}"
         if abs(est - ref) >= DEADBAND:
             bet_scale = _clamp((est / ref) ** weight, 0.5, 1.6)
             reasons["calls"] = (
-                f"You bet {_pct(est)} of the time when checked to (reference {_pct(ref)}), "
+                f"It estimates you bet {_pct(est)} of the time when checked to ({obs}), "
                 + (
                     "so it reads your bets as weaker and calls more."
                     if est > ref
@@ -146,19 +159,21 @@ def compute_adjustments(model: PlayerModel, weight: float) -> Adjustments:
             )
     if model.reliable("raise_vs_bet"):
         est, ref = model.estimate("raise_vs_bet"), BASELINES["raise_vs_bet"]
+        obs = f"{_seen(model, 'raise_vs_bet')}; reference {_pct(ref)}"
         if abs(est - ref) >= DEADBAND:
             raise_post_scale = _clamp((est / ref) ** weight, 0.5, 1.6)
-            reasons["raises"] = f"You raise {_pct(est)} of bets (reference {_pct(ref)}), " + (
+            reasons["raises"] = f"It estimates you raise {_pct(est)} of bets ({obs}), " + (
                 "so it reads your raises as weaker."
                 if est > ref
                 else "so it reads your raises as stronger."
             )
     if model.reliable("fold_to_raise_pre"):
         est, ref = model.estimate("fold_to_raise_pre"), BASELINES["fold_to_raise_pre"]
+        obs = f"{_seen(model, 'fold_to_raise_pre')}; reference {_pct(ref)}"
         if abs(est - ref) >= DEADBAND:
             open_shift = weight * _clamp(est - ref, -0.15, 0.15)
             reasons["steal"] = (
-                f"You fold to {_pct(est)} of preflop raises (reference {_pct(ref)}), "
+                f"It estimates you fold to {_pct(est)} of preflop raises ({obs}), "
                 + (
                     "so it raises more hands from the button."
                     if est > ref
@@ -168,10 +183,11 @@ def compute_adjustments(model: PlayerModel, weight: float) -> Adjustments:
 
     if model.reliable("pfr"):
         est, ref = model.estimate("pfr"), BASELINES["pfr"]
+        obs = f"{_seen(model, 'pfr')}; reference {_pct(ref)}"
         if abs(est - ref) >= DEADBAND:
             raise_scale = _clamp((est / ref) ** weight, 0.4, 2.0)
             reasons["preflop"] = (
-                f"You raise {_pct(est)} of hands preflop (reference {_pct(ref)}), "
+                f"It estimates you raise {_pct(est)} of hands preflop ({obs}), "
                 + (
                     "so it reads your raises as wider."
                     if est > ref
@@ -180,9 +196,10 @@ def compute_adjustments(model: PlayerModel, weight: float) -> Adjustments:
             )
     if model.reliable("vpip"):
         est, ref = model.estimate("vpip"), BASELINES["vpip"]
+        obs = f"{_seen(model, 'vpip')}; reference {_pct(ref)}"
         if abs(est - ref) >= DEADBAND:
             vpip_scale = _clamp((est / ref) ** weight, 0.5, 1.25)
-            reasons["vpip"] = f"You play {_pct(est)} of hands (reference {_pct(ref)}), " + (
+            reasons["vpip"] = f"It estimates you play {_pct(est)} of hands ({obs}), " + (
                 "so it reads your preflop calls as wider."
                 if est > ref
                 else "so it reads your preflop calls as stronger."

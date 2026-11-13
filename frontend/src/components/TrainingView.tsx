@@ -349,7 +349,7 @@ export function TrainingView({ progress, onAnswered, initial = null, startPlan =
                 Show the maths
               </label>
             </div>
-            <p className="mt-2 text-[11px] leading-snug text-slate-500">
+            <p className="mt-2 text-[11px] leading-snug text-slate-400">
               Estimates come from PokerLab's range model and one-street expected values. They are a guide to good
               reasoning, not solver-proven optimal play.
             </p>
@@ -373,7 +373,7 @@ export function TrainingView({ progress, onAnswered, initial = null, startPlan =
             </li>
           ))}
         </ul>
-        <p className="mt-3 text-[11px] leading-snug text-slate-500">
+        <p className="mt-3 text-[11px] leading-snug text-slate-400">
           Counts are your first answers (good, or close for half credit). The estimate is a model of those answers,
           weighted by difficulty, with an 80% range: few answers mean a wide range. It measures agreement with
           PokerLab's analysis, not winnings.
@@ -423,26 +423,26 @@ function ScenarioCard({
       )}
 
       <div className="felt mt-3 flex flex-col items-center gap-3 rounded-2xl px-3 py-4" data-testid="scenario-table">
-        <div className="text-[12px] text-emerald-50/80">
+        <div className="text-[12px] text-emerald-50">
           Opponent · stack {s.opponent_stack.toLocaleString("en-US")}
         </div>
-        <div className="flex min-h-[calc(var(--card-w)*1.4)] gap-1.5" aria-label="Board">
+        <div className="flex min-h-[calc(var(--card-w)*1.4)] gap-1.5" role="group" aria-label="Board">
           {s.board.length ? (
             s.board.map((c) => <PlayingCard key={c} code={c} />)
           ) : (
-            <span className="self-center text-[12px] text-emerald-50/70">Preflop: no board yet</span>
+            <span className="self-center text-[12px] text-emerald-50">Preflop: no board yet</span>
           )}
         </div>
         <div className="rounded-full bg-black/30 px-3 py-1 text-[13px] font-semibold tabular-nums text-amber-100">
           Pot {s.pot.toLocaleString("en-US")}
           {s.to_call > 0 && <span className="text-amber-200/80"> · to call {s.to_call.toLocaleString("en-US")}</span>}
         </div>
-        <div className="flex gap-1.5" aria-label="Your cards">
+        <div className="flex gap-1.5" role="group" aria-label="Your cards">
           {s.hero.map((c) => (
             <PlayingCard key={c} code={c} />
           ))}
         </div>
-        <div className="text-[12px] text-emerald-50/80">
+        <div className="text-[12px] text-emerald-50">
           You ({s.position}) · {s.hand} · stack {s.stack.toLocaleString("en-US")}
         </div>
       </div>

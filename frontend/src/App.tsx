@@ -138,22 +138,27 @@ export default function App() {
     state && state.status !== "in_hand" && state.result && !game.animating
       ? `${state.session_id}#${state.hand_number}`
       : null;
+  // The most recently requested review. A review is not abandoned when the next hand is
+  // dealt before it arrives (that used to leave "Reviewing…" on screen and drop the hand
+  // from skill progress): it is still recorded, and shown unless a newer review, or a
+  // new game, has replaced it.
+  const latestReview = useRef<string | null>(null);
   useEffect(() => {
     if (!reviewKey || !state || reviewState.key === reviewKey) return;
     const sessionId = state.session_id;
     const hand = state.hand_number;
+    latestReview.current = reviewKey;
     setReviewState({ key: reviewKey, loading: true, error: null });
-    let cancelled = false;
     coachApi
       .review(sessionId, hand)
       .then((r) => {
-        if (cancelled) return;
+        updateProgress((p) => recordHandReview(p, sessionId, r));
+        if (latestReview.current !== reviewKey) return;
         setReview(r);
         setReviewState({ key: reviewKey, loading: false, error: null });
-        updateProgress((p) => recordHandReview(p, sessionId, r));
       })
       .catch((e) => {
-        if (cancelled) return;
+        if (latestReview.current !== reviewKey) return;
         const gone = e instanceof ApiError && e.status === 404;
         setReviewState({ key: reviewKey, loading: false, error: gone ? null : "The review could not be loaded." });
       })
@@ -167,14 +172,16 @@ export default function App() {
             /* the hand is too old or the server is gone: nothing to save */
           });
       });
-    return () => {
-      cancelled = true;
-    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [reviewKey]);
-  // A new game starts with an empty coach panel.
+  // A new game starts with an empty coach panel; a review still in flight for the old
+  // game is recorded but not shown.
   const sessionId = state?.session_id;
-  useEffect(() => setReview(null), [sessionId]);
+  useEffect(() => {
+    latestReview.current = null;
+    setReview(null);
+    setReviewState((r) => (r.loading ? { ...r, loading: false } : r));
+  }, [sessionId]);
 
   // ---- practising a decision from a reviewed hand
   const [practice, setPractice] = useState<TrainingScenario | null>(null);
@@ -208,7 +215,7 @@ export default function App() {
     <MotionConfig reducedMotion="user">
     <MotionPrefsContext value={motionPrefs}>
     <div className="flex min-h-screen flex-col">
-      <header className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6">
+      <header className="flex flex-wrap items-center gap-2 px-4 py-3 sm:justify-between sm:gap-3 sm:px-6">
         <div className="flex items-center gap-3">
           <div
             className="grid h-9 w-9 place-items-center rounded-[11px] bg-gradient-to-br from-emerald-400 via-emerald-600 to-teal-900 text-white shadow-lg ring-1 ring-white/15"
@@ -224,8 +231,8 @@ export default function App() {
             </div>
           </div>
         </div>
-        <div className="flex min-w-0 flex-wrap items-center justify-end gap-2 sm:gap-2.5">
-          <div className="surface flex rounded-xl p-0.5" role="tablist" aria-label="Mode">
+        <div className="flex min-w-0 flex-wrap items-center justify-end gap-2 max-sm:contents sm:gap-2.5">
+          <div className="surface flex rounded-xl p-0.5 max-sm:ml-auto" role="tablist" aria-label="Mode">
             {(["play", "train", "history", "progress"] as const).map((m) => (
               <button
                 key={m}
@@ -272,33 +279,37 @@ export default function App() {
               )}
             </div>
           )}
-          <MuteButton
-            muted={!settings.sound || settings.volume === 0}
-            onToggle={() =>
-              updateSettings(
-                settings.sound && settings.volume > 0
-                  ? { sound: false }
-                  : { sound: true, volume: settings.volume > 0 ? settings.volume : 0.6 },
-              )
-            }
-          />
-          <SettingsMenu
-            settings={settings}
-            onChange={updateSettings}
-            onPreviewSound={() => {
-              sound.unlock();
-              sound.play("chip");
-            }}
-          />
-          {mode === "play" && (
-            <button
-              type="button"
-              onClick={() => setShowSetup(true)}
-              className="btn-dark whitespace-nowrap rounded-xl px-3 py-2 text-sm font-semibold"
-            >
-              New game
-            </button>
-          )}
+          <div className="flex items-center gap-2 max-sm:ml-auto sm:gap-2.5">
+            <MuteButton
+              muted={!settings.sound || settings.volume === 0}
+              onToggle={() =>
+                updateSettings(
+                  settings.sound && settings.volume > 0
+                    ? { sound: false }
+                    : { sound: true, volume: settings.volume > 0 ? settings.volume : 0.6 },
+                )
+              }
+            />
+            <SettingsMenu
+              settings={settings}
+              onChange={updateSettings}
+              onPreviewSound={() => {
+                sound.unlock();
+                sound.play("chip");
+              }}
+            />
+            {mode === "play" && (
+              <button
+                type="button"
+                onClick={() => setShowSetup(true)}
+                className="btn-dark whitespace-nowrap rounded-xl px-3 py-2 text-sm font-semibold"
+                aria-label="New game"
+              >
+                <span className="sm:hidden">New</span>
+                <span className="max-sm:hidden">New game</span>
+              </button>
+            )}
+          </div>
         </div>
       </header>
 
@@ -395,7 +406,7 @@ export default function App() {
               </div>
             </>
           ) : (
-            <div className="grid min-h-[50vh] w-full place-items-center text-slate-500">
+            <div className="grid min-h-[50vh] w-full place-items-center text-slate-400">
               {game.pending ? "Shuffling…" : ""}
             </div>
           )}

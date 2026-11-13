@@ -61,7 +61,7 @@ export function LeakPanel({ state, progress, onStart, onShowHand, onRetry, focus
       {state.status === "loading" && !report && <p className="mt-2 text-[12.5px] text-slate-400">Looking through your hands…</p>}
       {report && <Report report={report} progress={progress} onStart={onStart} onShowHand={onShowHand} focus={focus} cards={cards.current} />}
 
-      <p className="mt-3 text-[11px] leading-snug text-slate-500" data-testid="leak-method">
+      <p className="mt-3 text-[11px] leading-snug text-slate-400" data-testid="leak-method">
         A weakness is reported as supported only after at least {report?.rules.min_opportunities ?? 10} chances at the same
         kind of decision, {report?.rules.min_flagged ?? 3} confidently flagged ones, and a flagged rate clearly above{" "}
         {pct(report?.rules.min_rate ?? 0.15)}: an exact test that also allows for the{" "}
@@ -165,7 +165,7 @@ function Report({
       )}
 
       {unclear.length > 0 && report.status === "ready" && (
-        <p className="text-[11.5px] text-slate-500" data-testid="leaks-unclear">
+        <p className="text-[11.5px] text-slate-400" data-testid="leaks-unclear">
           No clear weakness (enough decisions, but not clearly a strength either): {unclear.map((i) => i.title.toLowerCase()).join("; ")}.
         </p>
       )}
@@ -173,7 +173,7 @@ function Report({
       {report.training && <TrainingCheck t={report.training} />}
 
       {insufficient.length > 0 && report.status === "ready" && (
-        <p className="text-[11.5px] text-slate-500" data-testid="leaks-no-data">
+        <p className="text-[11.5px] text-slate-400" data-testid="leaks-no-data">
           Not enough of these decisions yet to say either way: {insufficient.map((i) => i.title.toLowerCase()).join("; ")}.
         </p>
       )}
@@ -270,7 +270,7 @@ function LeakCard({
                   <span className="tabular-nums text-slate-400" title={new Date(h.t).toLocaleString()}>
                     #{h.hand_number}
                   </span>
-                  <span className="hidden text-[11px] tabular-nums text-slate-500 sm:inline">{when(h.t)}</span>
+                  <span className="hidden text-[11px] tabular-nums text-slate-400 sm:inline">{when(h.t)}</span>
                   <span className="whitespace-nowrap">
                     {h.hero_cards.map((c) => (
                       <MiniCard key={c} code={c} />
@@ -282,7 +282,7 @@ function LeakCard({
             ))}
           </ul>
           {l.flagged > Math.min(5, evidence.length) && (
-            <p className="text-[11px] text-slate-500" data-testid="leak-hands-more">
+            <p className="text-[11px] text-slate-400" data-testid="leak-hands-more">
               The {Math.min(5, evidence.length)} most recent of {l.flagged} flagged decisions.
             </p>
           )}
@@ -376,7 +376,7 @@ function TrainingCheck({ t }: { t: TrainingEvaluation }) {
           {t.table.change === "no_clear_change" ? " (no clear change)" : t.table.change === "improving" ? " (fewer)" : " (more)"}.
         </p>
       )}
-      <p className="mt-0.5 text-[11px] text-slate-500">
+      <p className="mt-0.5 text-[11px] text-slate-400">
         A before-and-after comparison, not an experiment: it can show that your answers changed, not that practice caused it.
         Scores measure agreement with PokerLab's own analysis, not optimal play.
       </p>

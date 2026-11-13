@@ -393,7 +393,8 @@ def test_session_tracks_the_human_and_explains_changed_decisions():
     assert {st["key"] for st in model["stats"]} == set(BASELINES)
     assert model["adjustments"], "an aggressive human should trigger adjustments"
     assert notes and all("instead of" in n for n in notes)
-    assert all("You " in n for n in notes)  # every change names an observed tendency
+    # Every change names an observed tendency, with the raw count behind the estimate.
+    assert all("estimates you" in n and "seen " in n for n in notes)
 
 
 def test_beginner_and_switched_off_adaptation_never_change_decisions():

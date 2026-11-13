@@ -219,6 +219,16 @@ numbers: [`docs/calibration/report.md`](docs/calibration/report.md).
 - **The oracle is not optimal play either.** It values decisions against PokerLab's own opponents with the player continuing their own policy. Different opponents (or people) could change which tendencies are costly.
 - **Scenario generation** is faster at screening but drawing-hand and "Opponent tendencies" scenarios at Intermediate and Advanced can still take several seconds, and about 1 seed in 10 for drawing hands finds no scenario (the app retries with another seed).
 
+**v0.4.6 — Gameplay polish, UX and reliability**
+
+Found by walking the whole workflow in a browser (play → coaching → history → replay → practice → progress) at desktop and phone widths, an automated accessibility scan (axe-core) and profiling.
+- **Reviews are never lost.** Dealing the next hand before the post-hand review arrived cancelled it: the coach panel kept showing "Reviewing your decisions…" and the hand never reached skill progress (in a fast browser session, 0 of 9 hands were counted). A late review is now always recorded, and shown unless a newer one replaced it. Regression test included.
+- **Reviews twice as fast.** Profiling showed 88% of review time in exact equity enumeration. The enumeration now scores each hand once per runout instead of once per opponent combination, with a heads-up fast path; results are identical (counts and equities on 120 random heads-up and three-way spots, plus the independent brute-force tests). Review latency over 25 seeded hands per level: median 1.46 s → 0.70 s, 90th percentile 2.55 s → 0.88 s, worst 6.3 s → 1.7 s; Advanced opponents act faster too (90th percentile 152 → 107 ms).
+- **The total pot is always visible.** While bets are in front of the players (preflop in particular) the table now shows the total committed, the number a call is priced against, next to the gathered pot.
+- **Phones.** The hand history no longer overflows the screen at 390 px (its grid column grew to fit the filters), and the header takes two rows instead of four.
+- **Accessibility.** Grey helper text raised from 3.2–4.1:1 to at least 5.8:1 contrast (WCAG AA), felt captions from 3.3:1 to 5:1; card groups in the replay and training views have proper group roles; the coach's verdict is announced to screen readers when a review arrives. the practice-history table scrolls by keyboard on phones. axe-core reports no violations on any view at desktop or phone width.
+- **Consistent opponent notes.** "Opponent adjustments" quoted the opponent's smoothed estimate ("you bet 13% of the time") beside a table showing 0 of 18; notes now say "It estimates you bet 13% … (seen 0 of 18; reference 34%)".
+
 ## Quick start
 
 Requirements: **Python 3.11+** and **Node.js 20.19+** (CI uses Node 24).
@@ -354,7 +364,7 @@ Illegal actions return `400` with an explanation. Out-of-turn or out-of-state re
 
 - **v0.2 — Visual polish:** v0.2.1 visual redesign, v0.2.2 animations, v0.2.3 sound and themes, and v0.2.4 stability and accessibility (done).
 - **v0.3 — Smarter AI and training:** v0.3.1 equity engine, v0.3.2 equity-driven opponent with equity review, v0.3.3 difficulty levels and live all-in equity, v0.3.4 adaptive opponent, v0.3.5 coaching and decision feedback, v0.3.6 interactive training mode, v0.3.7 personalised learning and skill assessment (done).
-- **v0.4 — Platform:** v0.4.0 reliable progress persistence, v0.4.1 strategy validation and coaching accuracy, v0.4.2 coaching quality and explainability, v0.4.3 hand history, replay and decision analysis, v0.4.4 personalised leak detection and adaptive training, v0.4.5 coaching calibration and statistical reliability (done).
+- **v0.4 — Platform:** v0.4.0 reliable progress persistence, v0.4.1 strategy validation and coaching accuracy, v0.4.2 coaching quality and explainability, v0.4.3 hand history, replay and decision analysis, v0.4.4 personalised leak detection and adaptive training, v0.4.5 coaching calibration and statistical reliability, v0.4.6 gameplay polish, UX and reliability (done).
 - **v0.4 (continued) — Analytics:** persistent hand history, replays, performance stats, AI-vs-AI simulations.
 - **Later:** multiplayer, tournaments, Omaha / Stud / Draw, CFR agents, reinforcement learning, strategy dashboards.
 

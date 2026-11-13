@@ -147,3 +147,18 @@ describe("Seat action feedback", () => {
     expect(screen.queryByText("Call")).not.toBeInTheDocument();
   });
 });
+
+describe("pot display", () => {
+  it("shows the total pot, bets included, while bets are still in front of the players", () => {
+    // Preflop: 15 in blinds, nothing gathered yet. The total is what a call is priced against.
+    render(<Table state={gameState()} lastEvent={null} thinkingSeat={null} humanTurn />);
+    expect(screen.getByTestId("total-pot")).toHaveTextContent("Total15");
+  });
+
+  it("shows only the pot once every bet has been gathered", () => {
+    const state = gameState({ pot: 40, collected_pot: 40, street: "flop", board: ["Ah", "7d", "2c"] });
+    render(<Table state={state} lastEvent={null} thinkingSeat={null} humanTurn />);
+    expect(screen.getByTestId("pot")).toHaveTextContent("40");
+    expect(screen.queryByTestId("total-pot")).not.toBeInTheDocument();
+  });
+});

@@ -71,6 +71,9 @@ export function Table({ state, lastEvent, thinkingSeat, humanTurn }: Props) {
   }, []);
   // Chips land in the pot a moment after they leave the bet area.
   const shownPot = useLanding(state.collected_pot, flightMs);
+  // Everything committed this hand, including bets still in front of the players: the
+  // number a pot-odds decision is made against (shown whenever it differs from the pot).
+  const totalPot = state.pot;
   const descDelay = travel ? revealLag(lastEvent) * durationScale(prefs) : 0;
   const hideActions = ROUND_OVER.has(lastEvent?.type ?? "");
   const sweeping = travel && (lastEvent?.type === "bets_collected" || lastEvent?.type === "pot_awarded");
@@ -137,6 +140,18 @@ export function Table({ state, lastEvent, thinkingSeat, humanTurn }: Props) {
                       <span className="eyebrow text-amber-200/70">Pot</span>
                       <span className="tabular-nums">{formatChips(shownPot)}</span>
                     </span>
+                    {totalPot > shownPot && <TotalPot amount={totalPot} />}
+                  </motion.div>
+                )}
+                {shownPot === 0 && totalPot > 0 && !awarding && state.status === "in_hand" && (
+                  <motion.div
+                    key="total"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0, transition: { duration: 0.1 } }}
+                    className="col-start-1 row-start-1"
+                  >
+                    <TotalPot amount={totalPot} />
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -256,5 +271,19 @@ function Deck({ ref }: { ref: Ref<HTMLDivElement> }) {
         ))}
       </div>
     </div>
+  );
+}
+
+/** The whole pot including current bets, so the price of a call can be read at a glance. */
+function TotalPot({ amount }: { amount: number }) {
+  return (
+    <span
+      className="flex items-baseline gap-1.5 rounded-full bg-black/35 px-2.5 py-0.5 text-[12px] font-semibold text-emerald-50"
+      data-testid="total-pot"
+      title="All chips committed this hand, including bets not yet gathered into the pot"
+    >
+      <span className="eyebrow text-emerald-50/90">Total</span>
+      <span className="tabular-nums">{formatChips(amount)}</span>
+    </span>
   );
 }

@@ -54,6 +54,14 @@ export function CoachPanel({ review, loading, error, progress, detailed, onToggl
       </div>
 
       <div className="px-4 pb-3 pt-2">
+        {/* Announces the outcome of a review (not the whole panel) to screen readers. */}
+        <p className="sr-only" role="status" aria-live="polite" data-testid="coach-announcer">
+          {loading
+            ? "Reviewing your decisions."
+            : review
+              ? `Coach, hand ${review.hand_number}: ${QUALITY_TEXT[review.quality]}. ${review.verdict}`
+              : ""}
+        </p>
         {loading && <p className="text-[12.5px] text-slate-400">Reviewing your decisions…</p>}
         {error && !loading && <p className="text-[12.5px] text-rose-300">{error}</p>}
         {!review && !loading && !error && (
@@ -137,7 +145,7 @@ export function CoachPanel({ review, loading, error, progress, detailed, onToggl
                   </li>
                 ))}
               </ul>
-              <p className="mt-0.5 text-[11px] text-slate-500">
+              <p className="mt-0.5 text-[11px] text-slate-400">
                 Counts only: whether a pattern is a supported weakness is checked on the Progress tab, with sample-size and
                 multiple-testing safeguards.
               </p>

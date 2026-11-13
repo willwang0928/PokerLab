@@ -8,11 +8,11 @@ import handFixture from "./test/hands.fixture.json";
 import { leakReport } from "./test/leaks";
 import type { GameState } from "./types";
 
-type Handler = (url: string, init?: RequestInit) => unknown;
+type Handler = (url: string, init?: RequestInit) => unknown; // may return a Promise
 
 function mockFetch(handler: Handler) {
   const fn = vi.fn(async (url: string, init?: RequestInit) => {
-    const result = handler(url, init);
+    const result = await handler(url, init);
     if (result instanceof Response) return result;
     if (result instanceof Error) throw result;
     return new Response(JSON.stringify(result), { status: 200 });
@@ -201,6 +201,47 @@ describe("coach review", () => {
     expect(await screen.findByTestId("coach-verdict")).toHaveTextContent(/You won 20 chips/);
     expect(reviews()).toBe(1);
     expect(fetchMock.mock.calls.some(([u]) => String(u).endsWith(`/hands/${dealt.hand_number}/review`))).toBe(true);
+  });
+  it("keeps a review that arrives after the next hand was dealt, and records it", async () => {
+    // Regression (v0.4.6): dealing the next hand before the review returned cancelled it,
+    // leaving "Reviewing your decisions…" on screen and the hand missing from progress.
+    const dealt = gameState();
+    const done = {
+      ...waiting(dealt),
+      result: { winnings: { 0: 20 }, uncontested: true, pots: [], showdown: null } as unknown as GameState["result"],
+    };
+    const next = { ...dealt, hand_number: dealt.hand_number + 1 };
+    const coaching = handFixture.folded.record.coaching;
+    const review = { ...coaching, hand_number: dealt.hand_number, verdict: "Late review arrived." };
+    let release: (v: unknown) => void = () => {};
+    const pending = new Promise((r) => (release = r));
+    let dealtHands = 0;
+    mockFetch((url) => {
+      if (url.endsWith("/api/sessions")) return { state: waiting({ ...dealt, hand_number: 0 }), steps: [] };
+      if (url.endsWith("/hands")) return { state: dealtHands++ === 0 ? dealt : next, steps: [] };
+      if (url.endsWith("/review")) return pending.then(() => new Response(JSON.stringify(review)));
+      if (url.endsWith("/record")) return new Response("{}", { status: 404 });
+      if (url.includes("/api/profile")) return new Response("{}", { status: 404 });
+      return { state: done, steps: [] };
+    });
+    await startGame();
+    await userEvent.click(await screen.findByRole("button", { name: /Call 5/ }));
+    expect(await screen.findByText("Reviewing your decisions…")).toBeInTheDocument();
+    await userEvent.click(await screen.findByRole("button", { name: /Deal next hand/ }));
+    await screen.findByRole("button", { name: /Call 5/ }); // the next hand is live
+    release(null);
+    expect(await screen.findByTestId("coach-verdict")).toHaveTextContent("Late review arrived.");
+    expect(screen.getByTestId("coach-announcer")).toHaveTextContent(/hand \d+: .*Late review arrived\./);
+    expect(screen.queryByText("Reviewing your decisions…")).not.toBeInTheDocument();
+    const graded = coaching.decisions.filter((d: { grade: string }) => d.grade !== "ungraded").length;
+    expect(graded).toBeGreaterThan(0);
+    await waitFor(() => {
+      const stored = Object.keys(localStorage)
+        .filter((k) => k.startsWith("pokerlab.progress.v2"))
+        .map((k) => localStorage.getItem(k) ?? "")
+        .join("");
+      expect(stored).toContain(`#${dealt.hand_number}:`);
+    });
   });
 });
 

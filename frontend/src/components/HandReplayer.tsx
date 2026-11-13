@@ -133,7 +133,7 @@ export function HandReplayer({
     const cards = isHero ? record.hero_cards : shown;
     return (
       <div className={`flex flex-col items-center gap-1 ${table.folded[s] ? "opacity-50" : ""}`} data-testid={isHero ? "replay-hero" : "replay-opponent"}>
-        <div className="flex gap-1" aria-label={isHero ? "Your cards" : "Opponent cards"}>
+        <div className="flex gap-1" role="group" aria-label={isHero ? "Your cards" : "Opponent cards"}>
           {cards
             ? cards.map((c) => <PlayingCard key={c} code={c} />)
             : [0, 1].map((k) => <PlayingCard key={k} faceUp={false} />)}
@@ -171,11 +171,11 @@ export function HandReplayer({
           </div>
         )}
         {seat(opp)}
-        <div className="flex min-h-[calc(var(--card-w)*1.4)] gap-1.5" aria-label="Board">
+        <div className="flex min-h-[calc(var(--card-w)*1.4)] gap-1.5" role="group" aria-label="Board">
           {table.board.length ? (
             table.board.map((c) => <PlayingCard key={c} code={c} />)
           ) : (
-            <span className="self-center text-[12px] text-emerald-50/70">Preflop: no board yet</span>
+            <span className="self-center text-[12px] text-emerald-50">Preflop: no board yet</span>
           )}
         </div>
         <div className="rounded-full bg-black/30 px-3 py-1 text-[13px] font-semibold tabular-nums text-amber-100" data-testid="replay-pot">

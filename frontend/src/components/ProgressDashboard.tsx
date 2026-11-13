@@ -149,7 +149,7 @@ export function ProgressDashboard({
             </li>
           ))}
         </ul>
-        <p className="mt-3 text-[11px] leading-snug text-slate-500">
+        <p className="mt-3 text-[11px] leading-snug text-slate-400">
           <b className="font-semibold text-slate-400">Measured</b> counts are your first answers and graded table decisions.
           The <b className="font-semibold text-slate-400">estimate</b> models them (harder levels count more, table
           decisions half), shown as the expected score on an Intermediate scenario with an 80% range. It reflects agreement
@@ -192,7 +192,7 @@ export function ProgressDashboard({
           <h2 id="mistakes-title" className="eyebrow text-slate-400">
             Recent flags
           </h2>
-          <p className="mt-1 text-[11.5px] text-slate-500">
+          <p className="mt-1 text-[11.5px] text-slate-400">
             Counted on this device only. Once your hands are saved on the server, they are checked for recurring leaks with
             sample-size safeguards instead.
           </p>
@@ -276,7 +276,7 @@ export function ProgressDashboard({
         {progress.answers.length === 0 ? (
           <p className="mt-2 text-[12.5px] text-slate-400">No training answers yet.</p>
         ) : (
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto" tabIndex={0} role="region" aria-label="Practice history table (scrolls sideways)">
             <table className="mt-2 w-full min-w-[420px] text-[12.5px]">
               <thead>
                 <tr className="text-left text-[10.5px] uppercase tracking-wide text-slate-400">
@@ -386,7 +386,7 @@ function TrendChart({ points }: { points: TrendPoint[] }) {
           Answers {a.index - a.n + 1}–{a.index}: <b>{Math.round(a.score * 100)}%</b>
         </div>
       )}
-      <p className="mt-1 text-[11px] text-slate-500">
+      <p className="mt-1 text-[11px] text-slate-400">
         Each point averages 10 first answers. At that size, two points can differ by up to about 40 percentage points by
         chance alone, so read the overall direction rather than single steps.
       </p>

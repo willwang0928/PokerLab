@@ -132,8 +132,8 @@ export function HistoryView({
     <div className="flex w-full flex-col gap-4" data-testid="history-view">
       {report && list.status === "ready" && list.total > 0 && <LeakSummary leaks={report.leaks} needed={report.status === "insufficient" ? report.needed : 0} onShowLeak={onShowLeak} />}
 
-      <div className="grid gap-4 lg:grid-cols-[minmax(0,22rem)_minmax(0,1fr)]">
-        <section className="surface rounded-2xl p-4" aria-labelledby="history-title">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,22rem)_minmax(0,1fr)]">
+        <section className="surface min-w-0 rounded-2xl p-4" aria-labelledby="history-title">
           <div className="flex items-baseline justify-between gap-2">
             <h2 id="history-title" className="font-display text-[18px] font-bold text-amber-50">
               Hand history
@@ -171,7 +171,7 @@ export function HistoryView({
             ))}
           </ul>
           {list.status === "ready" && list.total > list.hands.length && (
-            <p className="mt-2 text-[11px] text-slate-500">Showing the most recent {list.hands.length} hands.</p>
+            <p className="mt-2 text-[11px] text-slate-400">Showing the most recent {list.hands.length} hands.</p>
           )}
         </section>
 
@@ -228,7 +228,7 @@ function HandRow({ h, active, onOpen }: { h: HandSummary; active: boolean; onOpe
       </span>
       <span className="min-w-0 flex-1 truncate text-slate-300">
         {h.final_hand ?? h.hand_class}
-        <span className="text-slate-500"> · {h.last_street}</span>
+        <span className="text-slate-400"> · {h.last_street}</span>
       </span>
       {h.flagged > 0 && (
         <span className="shrink-0 rounded-full bg-amber-500/15 px-1.5 text-[10.5px] font-semibold text-amber-300 ring-1 ring-amber-400/30" title="Decisions flagged for review">
