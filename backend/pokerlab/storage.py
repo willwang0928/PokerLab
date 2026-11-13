@@ -425,13 +425,20 @@ class ProgressStore:
 
     def focused_answers(self, profile: Profile, limit: int = 20_000) -> list[dict[str, Any]]:
         """Training answers aimed at a leak (v0.4.4 ``leak`` field), oldest first."""
+        return self.answers(profile, limit, focused=True)
+
+    def answers(
+        self, profile: Profile, limit: int = 20_000, focused: bool = False
+    ) -> list[dict[str, Any]]:
+        """Training answers (the most recent ``limit``), oldest first."""
+        where = " AND json_extract(data, '$.leak') IS NOT NULL" if focused else ""
         with self._lock:
             rows = (
                 self._conn()
                 .execute(
                     "SELECT data FROM answers WHERE profile_id = ?"
-                    " AND json_extract(data, '$.leak') IS NOT NULL"
-                    " ORDER BY t DESC, id DESC LIMIT ?",
+                    + where
+                    + " ORDER BY t DESC, id DESC LIMIT ?",
                     (profile.id, limit),
                 )
                 .fetchall()

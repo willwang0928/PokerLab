@@ -285,7 +285,8 @@ def test_input_order_does_not_matter():
 
 
 def test_a_leak_names_the_condition_it_is_concentrated_in_with_a_practice_focus():
-    river = [bad_call(street="river")] * 6 + [dec("call", street="river")] * 2
+    # 7 of 20 (35%) is a leak by the exact test (6 of 20 would not be: p = .067).
+    river = [bad_call(street="river")] * 7 + [dec("call", street="river")] * 1
     turn = [dec("call", street="turn")] * 12
     i = item(L.find_leaks(hands(river + turn)), "called_without_odds")
     keys = [c["key"] for c in i["conditions"]]
@@ -364,7 +365,8 @@ def test_no_practice_yet():
     hs = hands([bad_call()] * 6 + [dec("call")] * 6)
     p = item(L.find_leaks(hs), "called_without_odds")["practice"]
     assert p == {"answers": 0, "score": None, "recent_score": None, "first_at": None,
-                 "last_at": None, "since": None}  # fmt: skip
+                 "last_at": None, "since": None, "new_answers": 0, "new_score": None,
+                 "seen_answers": 0, "seen_score": None}  # fmt: skip
 
 
 # --------------------------------------------------------------------------- recommendations
@@ -399,7 +401,7 @@ def test_report_numbers_are_finite():
 def test_a_river_focus_puts_the_decision_on_the_river_and_reloads_from_its_id():
     s = training.generate("beginner", "pot_odds", 3, "river")
     assert s.analysis.street == "river" and s.focus == "river"
-    assert s.id == "v2.beginner.pot_odds.3.river"
+    assert s.id == "v3.beginner.pot_odds.3.river"
     again = training.load(s.id)
     assert again.spot == s.spot and again.choices == s.choices
     view = training.scenario_view(s)
@@ -418,7 +420,7 @@ def test_a_large_bet_focus_faces_at_least_three_quarters_of_the_pot():
 
 def test_unfocused_scenario_ids_are_unchanged():
     s = training.generate("beginner", "pot_odds", 3)
-    assert s.id == "v2.beginner.pot_odds.3" and s.focus is None
+    assert s.id == "v3.beginner.pot_odds.3" and s.focus is None
     assert training.scenario_view(s)["focus"] is None
 
 
@@ -535,3 +537,104 @@ def test_the_scenario_endpoint_accepts_a_focus(db_path):
     bad = c.get("/api/training/scenario?difficulty=beginner&concept=preflop&seed=3&focus=river")
     assert bad.status_code == 400
     assert c.get("/api/training/scenario?concept=pot_odds&focus=turn").status_code == 422
+
+
+# --------------------------------------------------------------------------- v0.4.5 statistics
+
+
+def _ref_sf(k, n, p):
+    return sum(math.comb(n, i) * p**i * (1 - p) ** (n - i) for i in range(k, n + 1))
+
+
+def _ref_hyper(x, n1, n2, k):
+    return math.comb(n1, x) * math.comb(n2, k - x) / math.comb(n1 + n2, k)
+
+
+@pytest.mark.parametrize("k,n,p", [(6, 20, 0.15), (3, 10, 0.15), (0, 25, 0.12), (40, 200, 0.15),
+                                   (199, 200, 0.9), (1, 1, 0.5)])  # fmt: skip
+def test_exact_binomial_tails_match_direct_summation(k, n, p):
+    assert L.binom_sf(k, n, p) == pytest.approx(_ref_sf(k, n, p), abs=1e-12)
+    assert L.binom_cdf(k, n, p) == pytest.approx(1 - _ref_sf(k + 1, n, p), abs=1e-12)
+    # 6 of 20 at 15%: P(X >= 6) = .0673 (the textbook value)
+    assert L.binom_sf(6, 20, 0.15) == pytest.approx(0.0673, abs=1e-4)
+
+
+def test_clopper_pearson_bounds_are_where_the_exact_tails_equal_five_percent():
+    for k, n in ((6, 20), (1, 10), (12, 40), (0, 30), (30, 30)):
+        low, high = L.clopper_pearson(k, n)
+        if k > 0:
+            assert _ref_sf(k, n, low) == pytest.approx(0.05, abs=1e-9)
+        else:
+            assert low == 0.0
+        if k < n:
+            assert 1 - _ref_sf(k + 1, n, high) == pytest.approx(0.05, abs=1e-9)
+        else:
+            assert high == 1.0
+    # 0 of 30: upper bound 1 - .05^(1/30)
+    assert L.clopper_pearson(0, 30)[1] == pytest.approx(1 - 0.05 ** (1 / 30), abs=1e-9)
+
+
+def test_fisher_tests_match_hypergeometric_sums():
+    # 7 of 8 inside, 0 of 12 outside: P(X >= 7) with 7 flagged among 20.
+    ref = sum(_ref_hyper(x, 8, 12, 7) for x in range(7, 8))
+    assert L.fisher_greater(7, 8, 0, 12) == pytest.approx(ref, abs=1e-12)
+    # Two-sided: tables no more likely than the observed one.
+    obs = _ref_hyper(8, 16, 16, 9)
+    ref2 = sum(_ref_hyper(x, 16, 16, 9) for x in range(0, 10)
+               if _ref_hyper(x, 16, 16, 9) <= obs + 1e-12)  # fmt: skip
+    assert L.fisher_two_sided(8, 16, 1, 16) == pytest.approx(ref2, abs=1e-12)
+
+
+def test_benjamini_hochberg_on_a_textbook_example():
+    p = [0.01, 0.04, 0.03, 0.005, 0.20]
+    # Sorted: .005 .01 .03 .04 .20 vs k*.05/5 = .01 .02 .03 .04 .05 -> first four rejected.
+    assert L.benjamini_hochberg(p, 0.05) == [True, True, True, True, False]
+    assert L.benjamini_hochberg([0.02, 0.03], 0.05) == [True, True]
+    assert L.benjamini_hochberg([0.03, 0.04, 0.5], 0.05) == [False, False, False]
+    # BY divides q by H(3) = 1.8333: .02 <= .05/1.8333/3 is false.
+    assert L.benjamini_yekutieli([0.009, 0.02, 0.5], 0.05) == [True, False, False]
+    # Adjusted: p*m/rank = .025 .025 .05 .05 .2, then a running minimum from the top.
+    assert L.adjusted_bh(p) == pytest.approx([0.025, 0.05, 0.05, 0.025, 0.2])
+
+
+def test_design_effect_is_one_for_independent_decisions_and_grows_with_clustering():
+    assert L.design_effect([(1, 1), (1, 0), (1, 0), (1, 1)]) == pytest.approx(1.0)
+    clustered = [(3, 3), (3, 0), (3, 3), (3, 0)]  # all or nothing within a hand
+    assert L.design_effect(clustered) == pytest.approx(3.0)
+    assert L.effective(6, 12, 3.0) == (2, 4)
+    assert L.effective(6, 12, 1.0) == (6, 12)
+
+
+def test_decisions_flagged_together_in_the_same_hands_count_for_less():
+    # 6 flagged of 12 calls, all in two hands of three plus clean singletons.
+    clustered = [hand(1, [bad_call(i=0), bad_call(i=1), bad_call(i=2)]),
+                 hand(2, [bad_call(i=0), bad_call(i=1), bad_call(i=2)])]  # fmt: skip
+    clustered += [hand(3 + n, [dec("call")]) for n in range(6)]
+    i = item(L.find_leaks(clustered), "called_without_odds")
+    assert i["design_effect"] > 1.5 and i["effective_opportunities"] < 12
+    spread = hands([bad_call() if n % 2 == 0 else dec("call") for n in range(12)])
+    j = item(L.find_leaks(spread), "called_without_odds")
+    assert j["design_effect"] == 1.0 and j["status"] == "leak"
+    assert i["low"] < j["low"]
+
+
+def test_a_rate_clearly_below_the_threshold_is_not_a_possible_weakness():
+    # 6 of 160 (3.75%): the interval tops out below 15%, so this is evidence against a leak.
+    ds = [bad_call()] * 6 + [dec("call")] * 154
+    i = item(L.find_leaks(hands(ds)), "called_without_odds")
+    assert i["status"] == "strength" and i["evidence"] == "supported_strength"
+
+
+def test_many_weaknesses_near_the_threshold_are_corrected_for_multiple_testing():
+    # Two kinds each at 6 of 20 + one more flagged (7/20, p ~ .026 each): with the
+    # correction for the eight kinds tested... only those clearing BH are leaks.
+    calls = [bad_call()] * 7 + [dec("call")] * 13
+    folds = [bad_fold()] * 7 + [dec("fold")] * 13
+    r = L.find_leaks(hands(calls + folds))
+    assert r["tested"] >= 2
+    statuses = {i["key"]: i["status"] for g in ("leaks", "watch") for i in r[g]}
+    # Each p ~ .026 <= 2*.05/2: BH keeps both when only these two are tested.
+    assert statuses["called_without_odds"] == "leak"
+    for g in ("leaks", "strengths", "watch", "other"):
+        for it in r[g]:
+            assert it["evidence"] == L.EVIDENCE[it["status"]]

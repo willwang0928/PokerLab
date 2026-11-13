@@ -16,6 +16,7 @@ from pydantic import TypeAdapter, ValidationError
 
 from .. import __version__
 from ..coach import training
+from ..coach.evaluation import evaluate_training
 from ..coach.leaks import find_leaks
 from ..coach.spot import Spot, SpotError
 from ..engine import Action, IllegalActionError
@@ -259,8 +260,12 @@ def create_app(
             hit = leak_cache.get(profile.id)
         if hit is not None and hit[0] == profile.updated_at:
             return hit[1]
-        report = find_leaks(_summaries(db, profile, LEAK_WINDOW), db.focused_answers(profile))
+        summaries = _summaries(db, profile, LEAK_WINDOW)
+        answers = db.answers(profile)
+        report = find_leaks(summaries, [a for a in answers if a.get("leak") is not None])
         report["window"] = LEAK_WINDOW
+        # Does practice show up on new situations, not just repeated ones? (v0.4.5)
+        report["training"] = evaluate_training(answers, summaries)
         with leak_lock:
             if len(leak_cache) > 256:
                 leak_cache.clear()

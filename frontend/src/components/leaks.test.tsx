@@ -21,9 +21,9 @@ describe("Strengths and leaks on the Progress tab", () => {
     const { onStart, onShowHand } = dashboard();
     const card = screen.getByTestId("leak");
     expect(within(card).getByTestId("leak-evidence")).toHaveTextContent(
-      "Pattern: 6 of 12 such decisions flagged (50%; likely between 27% and 73%). 1 more were flagged with low confidence and are not counted.",
+      "Pattern: 6 of 12 such decisions flagged (50%; 90% confidence interval 27%–73%). 1 more were flagged with low confidence and are not counted.",
     );
-    expect(card).toHaveTextContent("Mostly on the river: 5 of 6 (83%), versus 17% in your other 6.");
+    expect(card).toHaveTextContent("More often on the river: 5 of 6 (83%), versus 17% in your other 6.");
     expect(card).toHaveTextContent("Why it matters: A call is profitable only when your equity is above call ÷ (pot + call)");
     // The hand shows decision-time facts: equity then and the price, not the result.
     const hand = within(card).getByTestId("leak-hands");
@@ -43,10 +43,59 @@ describe("Strengths and leaks on the Progress tab", () => {
 
   it("shows strengths, early signals and missing data without calling them leaks", () => {
     dashboard();
-    expect(screen.getByTestId("strengths")).toHaveTextContent("Folds facing bets: flagged in 1 of 28 confidently graded decisions (likely under 8%)");
-    expect(screen.getByTestId("watch")).toHaveTextContent("Not a leak yet: needs 6 more chances at this decision");
+    expect(screen.getByTestId("strengths")).toHaveTextContent("Folds facing bets: flagged in 1 of 28 confidently graded decisions, a rate credibly below 12%");
+    expect(screen.getByTestId("watch")).toHaveTextContent("Possible weakness"); expect(screen.getByTestId("watch")).toHaveTextContent("Not supported yet: needs 6 more chances at this decision");
     expect(screen.getByTestId("leaks-no-data")).toHaveTextContent("folding too much preflop");
     expect(screen.getAllByTestId("leak")).toHaveLength(1);
+  });
+
+  it("labels a leak as a supported weakness and explains what the interval is not", () => {
+    dashboard();
+    expect(within(screen.getByTestId("leak")).getByTestId("leak-status")).toHaveTextContent("Supported weakness");
+    const method = screen.getByTestId("leak-method");
+    expect(method).toHaveTextContent("not the chance that you have a leak");
+    expect(method).toHaveTextContent("not that they are proven wrong");
+  });
+
+  it("evaluates practice on new situations only, and says when it is too early", () => {
+    const base = {
+      answers: 30,
+      new_answers: 12,
+      seen_answers: 18,
+      needed: 8,
+      held_out: {
+        early: { answers: 6, correct: 3, rate: 0.5 },
+        late: { answers: 6, correct: 5, rate: 0.83 },
+        compared: 12,
+        difference: 0.33,
+        p_value: 0.4,
+        strata: 1,
+        change: "insufficient" as const,
+      },
+      familiar: { early: { answers: 9, correct: 3, rate: 0.33 }, late: { answers: 9, correct: 9, rate: 1 }, answers: 18, change: "improving" as const },
+      table: null,
+    };
+    dashboard({ leaks: ready({ ...leakReport, training: { ...base, status: "evaluating" } }) });
+    const box = screen.getByTestId("training-check");
+    expect(box).toHaveTextContent("Still evaluating");
+    expect(box).toHaveTextContent("at least 8 more are needed");
+    expect(box).toHaveTextContent("These can be remembered, so they are not counted as evidence of skill.");
+    expect(box).toHaveTextContent("not that practice caused it");
+  });
+
+  it("does not call a no-change result an improvement", () => {
+    const t = {
+      status: "no_clear_change" as const,
+      answers: 60, new_answers: 60, seen_answers: 0, needed: 0,
+      held_out: { early: { answers: 30, correct: 15, rate: 0.5 }, late: { answers: 30, correct: 17, rate: 0.57 }, compared: 60, difference: 0.07, p_value: 0.6, strata: 1, change: "no_clear_change" as const },
+      familiar: { early: { answers: 0, correct: 0, rate: null }, late: { answers: 0, correct: 0, rate: null }, answers: 0, change: "insufficient" as const },
+      table: null,
+    };
+    dashboard({ leaks: ready({ ...leakReport, training: t }) });
+    const box = screen.getByTestId("training-check");
+    expect(box).toHaveTextContent("No clear change on new situations");
+    expect(box).toHaveTextContent("within normal variation");
+    expect(box).not.toHaveTextContent("Better");
   });
 
   it("says when there are too few hands, and shows no leak cards", () => {
@@ -91,7 +140,7 @@ describe("Strengths and leaks on the Progress tab", () => {
 
   it("recommends the leak next unless a review is due", () => {
     const { onStart } = dashboard();
-    expect(screen.getByTestId("next-practice")).toHaveTextContent("Recurring leak in your hands: calling bets without the odds (6 of 12");
+    expect(screen.getByTestId("next-practice")).toHaveTextContent("Supported weakness in your hands: calling bets without the odds (6 of 12");
     fireEvent.click(screen.getByRole("button", { name: "Start practice" }));
     expect(onStart).toHaveBeenCalledWith(expect.objectContaining({ leak: "called_without_odds", focus: "river" }));
   });

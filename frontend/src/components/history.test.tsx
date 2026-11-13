@@ -173,7 +173,7 @@ describe("HistoryView", () => {
     const onShowLeak = vi.fn();
     history(fakeStore(), vi.fn(), { leaks: { status: "ready", report: leakReport }, onShowLeak });
     const summary = await screen.findByTestId("leak-summary");
-    expect(summary).toHaveTextContent("1 recurring leak in your hands: calling bets without the odds");
+    expect(summary).toHaveTextContent("1 supported weakness in your hands: calling bets without the odds");
     fireEvent.click(within(summary).getByRole("button", { name: "calling bets without the odds" }));
     expect(onShowLeak).toHaveBeenCalledWith("called_without_odds");
   });
@@ -188,7 +188,7 @@ describe("HistoryView", () => {
     });
     await waitFor(() => expect(screen.getByTestId("replay-decision")).toHaveTextContent("You raise to 120"));
     const finding = screen.getByTestId("decision-finding");
-    expect(finding).toHaveTextContent("Part of a recurring leak: calling bets without the odds (6 of 12 such decisions flagged)");
+    expect(finding).toHaveTextContent("Part of a supported weakness: calling bets without the odds (6 of 12 such decisions flagged)");
     fireEvent.click(within(finding).getByRole("button", { name: "Practise this leak" }));
     expect(onTrain).toHaveBeenCalledWith(
       expect.objectContaining({ concept: "pot_odds", difficulty: "beginner", focus: "river", leak: "called_without_odds" }),

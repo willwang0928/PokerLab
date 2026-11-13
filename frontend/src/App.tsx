@@ -208,7 +208,7 @@ export default function App() {
     <MotionConfig reducedMotion="user">
     <MotionPrefsContext value={motionPrefs}>
     <div className="flex min-h-screen flex-col">
-      <header className="flex items-center justify-between gap-3 px-4 py-3 sm:px-6">
+      <header className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6">
         <div className="flex items-center gap-3">
           <div
             className="grid h-9 w-9 place-items-center rounded-[11px] bg-gradient-to-br from-emerald-400 via-emerald-600 to-teal-900 text-white shadow-lg ring-1 ring-white/15"
@@ -224,7 +224,7 @@ export default function App() {
             </div>
           </div>
         </div>
-        <div className="flex items-center gap-2 sm:gap-2.5">
+        <div className="flex min-w-0 flex-wrap items-center justify-end gap-2 sm:gap-2.5">
           <div className="surface flex rounded-xl p-0.5" role="tablist" aria-label="Mode">
             {(["play", "train", "history", "progress"] as const).map((m) => (
               <button

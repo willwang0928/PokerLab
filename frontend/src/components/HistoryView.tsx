@@ -321,7 +321,7 @@ function LeakSummary({ leaks, needed, onShowLeak }: { leaks: LeakItem[]; needed:
       {leaks.length ? (
         <p>
           <b className="font-semibold text-amber-200">
-            {leaks.length} recurring leak{leaks.length === 1 ? "" : "s"} in your hands:
+            {leaks.length} supported weakness{leaks.length === 1 ? "" : "es"} in your hands:
           </b>{" "}
           {leaks.map((l, i) => (
             <span key={l.key}>
@@ -339,7 +339,7 @@ function LeakSummary({ leaks, needed, onShowLeak }: { leaks: LeakItem[]; needed:
           review stands on its own.
         </p>
       ) : (
-        <p>No recurring leak is supported by your hands so far. Strengths and early signals are on the Progress tab.</p>
+        <p>No recurring weakness is supported by your hands so far. Strengths and early signals are on the Progress tab.</p>
       )}
     </section>
   );

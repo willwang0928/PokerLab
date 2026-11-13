@@ -72,15 +72,18 @@ def test_calling_with_almost_no_equity_is_a_likely_mistake():
     assert lesson_ok(a)["principle"] == PRINCIPLES["call_without_odds"]
 
 
-def test_a_call_graded_down_for_not_raising_is_not_told_to_fold():
-    """9h8h calling is clearly profitable; it is marked down only because raising scores
-    higher under the fold model. The lesson must teach raising, not folding."""
+def test_a_profitable_call_is_not_graded_down_for_not_raising():
+    """9h8h calling is clearly profitable; raising scores higher only under the fold
+    model. Since v0.4.5 (calibration: such raises lost to the call when hands were played
+    out) that is not held against the call: it is a close call, never "fold", and the
+    raise is shown as an option resting on an assumed fold rate."""
     a = analysed(spot("9h8h", "Th7c2h", FLOP), Action.call())
     assert a.option("call").ev > 0 and a.option(a.best[0]).action == "raise"
-    assert a.grade != "mistake" and a.confidence == "low"  # fold model: low confidence
+    assert a.grade == "close" and a.tags == [] and a.confidence == "low"
     les = lesson_ok(a)
-    assert les["principle"] == PRINCIPLES["raise_value"]
+    assert les["principle"] != PRINCIPLES["call_without_odds"]
     assert "assumed fold rate" in les["alternative"]
+    assert "not the answer" in a.explanation
 
 
 # ----------------------------------------------------------------- close decisions

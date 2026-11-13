@@ -88,7 +88,7 @@ def test_training_scenario_and_answer(client):
                                                      "concept": "pot_odds", "seed": 9})  # fmt: skip
     assert r.status_code == 200
     s = r.json()
-    assert s["id"] == "v2.beginner.pot_odds.9" and len(s["choices"]) == 2
+    assert s["id"] == "v3.beginner.pot_odds.9" and len(s["choices"]) == 2
     assert "ev" not in json.dumps(s["choices"])
     a = client.post("/api/training/answer", json={"id": s["id"], "choice": "fold"})
     assert a.status_code == 200

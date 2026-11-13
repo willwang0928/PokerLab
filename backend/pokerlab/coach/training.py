@@ -92,10 +92,17 @@ def margin(concept: str, difficulty: str) -> float:
 
 ITERATIONS = 2500
 FILTER_ITERATIONS = 600  # quick screening of candidate spots
-MAX_ATTEMPTS = 80
+# Screening uses Monte Carlo above this many evaluations instead of exact enumeration
+# (v0.4.5: exact enumeration of flop spots made the "quick" pass as slow as the full
+# one). The full pass that decides and grades a scenario is unchanged.
+FILTER_EXACT_LIMIT = 20_000
+MAX_ATTEMPTS = 240  # v3: more candidates (screening is cheap since v0.4.5; see ID_VERSION)
 # v2 (0.4.1): scenarios must have a range-robust answer, so a seed can give another spot
-# than under v1. Old v1 ids still load, with the current generator.
-ID_VERSION = "v2"
+# than under v1. v3 (0.4.5): facing a bet, the answer taught must not be a raise valued
+# only by the fold model (calibration found such raises lost to calling or folding).
+# Older ids still load, with the current generator, and keep their id.
+ID_VERSION = "v3"
+OLD_VERSIONS = ("v1", "v2")
 BIG_BLIND = 10
 SMALL_BLIND = 5
 
@@ -396,6 +403,8 @@ def _acceptable(
             return False
     best = max(keys, key=lambda k: _ev(a, k))
     best_opt = a.option(best)
+    if a.spot == "facing_bet" and best_opt.basis == "fold model":
+        return False  # a raise is never taught as the answer facing a bet (see ID_VERSION)
     # The answer taught as right must not depend on the range assumption: against the
     # tighter and the looser range too, it must stay within noise of the best choice.
     if grade_option(_restricted(a, keys), best).robust is False:
@@ -457,12 +466,14 @@ def _fits(
     spot: Spot, concept: str, difficulty: str, iterations: int
 ) -> tuple[bool, DecisionAnalysis, list[str]]:
     # The range check (three times the work) only on the full pass, not the screening one.
-    a = _analyse(spot, iterations, range_check=iterations >= ITERATIONS)
+    full = iterations >= ITERATIONS
+    limit = None if full else FILTER_EXACT_LIMIT
+    a = _analyse(spot, iterations, range_check=full, exact_limit=limit)
     keys = _choices(a, concept, difficulty)
     neutral = None
     if concept == "reads":
         plain = Spot(**{**_fields(spot), "villain_stats": {}})
-        neutral = _analyse(plain, iterations, range_check=False)
+        neutral = _analyse(plain, iterations, range_check=False, exact_limit=limit)
     return _acceptable(a, concept, difficulty, keys, neutral), a, keys
 
 
@@ -471,7 +482,10 @@ def _fields(spot: Spot) -> dict[str, Any]:
 
 
 def _analyse(
-    spot: Spot, iterations: int = ITERATIONS, range_check: bool = True
+    spot: Spot,
+    iterations: int = ITERATIONS,
+    range_check: bool = True,
+    exact_limit: int | None = None,
 ) -> DecisionAnalysis:
     _, obs, legal = spot.replay()
     reads = villain_reads(spot.villain_model()) if spot.villain_stats else []
@@ -484,6 +498,7 @@ def _analyse(
         iterations=iterations,
         range_check=range_check,
         opponent=spot.opponent_info(),
+        exact_limit=exact_limit,
     )
 
 
@@ -523,9 +538,9 @@ def load(sid: str) -> Scenario:
     if sid.startswith("spot."):
         return _from_spot_cached(sid)
     parts = sid.split(".")
-    if len(parts) not in (4, 5) or parts[0] not in ("v1", ID_VERSION):
+    if len(parts) not in (4, 5) or parts[0] not in (*OLD_VERSIONS, ID_VERSION):
         raise ScenarioError("Unknown scenario")
-    if len(parts) == 5 and (parts[0] != ID_VERSION or parts[4] not in FOCUSES):
+    if len(parts) == 5 and (parts[0] not in ("v2", ID_VERSION) or parts[4] not in FOCUSES):
         raise ScenarioError("Unknown scenario")
     try:
         seed = int(parts[3])

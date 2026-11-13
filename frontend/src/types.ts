@@ -457,8 +457,16 @@ export interface LeakItem {
   /** Opportunities the coach graded with medium or high confidence. */
   judged: number;
   rate: number | null;
+  /** 90% confidence interval for the flagged rate (v0.4.5: exact, on the effective sample). */
   low: number;
   high: number;
+  /** v0.4.5: how the evidence is described (see backend coach/leaks.py). */
+  evidence?: LeakEvidence;
+  /** Variance inflation from decisions in the same hand (1 = none). */
+  design_effect?: number;
+  effective_opportunities?: number;
+  p_value?: number | null;
+  q_value?: number | null;
   hands: LeakHand[];
   missing?: string[];
   split?: { calls: number; folds: number };
@@ -470,6 +478,8 @@ export interface LeakItem {
     rate: number;
     rate_elsewhere: number;
     opportunities_elsewhere: number;
+    p_value?: number;
+    tested?: number;
     focus: Focus | null;
   }[];
   trend?: RateComparison;
@@ -480,8 +490,47 @@ export interface LeakItem {
     first_at: number | null;
     last_at: number | null;
     since: RateComparison | null;
+    /** v0.4.5: first-time scenarios versus repeated ones and your own hands. */
+    new_answers?: number;
+    new_score?: number | null;
+    seen_answers?: number;
+    seen_score?: number | null;
   };
   recommendation?: { concept: Concept; focus: Focus | null; focus_label: string | null; text: string; hands: LeakHand[] };
+}
+
+export type LeakEvidence =
+  | "supported_weakness"
+  | "uncertain"
+  | "possible"
+  | "supported_strength"
+  | "no_clear_weakness"
+  | "insufficient";
+
+export interface AnswerRate {
+  answers: number;
+  correct: number;
+  rate: number | null;
+}
+
+/** v0.4.5: does practice show up on new situations? (backend coach/evaluation.py) */
+export interface TrainingEvaluation {
+  status: "evaluating" | "improving" | "no_clear_change" | "declining";
+  answers: number;
+  new_answers: number;
+  seen_answers: number;
+  needed: number;
+  held_out: {
+    early: AnswerRate;
+    late: AnswerRate;
+    compared: number;
+    difference: number | null;
+    p_value: number;
+    strata: number;
+    change: "improving" | "declining" | "no_clear_change" | "insufficient";
+  };
+  familiar: { early: AnswerRate; late: AnswerRate; answers: number; change: RateComparison["change"] };
+  table: RateComparison | null;
 }
 
 export interface LeakReport {
@@ -495,6 +544,9 @@ export interface LeakReport {
   watch: LeakItem[];
   other: LeakItem[];
   window: number;
+  /** Weaknesses tested at once (the multiple-testing family), v0.4.5. */
+  tested?: number;
+  training?: TrainingEvaluation;
   rules: {
     min_opportunities: number;
     min_flagged: number;

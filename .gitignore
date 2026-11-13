@@ -29,3 +29,6 @@ backend/data/
 .DS_Store
 .idea/
 .vscode/
+
+# Calibration simulation cache (python -m pokerlab.calibration)
+.calibration-cache/

@@ -328,12 +328,12 @@ function DecisionPanel({
           <p className="text-amber-100">
             {f.status === "leak" ? (
               <>
-                <b className="font-semibold">Part of a recurring leak:</b> {f.title.toLowerCase()} ({f.flagged} of {f.opportunities}{" "}
+                <b className="font-semibold">Part of a supported weakness:</b> {f.title.toLowerCase()} ({f.flagged} of {f.opportunities}{" "}
                 such decisions flagged).
               </>
             ) : (
               <>
-                <b className="font-semibold">Early signal, not a leak yet:</b> {f.title.toLowerCase()} ({f.flagged} flagged of{" "}
+                <b className="font-semibold">Early signal, not supported yet:</b> {f.title.toLowerCase()} ({f.flagged} flagged of{" "}
                 {f.opportunities}).
               </>
             )}

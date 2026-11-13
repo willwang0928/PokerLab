@@ -71,6 +71,23 @@ GRADE_LABEL = {
     "mistake": "Likely mistake",
     "ungraded": "Not graded",
 }
+
+
+def display_label(grade: str, confidence: str) -> str:
+    """The grade as shown to the player, worded no more strongly than the evidence.
+
+    Low confidence means the verdict rests on an assumption (the range, a fold rate,
+    equity realisation, a guideline), so it is never shown as a plain "Good" or
+    "Questionable". ("Likely mistake" is never given with low confidence.)
+    """
+    if confidence == "low":
+        if grade == "questionable":
+            return "Possibly questionable"
+        if grade == "good":
+            return "Looks reasonable"
+    return GRADE_LABEL[grade]
+
+
 # EV given up, as a share of the pot, at which each grade starts.
 CLOSE_AT = 0.03
 QUESTIONABLE_AT = 0.10
@@ -83,6 +100,11 @@ LOW_CONFIDENCE_MISTAKE_AT = 0.50  # preflop: the model is cruder, so demand more
 # is an assumption, stated as such wherever it matters.
 REALIZATION_LOW = 0.70
 REALIZATION_HIGH = 1.10
+# A fold is judged independently of realisation only when calling pays even at 50%: the
+# hands players fold are usually weak and realise less of their equity (v0.4.5
+# calibration: "should have called" verdicts at the 70% bound did not hold up when the
+# hands were played out; see docs/calibration.md).
+FOLD_REALIZATION_LOW = 0.50
 # Bets adding more than this many times the pot (after calling) are not modelled: how
 # often an opponent calls a huge overbet cannot be read off a fold-frequency rule.
 OVERBET_LIMIT = 1.5
@@ -171,7 +193,7 @@ class DecisionAnalysis:
     def to_dict(self) -> dict[str, Any]:
         d = {f.name: getattr(self, f.name) for f in fields(self)}
         d["options"] = [o.to_dict() for o in self.options]
-        d["grade_label"] = GRADE_LABEL[self.grade]
+        d["grade_label"] = display_label(self.grade, self.confidence)
         return d
 
 
@@ -259,9 +281,15 @@ def describe_range(obs: Observation, villain: int, adjust: Adjustments | None) -
 
 
 def _equity(
-    hole: tuple[Card, ...], rng: HandRange, board: tuple[Card, ...], seed: int, iterations: int
+    hole: tuple[Card, ...],
+    rng: HandRange,
+    board: tuple[Card, ...],
+    seed: int,
+    iterations: int,
+    exact_limit: int | None = None,
 ) -> tuple[float, float, str]:
-    r = calculate_equity([hole, rng], board=board, iterations=iterations, seed=seed)
+    kw = {} if exact_limit is None else {"exact_limit": exact_limit}
+    r = calculate_equity([hole, rng], board=board, iterations=iterations, seed=seed, **kw)
     p = r.players[0]
     return p.equity, p.std_error, r.method
 
@@ -367,11 +395,14 @@ def analyze(
     names: dict[int, str] | None = None,
     range_check: bool = True,
     opponent: dict[str, Any] | None = None,
+    exact_limit: int | None = None,
 ) -> DecisionAnalysis:
     """Analyse a decision. With ``chosen`` it is also graded (see :func:`grade_option`).
 
     ``range_check`` repeats the comparison against the tighter and looser ranges in
-    :data:`RANGE_VARIANTS` (switch it off only for quick screening).
+    :data:`RANGE_VARIANTS` (switch it off only for quick screening). ``exact_limit``
+    caps exact enumeration (above it, seeded Monte Carlo with ``iterations`` samples);
+    the default is the equity engine's, and only quick screening should lower it.
     """
     rng = random.Random(seed)
     villain = _villain(obs)
@@ -420,7 +451,10 @@ def analyze(
     if unopened:
         _guideline_options(base, obs, legal)
     else:
-        _ev_options(base, obs, legal, chosen, adjust, rng, iterations, villain, spot, range_check)
+        _ev_options(
+            base, obs, legal, chosen, adjust, rng, iterations, villain, spot, range_check,
+            exact_limit,
+        )  # fmt: skip
     if chosen is not None:
         grade_option(base, chosen_key(chosen, legal))
     return base
@@ -563,10 +597,13 @@ def _evaluate(
     pot: int,
     seed: int,
     iterations: int,
+    exact_limit: int | None = None,
 ) -> _Evaluation:
     """Expected values of fold/call/check and of each modelled bet size, in chips."""
     sub = random.Random(seed)
-    eq, se, method = _equity(obs.hole, villain_range, obs.board, sub.randrange(2**63), iterations)
+    eq, se, method = _equity(
+        obs.hole, villain_range, obs.board, sub.randrange(2**63), iterations, exact_limit
+    )
     call = legal.call_amount
     evs: dict[str, float] = {}
     when_called: dict[str, float] = {}
@@ -587,7 +624,9 @@ def _evaluate(
             key = _raise_key(total, legal)
             v_call = min(total - villain_bet, villain_stack)
             final_pot = pot + b + v_call
-            eq_d, _, _ = _equity(obs.hole, drange, obs.board, sub.randrange(2**63), iterations)
+            eq_d, _, _ = _equity(
+                obs.hole, drange, obs.board, sub.randrange(2**63), iterations, exact_limit
+            )
             evs[key] = fold * pot + (1 - fold) * (eq_d * final_pot - b)
             when_called[key] = eq_d
     return _Evaluation(eq, se, method, evs, when_called)
@@ -604,6 +643,7 @@ def _ev_options(
     villain: int,
     spot: str,
     range_check: bool = True,
+    exact_limit: int | None = None,
 ) -> None:
     villain_range = _villain_range(obs, villain, adjust)
     a.range_size = len(villain_range)
@@ -641,7 +681,7 @@ def _ev_options(
     folds = [fold_rate(t - legal.player_bet, pot, adjust) for t in modelled]
 
     seed = rng.randrange(2**63)
-    base = _evaluate(obs, legal, villain_range, modelled, folds, pot, seed, iterations)
+    base = _evaluate(obs, legal, villain_range, modelled, folds, pot, seed, iterations, exact_limit)
     eq, se, method = base.equity, base.se, base.method
     a.equity, a.equity_se, a.equity_method = eq, se, method
     if a.concept == "bluffing" and eq >= 0.5:
@@ -650,7 +690,9 @@ def _ev_options(
     # The same comparison against plausible alternative ranges.
     for v in RANGE_VARIANTS if range_check else ():
         vr = _villain_range(obs, villain, _scaled(adjust, v))
-        ev = _evaluate(obs, legal, vr, modelled, folds, pot, rng.randrange(2**63), iterations)
+        ev = _evaluate(
+            obs, legal, vr, modelled, folds, pot, rng.randrange(2**63), iterations, exact_limit
+        )
         a.range_check.append(
             {
                 "name": v.name,
@@ -761,7 +803,7 @@ def _ev_options(
             "Preflop estimates ignore the later streets, where position and playability "
             "matter a lot. Treat the grade as a rough guide."
         )
-    elif obs.street != Street.RIVER:
+    elif obs.street != Street.RIVER and not a.betting_closed:
         a.caveats.append(
             "These are one-street estimates: they ignore betting on later streets "
             "(implied odds, or being bet off your hand)."
@@ -942,6 +984,19 @@ def _grade_ev(a: DecisionAnalysis, key: str) -> None:
     if grade == "questionable" and uses_fold_model and po_loss / pot <= MISTAKE_AT:
         if frac <= 2 * QUESTIONABLE_AT:
             grade = "close"
+    # Facing a bet, a call or fold that is right on pot odds is not graded down because a
+    # raise scores higher under the assumed fold rate. Calibration (v0.4.5, see
+    # docs/calibration.md) played such hands out with the real cards and opponents: the
+    # player's call or fold did better than the raise the fold model preferred, so the
+    # raise is shown as an option, not as the answer.
+    raise_only = (
+        a.spot == "facing_bet"
+        and chosen.basis == "pot odds"
+        and top.basis == "fold model"
+        and po_loss <= noise
+    )
+    if raise_only and grade in ("questionable", "mistake"):
+        grade = "close"
     if po_loss / pot > MISTAKE_AT and confidence == "low" and a.street != "preflop":
         confidence = "medium"  # the pot-odds part alone already settles it
     if grade == "mistake" and confidence == "low" and po_loss / pot <= LOW_CONFIDENCE_MISTAKE_AT:
@@ -976,7 +1031,9 @@ def _grade_ev(a: DecisionAnalysis, key: str) -> None:
     realization_matters = (
         r is not None
         and (chosen.action == "fold" or {chosen.action, top.action} <= {"fold", "call"})
-        and REALIZATION_LOW < r < REALIZATION_HIGH
+        and (FOLD_REALIZATION_LOW if chosen.action == "fold" else REALIZATION_LOW)
+        < r
+        < REALIZATION_HIGH
     )
     if realization_matters:
         confidence = "low"
@@ -988,7 +1045,7 @@ def _grade_ev(a: DecisionAnalysis, key: str) -> None:
     if grade in ("questionable", "mistake"):
         a.tags = _tags(a, chosen, top)
 
-    a.headline = GRADE_LABEL[grade]
+    a.headline = display_label(grade, confidence)
     a.explanation = _explain(a, chosen, top, loss)
     a.lesson = build_lesson(
         a, chosen, top, loss, range_dependent=bool(flips), realization_dependent=realization_matters
@@ -1086,8 +1143,15 @@ def _explain(a: DecisionAnalysis, chosen: Option, top: Option, loss: float) -> s
             f"hands the opponent is likely to have here, your {a.hand} has about {_pct(eq)}."
         )
         if chosen.action == "fold":
+            call_ev = next((o.ev for o in a.options if o.key == "call"), None)
             if top.action == "fold" or loss <= _noise(a):
                 parts.append("Folding gave up little or nothing.")
+            elif top.basis == "fold model" and (call_ev is None or call_ev <= _noise(a)):
+                parts.append(
+                    "Calling would not pay at this price. "
+                    f"{top.label} scored higher only if they fold as often as the model "
+                    "assumes, which did not hold up when PokerLab played such hands out."
+                )
             else:
                 parts.append(
                     f"That is enough to continue: {top.label.lower()} was worth about "
@@ -1097,10 +1161,14 @@ def _explain(a: DecisionAnalysis, chosen: Option, top: Option, loss: float) -> s
             ev = chosen.ev or 0.0
             parts.append(
                 f"Calling was worth about {_bb(ev, bb)} by this estimate"
-                + (", so folding was better." if ev < 0 and top.action == "fold" else ".")
+                + (", so folding scored better." if ev < 0 and top.action == "fold" else ".")
             )
             if top.action in ("raise",) and loss > _noise(a):
-                parts.append(f"{top.label} scored higher, assuming they fold or call as modelled.")
+                parts.append(
+                    f"{top.label} scored higher, but only if they fold as often as the model "
+                    "assumes; raises like this did not hold up when PokerLab played such hands "
+                    "out, so treat it as an option, not the answer."
+                )
         else:
             parts.append(_raise_sentence(chosen, top, loss, a))
     else:

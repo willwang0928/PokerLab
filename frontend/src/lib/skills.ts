@@ -338,7 +338,7 @@ export function nextPractice(p: Progress, now = Date.now(), rand?: number, leaks
       kind: "leak",
       leak: l.key,
       focus: l.recommendation?.focus ?? null,
-      reason: `Recurring leak in your hands: ${l.title.toLowerCase()} (${l.flagged} of ${l.opportunities} such decisions flagged).`,
+      reason: `Supported weakness in your hands: ${l.title.toLowerCase()} (${l.flagged} of ${l.opportunities} such decisions flagged).`,
     };
   }
   const local = leaks === undefined ? recurringLeaks(p) : [];

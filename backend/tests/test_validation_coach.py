@@ -117,6 +117,20 @@ def test_old_scenario_ids_still_load_and_keep_their_id():
     s = T.load("v1.beginner.pot_odds.4")
     assert s.id == "v1.beginner.pot_odds.4"
     assert T.load("v2.beginner.pot_odds.4").spot == s.spot
+    assert T.load("v2.beginner.pot_odds.4").id == "v2.beginner.pot_odds.4"
+    assert T.load("v2.beginner.pot_odds.4.river").id == "v2.beginner.pot_odds.4.river"
+    assert T.load("v3.beginner.pot_odds.4").spot == s.spot
+
+
+@pytest.mark.parametrize("concept", ["pot_odds", "draws"])
+def test_facing_a_bet_a_fold_model_raise_is_never_the_taught_answer(concept):
+    """v0.4.5 calibration: raises valued only by the fold model lost to calling or
+    folding when hands were played out, so training never teaches one as right."""
+    for seed in (1, 2, 3):
+        s = T.generate("intermediate", concept, seed)
+        a = s.analysis
+        best = max(s.choices, key=lambda k: a.option(k).ev or 0.0)
+        assert a.option(best).basis == "pot odds"
 
 
 def test_a_hand_that_is_all_on_the_board_is_labelled_as_such():

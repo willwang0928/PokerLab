@@ -1,0 +1,212 @@
+[
+ {
+  "difficulty": "beginner",
+  "concept": "pot_odds",
+  "old_median_s": 2.068817066028714,
+  "new_median_s": 1.2889782739803195,
+  "old_max_s": 2.108103110920638,
+  "new_max_s": 1.6767801759997383,
+  "same_scenario": 3,
+  "seeds": 3
+ },
+ {
+  "difficulty": "beginner",
+  "concept": "draws",
+  "old_median_s": 1.0396861049812287,
+  "new_median_s": 0.9342177651124075,
+  "old_max_s": 3.288395015988499,
+  "new_max_s": 2.3899032509652898,
+  "same_scenario": 3,
+  "seeds": 3
+ },
+ {
+  "difficulty": "beginner",
+  "concept": "value_betting",
+  "old_median_s": 4.183477581012994,
+  "new_median_s": 0.822394942981191,
+  "old_max_s": 4.82860471191816,
+  "new_max_s": 4.347582248970866,
+  "same_scenario": 3,
+  "seeds": 3
+ },
+ {
+  "difficulty": "beginner",
+  "concept": "bluffing",
+  "old_median_s": 2.8970025499584153,
+  "new_median_s": 1.7884984969859943,
+  "old_max_s": 6.3423426219960675,
+  "new_max_s": 2.7827768840361387,
+  "same_scenario": 3,
+  "seeds": 3
+ },
+ {
+  "difficulty": "beginner",
+  "concept": "bet_sizing",
+  "old_median_s": 5.598079649033025,
+  "new_median_s": 1.9050958619918674,
+  "old_max_s": 14.36176943697501,
+  "new_max_s": 4.585862579988316,
+  "same_scenario": 3,
+  "seeds": 3
+ },
+ {
+  "difficulty": "beginner",
+  "concept": "preflop",
+  "old_median_s": 0.41933270497247577,
+  "new_median_s": 0.40452835301402956,
+  "old_max_s": 0.5398836189415306,
+  "new_max_s": 0.5953655829653144,
+  "same_scenario": 3,
+  "seeds": 3
+ },
+ {
+  "difficulty": "beginner",
+  "concept": "reads",
+  "old_median_s": 30.55872332304716,
+  "new_median_s": 4.394848944968544,
+  "old_max_s": 40.00019403093029,
+  "new_max_s": 5.863317525014281,
+  "same_scenario": 3,
+  "seeds": 3
+ },
+ {
+  "difficulty": "intermediate",
+  "concept": "pot_odds",
+  "old_median_s": 0.052272934932261705,
+  "new_median_s": 0.05662010004743934,
+  "old_max_s": 1.6573908679420128,
+  "new_max_s": 0.4751893610227853,
+  "same_scenario": 3,
+  "seeds": 3
+ },
+ {
+  "difficulty": "intermediate",
+  "concept": "draws",
+  "old_median_s": 92.43420635000803,
+  "new_median_s": 9.089326942921616,
+  "old_max_s": 96.35152650589589,
+  "new_max_s": 9.973435665015131,
+  "same_scenario": 3,
+  "seeds": 3
+ },
+ {
+  "difficulty": "intermediate",
+  "concept": "value_betting",
+  "old_median_s": 0.34659123700112104,
+  "new_median_s": 0.17259339801967144,
+  "old_max_s": 10.70684789295774,
+  "new_max_s": 7.5938955679303035,
+  "same_scenario": 3,
+  "seeds": 3
+ },
+ {
+  "difficulty": "intermediate",
+  "concept": "bluffing",
+  "old_median_s": 17.394646963104606,
+  "new_median_s": 18.02034912595991,
+  "old_max_s": 32.016840514028445,
+  "new_max_s": 20.418488812050782,
+  "same_scenario": 3,
+  "seeds": 3
+ },
+ {
+  "difficulty": "intermediate",
+  "concept": "bet_sizing",
+  "old_median_s": 12.00202158500906,
+  "new_median_s": 16.641449306043796,
+  "old_max_s": 14.776046057930216,
+  "new_max_s": 23.527310253004543,
+  "same_scenario": 1,
+  "seeds": 3
+ },
+ {
+  "difficulty": "intermediate",
+  "concept": "preflop",
+  "old_median_s": 0.2089661629870534,
+  "new_median_s": 0.2121155250351876,
+  "old_max_s": 0.2317380040185526,
+  "new_max_s": 0.22336822689976543,
+  "same_scenario": 3,
+  "seeds": 3
+ },
+ {
+  "difficulty": "intermediate",
+  "concept": "reads",
+  "old_median_s": 8.96328722499311,
+  "new_median_s": 4.862291867029853,
+  "old_max_s": 11.200768528040498,
+  "new_max_s": 8.227162019931711,
+  "same_scenario": 2,
+  "seeds": 3
+ },
+ {
+  "difficulty": "advanced",
+  "concept": "pot_odds",
+  "old_median_s": 0.6091976459138095,
+  "new_median_s": 0.9836322000483051,
+  "old_max_s": 7.704140460002236,
+  "new_max_s": 1.2150497840484604,
+  "same_scenario": 3,
+  "seeds": 3
+ },
+ {
+  "difficulty": "advanced",
+  "concept": "draws",
+  "old_median_s": 73.63845980295446,
+  "new_median_s": 9.170835181022994,
+  "old_max_s": 211.62375942000654,
+  "new_max_s": 25.65512338199187,
+  "same_scenario": 2,
+  "seeds": 3
+ },
+ {
+  "difficulty": "advanced",
+  "concept": "value_betting",
+  "old_median_s": 0.4735883589601144,
+  "new_median_s": 0.4591699839802459,
+  "old_max_s": 1.7102582469815388,
+  "new_max_s": 1.6419351139338687,
+  "same_scenario": 3,
+  "seeds": 3
+ },
+ {
+  "difficulty": "advanced",
+  "concept": "bluffing",
+  "old_median_s": 5.707091239979491,
+  "new_median_s": 7.871918361983262,
+  "old_max_s": 38.776017272961326,
+  "new_max_s": 29.940307668992318,
+  "same_scenario": 2,
+  "seeds": 3
+ },
+ {
+  "difficulty": "advanced",
+  "concept": "bet_sizing",
+  "old_median_s": 5.163672358030453,
+  "new_median_s": 4.275199015974067,
+  "old_max_s": 5.196499381912872,
+  "new_max_s": 4.503111569094472,
+  "same_scenario": 3,
+  "seeds": 3
+ },
+ {
+  "difficulty": "advanced",
+  "concept": "preflop",
+  "old_median_s": 0.522572570014745,
+  "new_median_s": 0.4036174260545522,
+  "old_max_s": 0.7430709620239213,
+  "new_max_s": 0.8323314180597663,
+  "same_scenario": 3,
+  "seeds": 3
+ },
+ {
+  "difficulty": "advanced",
+  "concept": "reads",
+  "old_median_s": 41.587109612999484,
+  "new_median_s": 6.904991207062267,
+  "old_max_s": 61.03329778998159,
+  "new_max_s": 39.96046520303935,
+  "same_scenario": 3,
+  "seeds": 3
+ }
+]

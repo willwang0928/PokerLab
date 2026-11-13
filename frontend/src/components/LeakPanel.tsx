@@ -3,7 +3,7 @@ import type { LeakState } from "../hooks/useLeakReport";
 import { changeText, LEAK_PRINCIPLE, leakPlan, pct } from "../lib/leaks";
 import { CONCEPT_LABEL, type Progress } from "../lib/progress";
 import { LEVEL_LABEL } from "../lib/skills";
-import type { LeakHand, LeakItem, LeakReport } from "../types";
+import type { LeakHand, LeakItem, LeakReport, TrainingEvaluation } from "../types";
 import { MiniCard } from "./HandLog";
 import type { Plan } from "./TrainingView";
 
@@ -61,13 +61,17 @@ export function LeakPanel({ state, progress, onStart, onShowHand, onRetry, focus
       {state.status === "loading" && !report && <p className="mt-2 text-[12.5px] text-slate-400">Looking through your hands…</p>}
       {report && <Report report={report} progress={progress} onStart={onStart} onShowHand={onShowHand} focus={focus} cards={cards.current} />}
 
-      <p className="mt-3 text-[11px] leading-snug text-slate-500">
-        A leak is reported only after at least {report?.rules.min_opportunities ?? 10} chances at the same kind of decision,{" "}
-        {report?.rules.min_flagged ?? 3} confidently flagged ones, and a flagged rate that stays above{" "}
-        {pct(report?.rules.min_rate ?? 0.15)} even read pessimistically (90% interval). Grades come from the coach's
-        analysis at the moment of each decision: results, the opponent's cards and later streets are never used, so a lost
-        pot is not counted as a mistake. Grades that depended on an assumption (the range, equity realisation, a preflop
-        guideline) never make a leak on their own.
+      <p className="mt-3 text-[11px] leading-snug text-slate-500" data-testid="leak-method">
+        A weakness is reported as supported only after at least {report?.rules.min_opportunities ?? 10} chances at the same
+        kind of decision, {report?.rules.min_flagged ?? 3} confidently flagged ones, and a flagged rate clearly above{" "}
+        {pct(report?.rules.min_rate ?? 0.15)}: an exact test that also allows for the{" "}
+        {report?.tested ? `${report.tested} kinds of decision` : "several kinds of decision"} checked at the same time and for
+        decisions from the same hand counting for less. Intervals are 90% confidence intervals for the flagged rate, not the
+        chance that you have a leak. Grades come from the coach's one-street analysis at the moment of each decision: results,
+        the opponent's cards and later streets are never used, so a lost pot is not counted as a mistake, and a supported
+        weakness means the coach keeps flagging these decisions, not that they are proven wrong. Grades that depended on an
+        assumption (the range, equity realisation, a preflop guideline) never make a leak on their own. Findings are
+        re-checked after every hand, so one near the threshold can appear or disappear as hands are added.
       </p>
     </section>
   );
@@ -89,6 +93,7 @@ function Report({
   cards: Map<string, HTMLElement>;
 }) {
   const insufficient = report.other.filter((i) => i.status === "insufficient");
+  const unclear = report.other.filter((i) => i.status === "ok");
   return (
     <div className="mt-2 space-y-3">
       {report.status === "insufficient" && (
@@ -99,7 +104,8 @@ function Report({
       )}
       {report.status === "ready" && report.leaks.length === 0 && (
         <p className="text-[12.5px] text-slate-300" data-testid="no-leaks">
-          No recurring leak is supported by your hands so far.
+          No recurring weakness is supported by your hands so far. That is not the same as having none: some patterns need
+          more hands to show.
         </p>
       )}
 
@@ -127,12 +133,12 @@ function Report({
 
       {report.strengths.length > 0 && (
         <div data-testid="strengths">
-          <h3 className="text-[12.5px] font-semibold text-emerald-200">Relative strengths</h3>
+          <h3 className="text-[12.5px] font-semibold text-emerald-200">Supported strengths</h3>
           <ul className="mt-1 space-y-0.5 text-[12px] text-slate-300">
             {report.strengths.map((s) => (
               <li key={s.key}>
                 <b className="font-semibold text-slate-200">{strengthTitle(s)}</b>: flagged in {s.flagged + s.uncertain} of{" "}
-                {s.judged} confidently graded decisions (likely under {pct(s.high)}).
+                {s.judged} confidently graded decisions, a rate credibly below {pct(report.rules.strength_max_rate)}.
               </li>
             ))}
           </ul>
@@ -144,16 +150,27 @@ function Report({
           <summary className="cursor-pointer text-slate-300">Too early to tell ({report.watch.length})</summary>
           <ul className="mt-1 space-y-1">
             {report.watch.map((w) => (
-              <li key={w.key}>
+              <li key={w.key} data-evidence={w.evidence ?? w.status}>
+                <span className="mr-1 rounded bg-white/[0.06] px-1 py-px text-[10.5px] text-slate-300">
+                  {w.status === "uncertain" ? "Uncertain" : "Possible weakness"}
+                </span>
                 <b className="font-semibold text-slate-300">{w.title}</b>: {w.flagged} confidently flagged
                 {w.uncertain ? ` and ${w.uncertain} uncertain` : ""} of {w.opportunities}.{" "}
-                {w.status === "uncertain" ? "The coach is not sure: " : "Not a leak yet: needs "}
+                {w.status === "uncertain" ? "The coach is not sure: " : "Not supported yet: needs "}
                 {w.missing?.join(" and ")}.
               </li>
             ))}
           </ul>
         </details>
       )}
+
+      {unclear.length > 0 && report.status === "ready" && (
+        <p className="text-[11.5px] text-slate-500" data-testid="leaks-unclear">
+          No clear weakness (enough decisions, but not clearly a strength either): {unclear.map((i) => i.title.toLowerCase()).join("; ")}.
+        </p>
+      )}
+
+      {report.training && <TrainingCheck t={report.training} />}
 
       {insufficient.length > 0 && report.status === "ready" && (
         <p className="text-[11.5px] text-slate-500" data-testid="leaks-no-data">
@@ -217,16 +234,19 @@ function LeakCard({
         </span>
       </div>
       <p className="mt-0.5 text-[12px] text-slate-400">{l.description}</p>
+      <p className="mt-1 text-[11px] font-semibold uppercase tracking-wide text-amber-300/80" data-testid="leak-status">
+        Supported weakness
+      </p>
 
       <p className="mt-1.5 text-[12.5px] text-slate-200" data-testid="leak-evidence">
-        <b className="font-semibold">Pattern:</b> {l.flagged} of {l.opportunities} such decisions flagged ({pct(l.rate)}; likely
-        between {pct(l.low)} and {pct(l.high)}).
+        <b className="font-semibold">Pattern:</b> {l.flagged} of {l.opportunities} such decisions flagged ({pct(l.rate)}; 90%
+        confidence interval {pct(l.low)}–{pct(l.high)}).
         {l.split && ` ${l.split.calls} were calls without the odds and ${l.split.folds} folds with them.`}
         {l.uncertain > 0 && ` ${l.uncertain} more were flagged with low confidence and are not counted.`}
       </p>
       {l.conditions?.map((c) => (
         <p key={c.key} className="mt-0.5 text-[12px] text-amber-200/90">
-          Mostly {c.label}: {c.flagged} of {c.opportunities} ({pct(c.rate)}), versus {pct(c.rate_elsewhere)} in your other{" "}
+          More often {c.label}: {c.flagged} of {c.opportunities} ({pct(c.rate)}), versus {pct(c.rate_elsewhere)} in your other{" "}
           {c.opportunities_elsewhere}.
         </p>
       ))}
@@ -289,15 +309,77 @@ function LeakCard({
           <p>
             {p.answers} practice answer{p.answers === 1 ? "" : "s"} aimed at this leak, {pct(p.score)} good or close
             {p.answers > 10 ? ` (last 10: ${pct(p.recent_score)})` : ""}.
+            {p.new_answers !== undefined &&
+              ` New situations: ${p.new_answers ? `${pct(p.new_score)} of ${p.new_answers}` : "none yet"}; seen before: ${
+                p.seen_answers ? `${pct(p.seen_score)} of ${p.seen_answers}` : "none"
+              }.`}
           </p>
         ) : (
           <p>No practice aimed at this leak yet.</p>
         )}
-        {p?.since && <p>At the table since you started practising it: {changeText(p.since, { before: "before", after: "since" })}</p>}
+        {p?.since && (
+          <p>
+            At the table since you started practising it: {changeText(p.since, { before: "before", after: "since" })} This
+            compares before and after; it cannot show that practice caused a change.
+          </p>
+        )}
         {!p?.since && l.trend && (
           <p>Over time: {changeText(l.trend, { before: "in your earlier half", after: "in your recent half" })}</p>
         )}
       </div>
     </>
+  );
+}
+
+const TRAINING_TEXT: Record<TrainingEvaluation["status"], string> = {
+  evaluating: "Still evaluating",
+  improving: "Better on new situations",
+  no_clear_change: "No clear change on new situations",
+  declining: "Worse on new situations",
+};
+
+/**
+ * Whether practice shows up where it counts (v0.4.5): first-time scenarios, compared
+ * within the same concept and level, kept apart from repeated ones and the table.
+ */
+function TrainingCheck({ t }: { t: TrainingEvaluation }) {
+  const h = t.held_out;
+  return (
+    <div className="rounded-lg bg-white/[0.03] p-2 text-[12px] text-slate-300 ring-1 ring-white/5" data-testid="training-check">
+      <h3 className="text-[12.5px] font-semibold text-slate-200">
+        Is practice working? <span className="font-normal text-slate-400">· {TRAINING_TEXT[t.status]}</span>
+      </h3>
+      {t.status === "evaluating" ? (
+        <p className="mt-0.5">
+          {t.new_answers} first answer{t.new_answers === 1 ? "" : "s"} to new situations so far; at least {t.needed} more are
+          needed before comparing your earlier and later answers.
+        </p>
+      ) : (
+        <p className="mt-0.5">
+          New situations: {pct(h.late.rate)} answered well in your later half versus {pct(h.early.rate)} earlier
+          {h.difference !== null ? ` (${h.difference >= 0 ? "+" : "−"}${Math.abs(Math.round(h.difference * 100))} points within the same concept and level)` : ""}.{" "}
+          {t.status === "no_clear_change"
+            ? "That difference is within normal variation."
+            : "That difference is larger than chance alone would usually produce."}
+        </p>
+      )}
+      {t.familiar.answers > 0 && (
+        <p className="mt-0.5 text-slate-400">
+          Repeated situations and your own hands ({t.familiar.answers}): {pct(t.familiar.late.rate)} later versus{" "}
+          {pct(t.familiar.early.rate)} earlier. These can be remembered, so they are not counted as evidence of skill.
+        </p>
+      )}
+      {t.table && t.table.change !== "insufficient" && (
+        <p className="mt-0.5 text-slate-400">
+          At the table, confidently flagged decisions: {pct(t.table.after.rate)} since your first practice versus{" "}
+          {pct(t.table.before.rate)} before
+          {t.table.change === "no_clear_change" ? " (no clear change)" : t.table.change === "improving" ? " (fewer)" : " (more)"}.
+        </p>
+      )}
+      <p className="mt-0.5 text-[11px] text-slate-500">
+        A before-and-after comparison, not an experiment: it can show that your answers changed, not that practice caused it.
+        Scores measure agreement with PokerLab's own analysis, not optimal play.
+      </p>
+    </div>
   );
 }

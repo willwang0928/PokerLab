@@ -128,16 +128,22 @@ export function CoachPanel({ review, loading, error, progress, detailed, onToggl
               . {trend.total} decisions reviewed in all.
             </p>
             {leaks.length > 0 ? (
+              <>
               <ul className="mt-1 space-y-0.5 text-[12px] text-slate-300" data-testid="leaks">
                 {leaks.map((l) => (
                   <li key={l.tag}>
-                    <span className="text-amber-300">{l.label}</span>: {l.count} times recently (practise{" "}
+                    <span className="text-amber-300">{l.label}</span>: flagged {l.count} times recently (practise{" "}
                     {CONCEPT_LABEL[l.concept].toLowerCase()})
                   </li>
                 ))}
               </ul>
+              <p className="mt-0.5 text-[11px] text-slate-500">
+                Counts only: whether a pattern is a supported weakness is checked on the Progress tab, with sample-size and
+                multiple-testing safeguards.
+              </p>
+              </>
             ) : (
-              <p className="mt-1 text-[12px] text-slate-400">No recurring leaks so far.</p>
+              <p className="mt-1 text-[12px] text-slate-400">Nothing flagged repeatedly so far.</p>
             )}
           </div>
         )}

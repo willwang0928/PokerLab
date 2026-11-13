@@ -105,7 +105,7 @@ describe("CoachPanel", () => {
     );
     expect(screen.getByTestId("decision-maths")).toHaveTextContent(/EV\(Call 200\)/);
     expect(screen.getByTestId("decision-maths")).toHaveTextContent(/top 70% of hands/);
-    expect(screen.getByTestId("leaks")).toHaveTextContent(/Calling without enough equity: 2 times/);
+    expect(screen.getByTestId("leaks")).toHaveTextContent(/Calling without enough equity: flagged 2 times/);
     expect(screen.getByTestId("coach-progress")).toHaveTextContent(/2 decisions reviewed/);
   });
 
