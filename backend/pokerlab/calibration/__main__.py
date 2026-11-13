@@ -15,7 +15,7 @@ import json
 import time
 from pathlib import Path
 
-from .policies import RunConfig
+from .policies import QUICK, RunConfig
 
 DOCS = Path(__file__).resolve().parents[3] / "docs"
 
@@ -41,7 +41,7 @@ def main(argv: list[str] | None = None) -> int:
 
     cfg = RunConfig()
     if args.quick:
-        cfg = RunConfig(hands=40, session_hands=20, rollouts=4, oracle_per_session=4)
+        cfg = RunConfig(**QUICK)
     from .report import build_report
 
     if args.simulate_only:

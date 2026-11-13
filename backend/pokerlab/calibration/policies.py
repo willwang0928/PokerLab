@@ -394,3 +394,6 @@ class RunConfig:
 # The discovery run (graded by the v0.4.4 coach, before the fixes it led to) is kept in
 # its own cache folder; see docs/calibration.md.
 DISCOVERY = "discovery-coach-v0.4.4"
+
+# ``--quick``: a small run that checks the pipeline end to end.
+QUICK = {"hands": 40, "session_hands": 20, "rollouts": 4, "oracle_per_session": 4}

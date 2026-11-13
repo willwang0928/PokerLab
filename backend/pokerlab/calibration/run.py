@@ -17,6 +17,7 @@ from concurrent.futures.process import BrokenProcessPool
 from pathlib import Path
 from typing import Any
 
+from .housekeeping import SESSION_MB, DiskSpaceError, ensure_space, remove_partials, run_lock
 from .policies import POLICIES, RunConfig
 from .simulate import run_session
 
@@ -62,7 +63,15 @@ def run_all(
 ) -> dict[str, list[dict[str, Any]]]:
     names = list(policies or [p.name for p in POLICIES])
     sessions = cfg.hands // cfg.session_hands
-    (cache / config_hash(cfg)).mkdir(parents=True, exist_ok=True)
+    with run_lock(cache):
+        return _run_locked(cfg, names, sessions, cache, workers, log)
+
+
+def _run_locked(cfg, names, sessions, cache, workers, log):
+    folder = cache / config_hash(cfg)
+    folder.mkdir(parents=True, exist_ok=True)
+    if n := remove_partials(folder):
+        log(f"removed {n} partial session files from an interrupted run")
     todo = [
         (p, s, cfg, str(_path(cache, cfg, p, s)))
         for p in names
@@ -72,10 +81,13 @@ def run_all(
     # Random play is by far the slowest (long hands, many all-in rollouts): start it first.
     todo.sort(key=lambda t: t[0] != "random")
     if todo:
-        log(f"running {len(todo)} sessions ({cfg.session_hands} hands each)")
+        free = ensure_space(cache, need_mb=len(todo) * SESSION_MB)
+        log(f"running {len(todo)} sessions ({cfg.session_hands} hands each); "
+            f"~{len(todo) * SESSION_MB:.0f} MB to write, {free:.0f} MB free")  # fmt: skip
         workers = workers or max(1, (os.cpu_count() or 2) - 1)
         if workers == 1:
             for t in todo:
+                ensure_space(cache, need_mb=SESSION_MB)
                 _task(t)
         else:
             # A worker that dies (an interpreter crash was seen with Python 3.14) breaks the
@@ -90,6 +102,12 @@ def run_all(
                         for k, f in enumerate(as_completed(futures), 1):
                             p, s = f.result()
                             log(f"  [{k}/{len(left)}] {p} session {s}")
+                            try:  # stop early rather than fill the disk mid-run
+                                ensure_space(cache, need_mb=SESSION_MB)
+                            except DiskSpaceError:
+                                for other in futures:
+                                    other.cancel()
+                                raise
                 except BrokenProcessPool:
                     log(f"worker crashed (attempt {attempt + 1}); resuming the rest")
     out: dict[str, list[dict[str, Any]]] = {}
