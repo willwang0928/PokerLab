@@ -38,8 +38,15 @@ def _key(action: Action) -> str:
 
 
 def _coach_alternative(d: dict[str, Any]) -> str | None:
-    """The option the coach scored best among those it valued (its recommendation)."""
+    """The option the coach's verdict compared the chosen one with (its recommendation).
+
+    Since v0.4.7 the coach records it (``compared``): facing a bet, a call or fold is
+    judged against the other pot-odds option even when a fold-model raise scored higher,
+    so the oracle must test that comparison. Older analyses fall back to the best option.
+    """
     valued = {o["key"]: o for o in d["options"] if o.get("ev") is not None}
+    if d.get("compared") in valued and d["compared"] != d["chosen"]:
+        return d["compared"]
     best = [k for k in d.get("best") or [] if k in valued and k != d["chosen"]]
     if best:
         return max(best, key=lambda k: valued[k]["ev"])

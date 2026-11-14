@@ -74,16 +74,28 @@ def test_calling_with_almost_no_equity_is_a_likely_mistake():
 
 def test_a_profitable_call_is_not_graded_down_for_not_raising():
     """9h8h calling is clearly profitable; raising scores higher only under the fold
-    model. Since v0.4.5 (calibration: such raises lost to the call when hands were played
-    out) that is not held against the call: it is a close call, never "fold", and the
-    raise is shown as an option resting on an assumed fold rate."""
+    model. Calibration (v0.4.5, v0.4.7) found such raises lost to the call when hands were
+    played out, so facing a bet a call is judged against folding only: it is good, never
+    "fold", and the raise is shown as an option resting on an assumed fold rate."""
     a = analysed(spot("9h8h", "Th7c2h", FLOP), Action.call())
     assert a.option("call").ev > 0 and a.option(a.best[0]).action == "raise"
-    assert a.grade == "close" and a.tags == [] and a.confidence == "low"
+    assert a.grade == "good" and a.tags == [] and a.ev_loss == 0
     les = lesson_ok(a)
-    assert les["principle"] != PRINCIPLES["call_without_odds"]
+    assert les["principle"] == PRINCIPLES["call_ok"]
     assert "assumed fold rate" in les["alternative"]
     assert "not the answer" in a.explanation
+
+
+def test_an_unprofitable_call_is_judged_against_folding_not_a_raise():
+    """v0.4.7: when the call does not pay on pot odds and a fold-model raise scores best,
+    the verdict compares the call with folding (what the oracle confirms costly), not
+    with the raise, and is tagged as a call without the odds when flagged."""
+    a = analysed(spot("Kc3h", "Th7c2h", FLOP), Action.call())
+    assert a.option("call").ev < 0 and a.option(a.best[0]).basis == "fold model"
+    assert a.ev_loss == pytest.approx(-a.option("call").ev)
+    assert a.grade in ("questionable", "mistake")
+    assert a.tags == ["called_without_odds"]
+    assert a.compared == "fold"  # what the calibration oracle tests against
 
 
 # ----------------------------------------------------------------- close decisions
@@ -110,6 +122,30 @@ def test_a_fold_that_depends_on_realisation_says_it_is_a_judgement_call():
     assert a.grade != "mistake" and a.confidence == "low"
     assert "judgement call" in a.explanation
     assert PRINCIPLES["realization"] in lesson_ok(a)["also"]
+
+
+def test_a_fold_needing_high_realisation_is_not_flagged():
+    """v0.4.7: Jh9h on Th7c2s needs about 74% realisation for the call. Folded hands
+    usually realise less than that and calibration found such folds did better than
+    the call, so the fold is a judgement call, not "folded with the odds"."""
+    a = analysed(spot("Jh9h", "Th7c2s", FLOP), Action.fold())
+    assert REALIZATION_LOW <= a.realization_needed < REALIZATION_HIGH
+    assert a.option("call").ev > 0
+    assert a.grade in ("good", "close") and a.tags == [] and a.confidence == "low"
+    assert "judgement call" in a.explanation
+
+
+def test_a_river_bet_is_not_overaggressive_on_the_fold_model_alone():
+    """v0.4.7: 9c8c (a pair of nines) bets 150 into 230 on Kd9s5c2h7d. The fold model
+    prefers checking by about 0.3 pots, but calibration found such bets did better than
+    checking against PokerLab's opponents, so the bet is not flagged."""
+    river_unbet = RIVER_LINE[:-2]
+    a = analysed(spot("9c8c", "Kd9s5c2h7d", river_unbet), Action.bet(150))
+    assert a.spot != "facing_bet" and a.option(a.best[0]).action == "check"
+    assert a.ev_loss > 0.2 * a.pot
+    assert a.grade == "close" and a.tags == []
+    assert "not counted as a mistake" in a.explanation
+    lesson_ok(a)
 
 
 def test_realisation_is_not_applied_on_the_river():
@@ -270,3 +306,10 @@ def test_lessons_are_reproducible():
         for _ in range(3)
     }
     assert len(runs) == 1
+
+
+def test_a_zero_equity_claim_says_it_rests_on_the_range_estimate():
+    """v0.4.7: the hard-cut range model has no bluffs, so "0%" is qualified."""
+    a = analysed(spot("3c2d", "AhKdQs7c9h", RIVER_LINE), Action.call())
+    assert a.equity == 0.0
+    assert "small, not zero" in a.explanation

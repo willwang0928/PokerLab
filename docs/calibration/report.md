@@ -143,19 +143,19 @@ Should not be clearly negative.
 | policy | injected behaviour | expected detector finding | hands | graded decisions | deviations fired | flagged | bb/100 (noisy) |
 |---|---|---|---|---|---|---|---|
 | `baseline` | The Intermediate opponent logic, unmodified: no injected tendency. | none | 800 | 2127 | 0 | 1% | +33 |
-| `baseline_vs_changing_opponent` | Baseline player; the opponent switches from Beginner to Advanced halfway. | none | 800 | 2400 | 0 | 3% | +120 |
-| `beginner_style` | The Beginner opponent logic (plays its own cards, calls slightly bad prices): weaknesses that emerge naturally rather than being injected. | none | 800 | 2843 | 0 | 10% | -224 |
-| `calling_station` | After the flop, facing a bet the baseline folds, call instead (70%). | called_without_odds | 800 | 2292 | 177 | 8% | -77 |
-| `river_station` | On the river only, facing a bet the baseline folds, call instead (85%). | called_without_odds | 800 | 2169 | 46 | 3% | +32 |
-| `big_bet_station` | Facing a bet of ¾ pot or more after the flop that the baseline folds, call (85%). | called_without_odds | 800 | 2213 | 4 | 2% | -1 |
-| `over_folder` | After the flop, facing a bet the baseline calls, fold instead (55%). | folded_with_odds | 800 | 2048 | 64 | 4% | -46 |
+| `baseline_vs_changing_opponent` | Baseline player; the opponent switches from Beginner to Advanced halfway. | none | 800 | 2400 | 0 | 2% | +120 |
+| `beginner_style` | The Beginner opponent logic (plays its own cards, calls slightly bad prices): weaknesses that emerge naturally rather than being injected. | none | 800 | 2843 | 0 | 9% | -224 |
+| `calling_station` | After the flop, facing a bet the baseline folds, call instead (70%). | called_without_odds | 800 | 2292 | 177 | 7% | -77 |
+| `river_station` | On the river only, facing a bet the baseline folds, call instead (85%). | called_without_odds | 800 | 2169 | 46 | 2% | +32 |
+| `big_bet_station` | Facing a bet of ¾ pot or more after the flop that the baseline folds, call (85%). | called_without_odds | 800 | 2213 | 4 | 1% | -1 |
+| `over_folder` | After the flop, facing a bet the baseline calls, fold instead (55%). | folded_with_odds | 800 | 2048 | 64 | 3% | -46 |
 | `over_bluffer` | After the flop with no made hand and no bet to face, bet ⅔ pot where the baseline checks (65%). | overaggressive | 800 | 2045 | 185 | 1% | -50 |
 | `never_bluffs` | After the flop with no made hand, check or call where the baseline bets or raises (100%). | none | 800 | 2255 | 17 | 1% | -16 |
 | `slow_player` | After the flop with two pair or better, check or call where the baseline bets or raises (75%). | missed_value | 800 | 2186 | 89 | 3% | +31 |
-| `preflop_loose` | Preflop, facing a raise the baseline folds, call instead (70%). | preflop_loose | 800 | 2195 | 48 | 2% | +84 |
-| `station_and_bluffer` | Two injected tendencies at once: After the flop, facing a bet the baseline folds, call instead (70%). After the flop with no made hand and no bet to face, bet ⅔ pot where the baseline checks (65%). | called_without_odds, overaggressive | 800 | 2214 | 401 | 7% | -59 |
-| `station_then_fixed` | Calls too much for the first half of the run, then plays the baseline. | called_without_odds | 800 | 2286 | 112 | 5% | -50 |
-| `random` | Every decision uniformly at random among fold (when facing a bet), check or call, and a bet or raise of random size. | called_without_odds, folded_with_odds, overaggressive | 800 | 1663 | 1250 | 18% | -198 |
+| `preflop_loose` | Preflop, facing a raise the baseline folds, call instead (70%). | preflop_loose | 800 | 2195 | 48 | 1% | +84 |
+| `station_and_bluffer` | Two injected tendencies at once: After the flop, facing a bet the baseline folds, call instead (70%). After the flop with no made hand and no bet to face, bet ⅔ pot where the baseline checks (65%). | called_without_odds, overaggressive | 800 | 2214 | 401 | 6% | -59 |
+| `station_then_fixed` | Calls too much for the first half of the run, then plays the baseline. | called_without_odds | 800 | 2286 | 112 | 4% | -50 |
+| `random` | Every decision uniformly at random among fold (when facing a bet), check or call, and a bet or raise of random size. | called_without_odds, folded_with_odds, overaggressive | 800 | 1663 | 1250 | 15% | -198 |
 
 Hands holding more than one opportunity of the same weakness (baseline): called_without_odds 21%, folded_with_odds 0%, pot_odds_mixed 21%, missed_value 32%, overaggressive 18%, bet_sizing 32%, preflop_loose 1%, preflop_tight 0%.
 
@@ -186,44 +186,40 @@ If the coach's flags are right, the chosen action should lose chips against the 
 
 | tag | n | oracle Δ bb | share Δ<0 | coach Δ bb | verdict |
 |---|---|---|---|---|---|
-| (no tag) | 113 | +5.45 ± 3.02 | 29% | -4.40 | gains |
-| bet_sizing | 8 | -6.18 ± 9.02 | 50% | -5.51 | insufficient |
-| called_without_odds | 487 | -10.58 ± 1.19 | 92% | -6.93 | costly |
-| folded_with_odds | 135 | +0.91 ± 3.44 | 45% | -5.71 | unclear |
-| missed_value | 344 | -1.29 ± 0.88 | 51% | -2.54 | costly |
-| overaggressive | 95 | +3.00 ± 1.96 | 24% | -2.57 | gains |
-| preflop_loose | 34 | -5.87 ± 5.30 | 74% | -0.57 | costly |
-| preflop_tight | 58 | +1.90 ± 2.11 | 50% | -0.98 | unclear |
+| (no tag) | 9 | +0.49 ± 3.74 | 56% | -1.43 | insufficient |
+| bet_sizing | 9 | -3.52 ± 6.82 | 56% | -5.09 | insufficient |
+| called_without_odds | 579 | -11.11 ± 1.19 | 92% | -6.21 | costly |
+| folded_with_odds | 75 | +0.54 ± 4.69 | 51% | -6.28 | unclear |
+| missed_value | 351 | -1.42 ± 0.82 | 52% | -2.53 | costly |
+| overaggressive | 6 | -9.91 ± 27.38 | 50% | -4.28 | insufficient |
+| preflop_loose | 37 | -5.62 ± 5.02 | 73% | -0.57 | costly |
+| preflop_tight | 44 | +3.99 ± 2.36 | 34% | -1.22 | gains |
 
 ### Coach flags by confidence
 
 | confidence / robust | n | oracle Δ bb | verdict |
 |---|---|---|---|
-| high / robust=True | 185 | -10.52 ± 1.99 | costly |
-| low / robust=False | 171 | -6.95 ± 2.43 | costly |
-| low / robust=None | 11 | -8.73 ± 13.14 | insufficient |
-| low / robust=True | 602 | +0.58 ± 0.92 | unclear |
-| medium / robust=True | 305 | -5.75 ± 1.73 | costly |
+| high / robust=True | 191 | -9.99 ± 1.83 | costly |
+| low / robust=False | 204 | -8.73 ± 1.94 | costly |
+| low / robust=None | 12 | -10.06 ± 13.07 | insufficient |
+| low / robust=True | 438 | -0.55 ± 0.75 | unclear |
+| medium / robust=True | 265 | -10.72 ± 2.35 | costly |
 
 ### Coach flags by street and tag (n ≥ 10)
 
 | street / tag | n | oracle Δ bb | verdict |
 |---|---|---|---|
-| flop / (no tag) | 31 | +3.88 ± 6.47 | unclear |
-| flop / called_without_odds | 91 | -9.90 ± 2.29 | costly |
-| flop / folded_with_odds | 74 | +2.36 ± 4.67 | unclear |
-| flop / missed_value | 190 | -1.21 ± 1.08 | costly |
-| preflop / preflop_loose | 34 | -5.87 ± 5.30 | costly |
-| preflop / preflop_tight | 58 | +1.90 ± 2.11 | unclear |
-| river / called_without_odds | 278 | -9.92 ± 1.64 | costly |
-| river / folded_with_odds | 17 | +0.31 ± 10.50 | unclear |
-| river / missed_value | 20 | -1.13 ± 6.25 | unclear |
-| river / overaggressive | 82 | +3.25 ± 2.25 | gains |
-| turn / (no tag) | 81 | +6.12 ± 3.42 | gains |
-| turn / called_without_odds | 118 | -12.59 ± 2.47 | costly |
-| turn / folded_with_odds | 44 | -1.39 ± 5.84 | unclear |
-| turn / missed_value | 134 | -1.44 ± 1.37 | costly |
-| turn / overaggressive | 10 | +1.01 ± 1.23 | insufficient |
+| flop / called_without_odds | 124 | -12.84 ± 3.08 | costly |
+| flop / folded_with_odds | 38 | +4.88 ± 6.42 | unclear |
+| flop / missed_value | 196 | -1.13 ± 0.93 | costly |
+| preflop / preflop_loose | 37 | -5.62 ± 5.02 | costly |
+| preflop / preflop_tight | 44 | +3.99 ± 2.36 | gains |
+| river / called_without_odds | 282 | -9.54 ± 1.56 | costly |
+| river / folded_with_odds | 17 | +0.21 ± 10.68 | unclear |
+| river / missed_value | 19 | -0.98 ± 6.03 | unclear |
+| turn / called_without_odds | 173 | -12.37 ± 2.12 | costly |
+| turn / folded_with_odds | 20 | -7.75 ± 7.98 | unclear |
+| turn / missed_value | 136 | -1.89 ± 1.40 | costly |
 
 ### Decisions graded good: chosen versus the best other option
 
@@ -231,9 +227,9 @@ Should not be clearly negative.
 
 | confidence | n | oracle Δ bb | verdict |
 |---|---|---|---|
-| high | 265 | -0.24 ± 1.63 | unclear |
-| low | 809 | +0.56 ± 0.56 | unclear |
-| medium | 606 | +0.80 ± 0.64 | gains |
+| high | 278 | -0.27 ± 1.79 | unclear |
+| low | 713 | +0.43 ± 0.78 | unclear |
+| medium | 689 | +1.34 ± 0.72 | gains |
 
 ## 4. Leak detection on simulated players
 
@@ -251,18 +247,18 @@ P(weakness reported as a leak) in bootstrap samples of N hands (whole hands resa
 | `baseline_vs_changing_opponent` | 200 | 0% | 0% | 0% | 0% | 0% | 0% | 0% |
 | `baseline_vs_changing_opponent` | 400 | 0% | 0% | 0% | 0% | 0% | 0% | 0% |
 | `baseline_vs_changing_opponent` | 800 | 0% | 0% | 0% | 0% | 0% | 0% | 0% |
-| `beginner_style` | 100 | 22% | 0% | 0% | 0% | 0% | 0% | 0% |
-| `beginner_style` | 200 | 26% | 0% | 0% | 0% | 0% | 0% | 0% |
-| `beginner_style` | 400 | 45% | 0% | 0% | 0% | 0% | 0% | 0% |
-| `beginner_style` | 800 | 73% | 0% | 0% | 0% | 0% | 0% | 0% |
-| `calling_station` | 100 | **48%** | 0% | 0% | 0% | 0% | 0% | 0% |
-| `calling_station` | 200 | **81%** | 0% | 0% | 0% | 0% | 0% | 0% |
-| `calling_station` | 400 | **96%** | 0% | 0% | 0% | 0% | 0% | 0% |
+| `beginner_style` | 100 | 33% | 0% | 0% | 0% | 0% | 0% | 0% |
+| `beginner_style` | 200 | 55% | 0% | 0% | 0% | 0% | 0% | 0% |
+| `beginner_style` | 400 | 84% | 0% | 0% | 0% | 0% | 0% | 0% |
+| `beginner_style` | 800 | 99% | 0% | 0% | 0% | 0% | 0% | 0% |
+| `calling_station` | 100 | **71%** | 0% | 0% | 0% | 0% | 0% | 0% |
+| `calling_station` | 200 | **96%** | 0% | 0% | 0% | 0% | 0% | 0% |
+| `calling_station` | 400 | **98%** | 0% | 0% | 0% | 0% | 0% | 0% |
 | `calling_station` | 800 | **100%** | 0% | 0% | 0% | 0% | 0% | 0% |
 | `river_station` | 100 | **2%** | 0% | 0% | 0% | 0% | 0% | 0% |
 | `river_station` | 200 | **9%** | 0% | 0% | 0% | 0% | 0% | 0% |
 | `river_station` | 400 | **16%** | 0% | 0% | 0% | 0% | 0% | 0% |
-| `river_station` | 800 | **16%** | 0% | 0% | 0% | 0% | 0% | 0% |
+| `river_station` | 800 | **23%** | 0% | 0% | 0% | 0% | 0% | 0% |
 | `big_bet_station` | 100 | **0%** | 0% | 0% | 0% | 0% | 0% | 0% |
 | `big_bet_station` | 200 | **0%** | 0% | 0% | 0% | 0% | 0% | 0% |
 | `big_bet_station` | 400 | **0%** | 0% | 0% | 0% | 0% | 0% | 0% |
@@ -287,18 +283,18 @@ P(weakness reported as a leak) in bootstrap samples of N hands (whole hands resa
 | `preflop_loose` | 200 | 0% | 0% | 0% | 0% | 0% | **0%** | 0% |
 | `preflop_loose` | 400 | 0% | 0% | 0% | 0% | 0% | **0%** | 0% |
 | `preflop_loose` | 800 | 0% | 0% | 0% | 0% | 0% | **0%** | 0% |
-| `station_and_bluffer` | 100 | **37%** | 0% | 0% | **0%** | 0% | 0% | 0% |
-| `station_and_bluffer` | 200 | **59%** | 0% | 0% | **0%** | 0% | 0% | 0% |
-| `station_and_bluffer` | 400 | **84%** | 0% | 0% | **0%** | 0% | 0% | 0% |
-| `station_and_bluffer` | 800 | **99%** | 0% | 0% | **0%** | 0% | 0% | 0% |
+| `station_and_bluffer` | 100 | **51%** | 0% | 0% | **0%** | 0% | 0% | 0% |
+| `station_and_bluffer` | 200 | **82%** | 0% | 0% | **0%** | 0% | 0% | 0% |
+| `station_and_bluffer` | 400 | **99%** | 0% | 0% | **0%** | 0% | 0% | 0% |
+| `station_and_bluffer` | 800 | **100%** | 0% | 0% | **0%** | 0% | 0% | 0% |
 | `station_then_fixed` | 100 | **15%** | 0% | 0% | 0% | 0% | 0% | 0% |
-| `station_then_fixed` | 200 | **17%** | 0% | 0% | 0% | 0% | 0% | 0% |
-| `station_then_fixed` | 400 | **13%** | 0% | 0% | 0% | 0% | 0% | 0% |
-| `station_then_fixed` | 800 | **37%** | 0% | 0% | 0% | 0% | 0% | 0% |
-| `random` | 100 | **19%** | **6%** | 0% | **0%** | 0% | 0% | 0% |
-| `random` | 200 | **32%** | **15%** | 0% | **0%** | 0% | 0% | 0% |
-| `random` | 400 | **61%** | **35%** | 0% | **0%** | 0% | 0% | 0% |
-| `random` | 800 | **93%** | **51%** | 0% | **0%** | 0% | 0% | 0% |
+| `station_then_fixed` | 200 | **25%** | 0% | 0% | 0% | 0% | 0% | 0% |
+| `station_then_fixed` | 400 | **27%** | 0% | 0% | 0% | 0% | 0% | 0% |
+| `station_then_fixed` | 800 | **60%** | 0% | 0% | 0% | 0% | 0% | 0% |
+| `random` | 100 | **36%** | **8%** | 0% | **0%** | 0% | 0% | 0% |
+| `random` | 200 | **63%** | **18%** | 0% | **0%** | 0% | 0% | 0% |
+| `random` | 400 | **92%** | **37%** | 0% | **0%** | 0% | 0% | 0% |
+| `random` | 800 | **99%** | **51%** | 0% | **0%** | 0% | 0% | 0% |
 
 ### Detector v0.4.4
 
@@ -312,13 +308,13 @@ P(weakness reported as a leak) in bootstrap samples of N hands (whole hands resa
 | `baseline_vs_changing_opponent` | 200 | 0% | 0% | 0% | 0% | 0% | 0% | 0% |
 | `baseline_vs_changing_opponent` | 400 | 0% | 0% | 0% | 0% | 0% | 0% | 0% |
 | `baseline_vs_changing_opponent` | 800 | 0% | 0% | 0% | 0% | 0% | 0% | 0% |
-| `beginner_style` | 100 | 28% | 0% | 0% | 0% | 0% | 0% | 0% |
-| `beginner_style` | 200 | 57% | 0% | 0% | 0% | 0% | 0% | 0% |
-| `beginner_style` | 400 | 67% | 0% | 0% | 0% | 0% | 0% | 0% |
-| `beginner_style` | 800 | 89% | 0% | 0% | 0% | 0% | 0% | 0% |
-| `calling_station` | 100 | **77%** | 0% | 0% | 0% | 0% | 0% | 0% |
-| `calling_station` | 200 | **90%** | 0% | 0% | 0% | 0% | 0% | 0% |
-| `calling_station` | 400 | **97%** | 0% | 0% | 0% | 0% | 0% | 0% |
+| `beginner_style` | 100 | 50% | 0% | 0% | 0% | 0% | 0% | 0% |
+| `beginner_style` | 200 | 74% | 0% | 0% | 0% | 0% | 0% | 0% |
+| `beginner_style` | 400 | 87% | 0% | 0% | 0% | 0% | 0% | 0% |
+| `beginner_style` | 800 | 99% | 0% | 0% | 0% | 0% | 0% | 0% |
+| `calling_station` | 100 | **86%** | 0% | 0% | 0% | 0% | 0% | 0% |
+| `calling_station` | 200 | **98%** | 0% | 0% | 0% | 0% | 0% | 0% |
+| `calling_station` | 400 | **99%** | 0% | 0% | 0% | 0% | 0% | 0% |
 | `calling_station` | 800 | **100%** | 0% | 0% | 0% | 0% | 0% | 0% |
 | `river_station` | 100 | **15%** | 0% | 0% | 0% | 0% | 0% | 0% |
 | `river_station` | 200 | **10%** | 0% | 0% | 0% | 0% | 0% | 0% |
@@ -348,18 +344,18 @@ P(weakness reported as a leak) in bootstrap samples of N hands (whole hands resa
 | `preflop_loose` | 200 | 0% | 0% | 0% | 0% | 0% | **0%** | 0% |
 | `preflop_loose` | 400 | 0% | 0% | 0% | 0% | 0% | **0%** | 0% |
 | `preflop_loose` | 800 | 0% | 0% | 0% | 0% | 0% | **0%** | 0% |
-| `station_and_bluffer` | 100 | **57%** | 0% | 0% | **0%** | 0% | 0% | 0% |
-| `station_and_bluffer` | 200 | **74%** | 0% | 0% | **0%** | 0% | 0% | 0% |
-| `station_and_bluffer` | 400 | **90%** | 0% | 0% | **0%** | 0% | 0% | 0% |
+| `station_and_bluffer` | 100 | **63%** | 0% | 0% | **0%** | 0% | 0% | 0% |
+| `station_and_bluffer` | 200 | **87%** | 0% | 0% | **0%** | 0% | 0% | 0% |
+| `station_and_bluffer` | 400 | **99%** | 0% | 0% | **0%** | 0% | 0% | 0% |
 | `station_and_bluffer` | 800 | **100%** | 0% | 0% | **0%** | 0% | 0% | 0% |
 | `station_then_fixed` | 100 | **25%** | 0% | 0% | 0% | 0% | 0% | 0% |
-| `station_then_fixed` | 200 | **24%** | 0% | 0% | 0% | 0% | 0% | 0% |
-| `station_then_fixed` | 400 | **40%** | 0% | 0% | 0% | 0% | 0% | 0% |
-| `station_then_fixed` | 800 | **57%** | 0% | 0% | 0% | 0% | 0% | 0% |
-| `random` | 100 | **29%** | **12%** | 0% | **0%** | 0% | 0% | 0% |
-| `random` | 200 | **61%** | **30%** | 0% | **0%** | 0% | 0% | 0% |
-| `random` | 400 | **89%** | **36%** | 0% | **0%** | 0% | 0% | 0% |
-| `random` | 800 | **96%** | **71%** | 0% | **0%** | 0% | 0% | 0% |
+| `station_then_fixed` | 200 | **33%** | 0% | 0% | 0% | 0% | 0% | 0% |
+| `station_then_fixed` | 400 | **54%** | 0% | 0% | 0% | 0% | 0% | 0% |
+| `station_then_fixed` | 800 | **64%** | 0% | 0% | 0% | 0% | 0% | 0% |
+| `random` | 100 | **54%** | **12%** | 0% | **0%** | 0% | 0% | 0% |
+| `random` | 200 | **87%** | **30%** | 0% | **0%** | 0% | 0% | 0% |
+| `random` | 400 | **98%** | **36%** | 0% | **0%** | 0% | 0% | 0% |
+| `random` | 800 | **100%** | **71%** | 0% | **0%** | 0% | 0% | 0% |
 
 ### Precision, recall and false-positive rate
 
@@ -367,62 +363,62 @@ Expected counts over all (policy, weakness) pairs. *Injected*: positives are the
 
 | detector | N | ground truth | precision | recall | FPR | TP | FP | FN |
 |---|---|---|---|---|---|---|---|---|
-| v0.4.4 | 50 | injected | 83% | 8% | 0.3% | 1.1 | 0.2 | 11.9 |
-| v0.4.4 | 50 | oracle_confirmed | 100% | 13% | 0.0% | 1.3 | 0.0 | 8.7 |
-| v0.4.4 | 100 | injected | 88% | 17% | 0.3% | 2.1 | 0.3 | 10.8 |
-| v0.4.4 | 100 | oracle_confirmed | 100% | 23% | 0.0% | 2.3 | 0.0 | 7.7 |
-| v0.4.4 | 200 | injected | 84% | 22% | 0.7% | 2.9 | 0.6 | 10.1 |
-| v0.4.4 | 200 | oracle_confirmed | 100% | 32% | 0.0% | 3.2 | 0.0 | 6.8 |
-| v0.4.4 | 400 | injected | 85% | 28% | 0.8% | 3.7 | 0.7 | 9.3 |
-| v0.4.4 | 400 | oracle_confirmed | 100% | 40% | 0.0% | 4.0 | 0.0 | 6.0 |
-| v0.4.4 | 800 | injected | 84% | 35% | 1.0% | 4.6 | 0.9 | 8.4 |
-| v0.4.4 | 800 | oracle_confirmed | 100% | 48% | 0.0% | 4.8 | 0.0 | 5.2 |
-| v0.4.5 | 50 | injected | 93% | 5% | 0.1% | 0.6 | 0.1 | 12.4 |
-| v0.4.5 | 50 | oracle_confirmed | 100% | 7% | 0.0% | 0.7 | 0.0 | 9.3 |
-| v0.4.5 | 100 | injected | 85% | 10% | 0.3% | 1.3 | 0.2 | 11.7 |
-| v0.4.5 | 100 | oracle_confirmed | 100% | 14% | 0.0% | 1.4 | 0.0 | 8.6 |
-| v0.4.5 | 200 | injected | 89% | 16% | 0.3% | 2.1 | 0.3 | 10.9 |
-| v0.4.5 | 200 | oracle_confirmed | 100% | 22% | 0.0% | 2.2 | 0.0 | 7.8 |
-| v0.4.5 | 400 | injected | 87% | 23% | 0.5% | 3.0 | 0.5 | 10.0 |
-| v0.4.5 | 400 | oracle_confirmed | 100% | 31% | 0.0% | 3.1 | 0.0 | 6.8 |
-| v0.4.5 | 800 | injected | 84% | 30% | 0.9% | 4.0 | 0.7 | 9.0 |
-| v0.4.5 | 800 | oracle_confirmed | 100% | 42% | 0.0% | 4.2 | 0.0 | 5.8 |
+| v0.4.4 | 50 | injected | 80% | 11% | 0.4% | 1.4 | 0.3 | 11.6 |
+| v0.4.4 | 50 | oracle_confirmed | 100% | 19% | 0.0% | 1.7 | 0.0 | 7.3 |
+| v0.4.4 | 100 | injected | 84% | 20% | 0.6% | 2.6 | 0.5 | 10.5 |
+| v0.4.4 | 100 | oracle_confirmed | 100% | 33% | 0.0% | 2.9 | 0.0 | 6.1 |
+| v0.4.4 | 200 | injected | 82% | 27% | 0.9% | 3.5 | 0.7 | 9.5 |
+| v0.4.4 | 200 | oracle_confirmed | 100% | 43% | 0.0% | 3.9 | 0.0 | 5.1 |
+| v0.4.4 | 400 | injected | 82% | 31% | 1.0% | 4.0 | 0.9 | 9.0 |
+| v0.4.4 | 400 | oracle_confirmed | 100% | 50% | 0.0% | 4.5 | 0.0 | 4.5 |
+| v0.4.4 | 800 | injected | 83% | 36% | 1.2% | 4.7 | 1.0 | 8.3 |
+| v0.4.4 | 800 | oracle_confirmed | 100% | 55% | 0.0% | 5.0 | 0.0 | 4.0 |
+| v0.4.5 | 50 | injected | 87% | 7% | 0.2% | 0.9 | 0.1 | 12.1 |
+| v0.4.5 | 50 | oracle_confirmed | 100% | 12% | 0.0% | 1.1 | 0.0 | 7.9 |
+| v0.4.5 | 100 | injected | 85% | 14% | 0.4% | 1.8 | 0.3 | 11.2 |
+| v0.4.5 | 100 | oracle_confirmed | 100% | 23% | 0.0% | 2.1 | 0.0 | 6.9 |
+| v0.4.5 | 200 | injected | 84% | 23% | 0.6% | 2.9 | 0.6 | 10.1 |
+| v0.4.5 | 200 | oracle_confirmed | 100% | 37% | 0.0% | 3.3 | 0.0 | 5.7 |
+| v0.4.5 | 400 | injected | 81% | 28% | 1.0% | 3.7 | 0.8 | 9.3 |
+| v0.4.5 | 400 | oracle_confirmed | 100% | 46% | 0.0% | 4.2 | 0.0 | 4.8 |
+| v0.4.5 | 800 | injected | 81% | 33% | 1.2% | 4.3 | 1.0 | 8.7 |
+| v0.4.5 | 800 | oracle_confirmed | 100% | 53% | 0.0% | 4.8 | 0.0 | 4.2 |
 
 ### Ground truth per policy (oracle verdict on coach-flagged decisions)
 
 | policy | called_without_odds | folded_with_odds | missed_value | overaggressive | bet_sizing | preflop_loose | preflop_tight |
 |---|---|---|---|---|---|---|---|
-| `baseline` | insufficient (0) | insufficient (3) | insufficient (12) | insufficient (4) | insufficient (0) | insufficient (0) | insufficient (0) |
-| `baseline_vs_changing_opponent` | insufficient (1) | gains (17) | costly (32) | insufficient (12) | insufficient (2) | insufficient (0) | insufficient (0) |
-| `beginner_style` | costly (133) | insufficient (0) | unclear (41) | insufficient (8) | insufficient (0) | costly (16) | insufficient (0) |
-| `calling_station` | inj, costly (117) | insufficient (2) | unclear (22) | insufficient (5) | insufficient (0) | insufficient (0) | insufficient (0) |
-| `river_station` | inj, costly (42) | insufficient (3) | insufficient (9) | insufficient (4) | insufficient (1) | insufficient (0) | insufficient (0) |
-| `big_bet_station` | inj, insufficient (3) | insufficient (7) | unclear (16) | insufficient (7) | insufficient (0) | insufficient (0) | insufficient (0) |
-| `over_folder` | insufficient (0) | inj, unclear (59) | insufficient (11) | insufficient (8) | insufficient (1) | insufficient (0) | insufficient (0) |
-| `over_bluffer` | insufficient (0) | insufficient (6) | unclear (19) | inj, insufficient (3) | insufficient (0) | insufficient (0) | insufficient (0) |
-| `never_bluffs` | insufficient (0) | insufficient (4) | unclear (21) | insufficient (0) | insufficient (0) | insufficient (0) | insufficient (0) |
-| `slow_player` | insufficient (1) | insufficient (6) | inj, unclear (56) | insufficient (6) | insufficient (0) | insufficient (0) | insufficient (0) |
-| `preflop_loose` | insufficient (0) | insufficient (0) | costly (22) | insufficient (8) | insufficient (1) | inj, insufficient (7) | insufficient (0) |
-| `station_and_bluffer` | inj, costly (95) | insufficient (0) | unclear (23) | inj, insufficient (10) | insufficient (0) | insufficient (0) | insufficient (0) |
-| `station_then_fixed` | inj, costly (65) | insufficient (4) | unclear (21) | insufficient (7) | insufficient (0) | insufficient (0) | insufficient (0) |
-| `random` | inj, costly (30) | inj, unclear (24) | costly (39) | inj, insufficient (13) | insufficient (3) | insufficient (11) | unclear (58) |
+| `baseline` | insufficient (0) | insufficient (0) | insufficient (12) | insufficient (0) | insufficient (0) | insufficient (0) | insufficient (0) |
+| `baseline_vs_changing_opponent` | insufficient (1) | insufficient (6) | costly (32) | insufficient (0) | insufficient (2) | insufficient (0) | insufficient (0) |
+| `beginner_style` | costly (161) | insufficient (0) | unclear (42) | insufficient (0) | insufficient (0) | costly (17) | insufficient (0) |
+| `calling_station` | inj, costly (136) | insufficient (0) | unclear (22) | insufficient (0) | insufficient (0) | insufficient (0) | insufficient (0) |
+| `river_station` | inj, costly (42) | insufficient (0) | insufficient (9) | insufficient (0) | insufficient (1) | insufficient (0) | insufficient (0) |
+| `big_bet_station` | inj, insufficient (4) | insufficient (0) | unclear (16) | insufficient (0) | insufficient (0) | insufficient (0) | insufficient (0) |
+| `over_folder` | insufficient (0) | inj, unclear (42) | insufficient (11) | insufficient (0) | insufficient (1) | insufficient (0) | insufficient (0) |
+| `over_bluffer` | insufficient (0) | insufficient (3) | unclear (19) | inj, insufficient (0) | insufficient (0) | insufficient (0) | insufficient (0) |
+| `never_bluffs` | insufficient (1) | insufficient (0) | unclear (21) | insufficient (0) | insufficient (0) | insufficient (0) | insufficient (0) |
+| `slow_player` | insufficient (1) | insufficient (1) | inj, unclear (56) | insufficient (0) | insufficient (0) | insufficient (0) | insufficient (0) |
+| `preflop_loose` | insufficient (0) | insufficient (0) | costly (22) | insufficient (0) | insufficient (1) | inj, insufficient (7) | insufficient (0) |
+| `station_and_bluffer` | inj, costly (115) | insufficient (0) | unclear (23) | inj, insufficient (0) | insufficient (0) | insufficient (0) | insufficient (0) |
+| `station_then_fixed` | inj, costly (78) | insufficient (1) | unclear (21) | insufficient (0) | insufficient (0) | insufficient (0) | insufficient (0) |
+| `random` | inj, costly (40) | inj, unclear (22) | unclear (45) | inj, insufficient (6) | insufficient (4) | insufficient (13) | gains (44) |
 
 ### Concentration and trend checks (N=800 bootstrap; full sequence)
 
-- v0.4.5 `beginner_style`: leaks naming a condition that was not injected: 86%
+- v0.4.5 `beginner_style`: leaks naming a condition that was not injected: 57%
 - v0.4.5 `calling_station`: leaks naming a condition that was not injected: 100%
 - v0.4.5 `river_station`: target condition named when the leak is found: river 100%
 - v0.4.5 `big_bet_station`: target condition named when the leak is found: large_bets –
-- v0.4.5 `station_and_bluffer`: leaks naming a condition that was not injected: 83%
+- v0.4.5 `station_and_bluffer`: leaks naming a condition that was not injected: 91%
 - v0.4.5 `station_then_fixed`: leaks naming a condition that was not injected: 100%
-- v0.4.5 `random`: leaks naming a condition that was not injected: 41%
-- v0.4.4 `beginner_style`: leaks naming a condition that was not injected: 96%
+- v0.4.5 `random`: leaks naming a condition that was not injected: 16%
+- v0.4.4 `beginner_style`: leaks naming a condition that was not injected: 88%
 - v0.4.4 `calling_station`: leaks naming a condition that was not injected: 100%
 - v0.4.4 `river_station`: target condition named when the leak is found: river 100%
 - v0.4.4 `big_bet_station`: target condition named when the leak is found: large_bets –
-- v0.4.4 `station_and_bluffer`: leaks naming a condition that was not injected: 99%
+- v0.4.4 `station_and_bluffer`: leaks naming a condition that was not injected: 100%
 - v0.4.4 `station_then_fixed`: leaks naming a condition that was not injected: 100%
-- v0.4.4 `random`: leaks naming a condition that was not injected: 77%
+- v0.4.4 `random`: leaks naming a condition that was not injected: 65%
 - `baseline` ever reported when re-checked every 25 hands: v0.4.5 none; v0.4.4 none
 - `baseline_vs_changing_opponent` ever reported when re-checked every 25 hands: v0.4.5 none; v0.4.4 none
 - v0.4.5 `beginner_style` full run: trends called_without_odds: no_clear_change
@@ -441,8 +437,9 @@ Expected counts over all (policy, weakness) pairs. *Injected*: positives are the
 - v0.4.5 `station_and_bluffer` full run: trends called_without_odds: no_clear_change
 - v0.4.4 `station_and_bluffer` full run: trends called_without_odds: no_clear_change
 - `station_and_bluffer` ever reported when re-checked every 25 hands: v0.4.5 ['called_without_odds']; v0.4.4 ['called_without_odds']
+- v0.4.5 `station_then_fixed` full run: trends called_without_odds: no_clear_change
 - v0.4.4 `station_then_fixed` full run: trends called_without_odds: no_clear_change
 - `station_then_fixed` ever reported when re-checked every 25 hands: v0.4.5 ['called_without_odds']; v0.4.4 ['called_without_odds']
-- v0.4.5 `random` full run: trends called_without_odds: no_clear_change, pot_odds_mixed: no_clear_change
-- v0.4.4 `random` full run: trends called_without_odds: no_clear_change, pot_odds_mixed: no_clear_change, folded_with_odds: no_clear_change
+- v0.4.5 `random` full run: trends called_without_odds: no_clear_change
+- v0.4.4 `random` full run: trends called_without_odds: no_clear_change, folded_with_odds: no_clear_change
 - `random` ever reported when re-checked every 25 hands: v0.4.5 ['called_without_odds', 'pot_odds_mixed']; v0.4.4 ['called_without_odds', 'folded_with_odds', 'pot_odds_mixed']

@@ -178,6 +178,8 @@ class DecisionAnalysis:
     lesson: dict[str, Any] = field(default_factory=dict)
     best: list[str] = field(default_factory=list)  # keys of options within noise of the top
     chosen: str | None = None
+    # The option the verdict on the chosen one was measured against (its alternative).
+    compared: str | None = None
     grade: str = "ungraded"
     confidence: str = "low"  # how much the grade can be trusted: low / medium / high
     ev_loss: float = 0.0  # chips below the best option (estimated)
@@ -832,6 +834,7 @@ def grade_option(a: DecisionAnalysis, key: str) -> DecisionAnalysis:
     alternatives this way).
     """
     a.chosen = key
+    a.compared = None
     a.tags = []
     if a.spot == "unopened":
         _grade_guideline(a, key)
@@ -949,11 +952,21 @@ def _grade_ev(a: DecisionAnalysis, key: str) -> None:
         and (o.basis == "pot odds" or best_po is None or (o.ev or 0.0) > best_po + noise)
     ]
     loss = max(0.0, best_ev - chosen.ev)
-    a.ev_loss = loss
-    pot = max(a.pot, a.big_blind)
-    frac = loss / pot
     top = next(o for o in valued if o.key == a.best[0]) if a.best else valued[0]
     top = max((o for o in valued if o.key in a.best), key=lambda o: o.ev or 0.0, default=top)
+    # Facing a bet, a call or fold is judged against the other pot-odds option (fold or
+    # call), never against a raise valued only by the fold model. Calibration (v0.4.5 and
+    # v0.4.7, docs/calibration.md) played such hands out: a call graded down because a
+    # fold-model raise scored higher did better than that raise (+7.1 ± 4.1 bb), whether
+    # or not the call itself paid. When the call did not pay, the honest verdict is
+    # "folding was better", which the oracle confirms; the raise stays listed as an option.
+    if a.spot == "facing_bet" and chosen.basis == "pot odds" and top.basis == "fold model":
+        top = max((o for o in valued if o.basis == "pot odds"), key=lambda o: o.ev or 0.0)
+        loss = max(0.0, (top.ev or 0.0) - chosen.ev)
+    a.ev_loss = loss
+    a.compared = top.key if top.key != key else None
+    pot = max(a.pot, a.big_blind)
+    frac = loss / pot
 
     if loss <= noise:
         grade = "good"
@@ -984,18 +997,19 @@ def _grade_ev(a: DecisionAnalysis, key: str) -> None:
     if grade == "questionable" and uses_fold_model and po_loss / pot <= MISTAKE_AT:
         if frac <= 2 * QUESTIONABLE_AT:
             grade = "close"
-    # Facing a bet, a call or fold that is right on pot odds is not graded down because a
-    # raise scores higher under the assumed fold rate. Calibration (v0.4.5, see
-    # docs/calibration.md) played such hands out with the real cards and opponents: the
-    # player's call or fold did better than the raise the fold model preferred, so the
-    # raise is shown as an option, not as the answer.
-    raise_only = (
-        a.spot == "facing_bet"
-        and chosen.basis == "pot odds"
-        and top.basis == "fold model"
-        and po_loss <= noise
-    )
-    if raise_only and grade in ("questionable", "mistake"):
+    # A bet where checking was possible, whose whole deficit comes from the fold model, is
+    # not flagged as overaggressive. Calibration played these bets out against the real
+    # opponents: on the turn and river they did better than checking (river +2.4 ± 2.2 bb
+    # over 79 flags in v0.4.5). The fold-model diagnostic shows why: these opponents fold
+    # to a bet far more often than the minimum-defence rate assumes (river 77% measured
+    # against 38% assumed, turn 61% against 38%), which outweighs that the hands that
+    # call are stronger than modelled.
+    if (
+        a.spot != "facing_bet"
+        and chosen.basis == "fold model"
+        and top.basis == "pot odds"
+        and grade in ("questionable", "mistake")
+    ):
         grade = "close"
     if po_loss / pot > MISTAKE_AT and confidence == "low" and a.street != "preflop":
         confidence = "medium"  # the pot-odds part alone already settles it
@@ -1006,9 +1020,13 @@ def _grade_ev(a: DecisionAnalysis, key: str) -> None:
     # against the tighter and the looser range: a choice flagged here must also be flagged
     # there, and a choice called good must not be a clear error there.
     flagged = grade in ("questionable", "mistake")
+    # The same options as the verdict itself: a call or fold facing a bet is compared
+    # only with the other pot-odds option.
+    pot_odds_only = a.spot == "facing_bet" and chosen.basis == "pot odds"
+    compare = {o.key for o in valued if not pot_odds_only or o.basis == "pot odds"}
     flips: list[dict[str, Any]] = []
     for rc in a.range_check:
-        evs = {k: v for k, v in rc["evs"].items() if k in by_key and by_key[k].ev is not None}
+        evs = {k: v for k, v in rc["evs"].items() if k in compare}
         if key not in evs:
             continue
         v_loss = max(evs.values()) - evs[key]
@@ -1039,6 +1057,12 @@ def _grade_ev(a: DecisionAnalysis, key: str) -> None:
         confidence = "low"
         if grade == "mistake":
             grade = "questionable"
+        # A fold whose call needs 70% or more of its equity realised is not flagged:
+        # folded hands are usually weak and out of position, and calibration found such
+        # folds did better than the call (v0.4.5 run: +3.5 bb preflop, +5.4 bb later).
+        if chosen.action == "fold" and r is not None and r >= REALIZATION_LOW:
+            if grade == "questionable":
+                grade = "close"
     a.grade, a.confidence = grade, confidence
 
     # Recurring-mistake tags (only for decisions worth flagging).
@@ -1132,6 +1156,41 @@ def _tags(a: DecisionAnalysis, chosen: Option, top: Option) -> list[str]:
     return []
 
 
+def _extreme_note(eq: float) -> str:
+    """A caveat when the equity estimate is exactly none or all of the pot.
+
+    The estimated range is a hard cut (the strongest share of hands plus strong draws), so
+    it contains no bluffs or odd holdings; a "0%" or "100%" against it is an artefact of
+    that model, not a certainty about the opponent.
+    """
+    if eq <= 0.0:
+        return (
+            " That 0% is against PokerLab's estimate of their range, which leaves out "
+            "bluffs and unusual hands; against a real opponent it is small, not zero."
+        )
+    if eq >= 1.0:
+        return (
+            " That 100% is against PokerLab's estimate of their range, which leaves out "
+            "unusual hands; against a real opponent it is very likely, not certain."
+        )
+    return ""
+
+
+def _assumed_raise(a: DecisionAnalysis, chosen: Option) -> Option | None:
+    """Facing a bet, the fold-model raise that scored clearly higher than a call or fold.
+
+    Such a raise is shown as an option resting on an assumed fold rate, not as the answer
+    (see the facing-bet rule in :func:`_grade_ev`).
+    """
+    if a.spot != "facing_bet" or chosen.basis != "pot odds":
+        return None
+    raises = [o for o in a.options if o.basis == "fold model" and o.ev is not None]
+    best = max(raises, key=lambda o: o.ev or 0.0, default=None)
+    if best is None or (best.ev or 0.0) - (chosen.ev or 0.0) <= _noise(a):
+        return None
+    return best
+
+
 def _explain(a: DecisionAnalysis, chosen: Option, top: Option, loss: float) -> str:
     bb = a.big_blind
     eq = a.equity or 0.0
@@ -1141,17 +1200,11 @@ def _explain(a: DecisionAnalysis, chosen: Option, top: Option, loss: float) -> s
         parts.append(
             f"You needed {_pct(need)} equity to call {a.to_call} into {a.pot}. Against the "
             f"hands the opponent is likely to have here, your {a.hand} has about {_pct(eq)}."
+            + _extreme_note(eq)
         )
         if chosen.action == "fold":
-            call_ev = next((o.ev for o in a.options if o.key == "call"), None)
             if top.action == "fold" or loss <= _noise(a):
                 parts.append("Folding gave up little or nothing.")
-            elif top.basis == "fold model" and (call_ev is None or call_ev <= _noise(a)):
-                parts.append(
-                    "Calling would not pay at this price. "
-                    f"{top.label} scored higher only if they fold as often as the model "
-                    "assumes, which did not hold up when PokerLab played such hands out."
-                )
             else:
                 parts.append(
                     f"That is enough to continue: {top.label.lower()} was worth about "
@@ -1163,17 +1216,21 @@ def _explain(a: DecisionAnalysis, chosen: Option, top: Option, loss: float) -> s
                 f"Calling was worth about {_bb(ev, bb)} by this estimate"
                 + (", so folding scored better." if ev < 0 and top.action == "fold" else ".")
             )
-            if top.action in ("raise",) and loss > _noise(a):
-                parts.append(
-                    f"{top.label} scored higher, but only if they fold as often as the model "
-                    "assumes; raises like this did not hold up when PokerLab played such hands "
-                    "out, so treat it as an option, not the answer."
-                )
-        else:
+        best_raise = _assumed_raise(a, chosen)
+        if best_raise is not None:
+            parts.append(
+                f"{best_raise.label} scored higher, but only if they fold as often as the "
+                "model assumes; raises like this did not hold up when PokerLab played such "
+                "hands out, so treat it as an option, not the answer."
+            )
+        if chosen.action not in ("fold", "call"):
             parts.append(_raise_sentence(chosen, top, loss, a))
     else:
         if chosen.action == "check":
-            parts.append(f"Your {a.hand} has about {_pct(eq)} equity against their likely hands.")
+            parts.append(
+                f"Your {a.hand} has about {_pct(eq)} equity against their likely hands."
+                + _extreme_note(eq)
+            )
             if top.action == "check" or loss <= _noise(a):
                 parts.append("Checking is reasonable: betting did not score clearly better.")
             else:
@@ -1183,8 +1240,17 @@ def _explain(a: DecisionAnalysis, chosen: Option, top: Option, loss: float) -> s
                     "called) to bet for value."
                 )
         else:
-            parts.append(f"Your {a.hand} has about {_pct(eq)} equity against their likely hands.")
+            parts.append(
+                f"Your {a.hand} has about {_pct(eq)} equity against their likely hands."
+                + _extreme_note(eq)
+            )
             parts.append(_raise_sentence(chosen, top, loss, a))
+            if top.action == "check" and loss > _noise(a) and chosen.basis == "fold model":
+                parts.append(
+                    "That gap rests entirely on the assumed fold rate and calling range; "
+                    "bets like this did better than the model says when PokerLab played "
+                    "such hands out, so it is not counted as a mistake."
+                )
     return " ".join(parts)
 
 
@@ -1331,6 +1397,7 @@ def build_lesson(
         fold_model = (chosen is not None and chosen.basis == "fold model") or (
             top is not None and top.basis == "fold model"
         )
+        fold_model = fold_model or (chosen is not None and _assumed_raise(a, chosen) is not None)
         if fold_model:
             step("Bet and raise values also assume how often they fold.", "model")
         if chosen is not None and chosen.basis == "guideline":
@@ -1344,6 +1411,12 @@ def build_lesson(
             f"The guideline suggests {better[0].lower()} instead."
             if better
             else "Your choice matches the guideline."
+        )
+    elif (raise_opt := _assumed_raise(a, chosen)) is not None and loss <= _noise(a):
+        alternative = (
+            f"{raise_opt.label} scored about {_bb((raise_opt.ev or 0) - (chosen.ev or 0), bb)} "
+            "better, but this rests on an assumed fold rate that did not hold up when "
+            "PokerLab played such hands out: an option, not the answer."
         )
     elif a.chosen in a.best or loss <= _noise(a):
         alternative = "No option scored clearly better by these estimates."

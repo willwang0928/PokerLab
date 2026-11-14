@@ -1,8 +1,10 @@
-# Calibration of the coach and the leak detector (v0.4.5)
+# Calibration of the coach and the leak detector (v0.4.5, v0.4.7)
 
 This document describes how PokerLab's coaching and leak detection were evaluated
 empirically, what was found, and what was changed. The generated numbers are in
-[`calibration/report.md`](calibration/report.md) (raw: `calibration/results.json`).
+[`calibration/report.md`](calibration/report.md) (raw: `calibration/results.json`); since
+v0.4.7 they describe the v0.4.7 coach (§7). The v0.4.5 numbers quoted in §2–§6 are in the
+same files at the `v0.4.5` tag.
 
 Everything here is an estimate from simulation against PokerLab's own opponents. Nothing
 is compared with game-theory-optimal play.
@@ -346,7 +348,7 @@ re-evaluates its flags with the oracle.
 
 The raise-facing-a-bet error is mostly gone: such flags fell by 86%, and the categories
 that leaned the wrong way are now indistinguishable from zero. **Three weaknesses remain
-and are open** (not fixed in v0.4.5; they are the starting point for v0.4.7):
+and are open** (not fixed in v0.4.5; v0.4.7 addresses them, see §7):
 
 * **"Overaggressive" river bets** (bet where the coach preferred a check): the bet did
   better, +2.4 ± 2.2 bb over 79 flags (coach's own estimate −2.7). This rule was not
@@ -399,3 +401,86 @@ seed the bootstrap, which is randomised per interpreter, so two runs on identica
 sessions gave different tables (e.g. river_station 11% vs 21%). Seeds are now derived with
 CRC-32 from the run seed (`report.boot_seed`, tested across `PYTHONHASHSEED` values), and
 two consecutive runs produce byte-identical `report.md` and `results.json`.
+
+### 7. v0.4.7: the three open weaknesses, measured and fixed
+
+**Why the fold model was wrong, measured.** `python -m pokerlab.calibration.diagnose`
+(2 sessions × 100 hands for each of four policies, 8 opponent responses per probe) applied
+the coach's candidate bets and raises to copies of real game states and let the opponent,
+holding its real cards, respond. Against the Intermediate opponent:
+
+| spot | n | fold rate assumed | fold rate measured | equity when called, assumed | measured |
+|---|---|---|---|---|---|
+| bet, flop | 1,467 | 38% | 51% | 36% | 36% |
+| bet, turn | 1,082 | 38% | 61% | 31% | 27% |
+| bet, river | 784 | 38% | 77% | 18% | 11% |
+| raise facing a bet, flop | 184 | 50% | 37% | 30% | 21% |
+| raise facing a bet, turn | 176 | 50% | 35% | 28% | 17% |
+| raise facing a bet, river | 112 | 49% | 50% | 7% | 2% |
+
+The minimum-defence model is wrong in opposite directions in the two kinds of spot. When
+checked to, these opponents fold to a bet far *more* often than it assumes (they check
+weak hands and give up), which outweighs that the hands that call are stronger than
+modelled: bets look worse than they are. Facing a bet they have already shown strength,
+fold to a raise *less* often, and continue with stronger hands: raises look better than
+they are. After the player checks, the opponent bets 35–39% of the time, which the check
+value (equity × pot, as if checked down) leaves out. The coach's fold model was not
+re-fitted to these numbers (that would tune the coach to PokerLab's own bots and one
+difficulty level); instead verdicts that rest only on it are no longer flagged where the
+oracle shows them wrong.
+
+**Changes.**
+
+* *Facing a bet, a call or fold is judged against the other pot-odds option only.* A
+  raise valued by the fold model is listed as an option resting on an assumed fold rate,
+  never the comparison the verdict is made against. A call that is right on pot odds is
+  now *good* (v0.4.5: *close*); a call that does not pay is compared with folding, so the
+  flag is "calling without the odds" rather than an untagged "should have raised". The
+  range-robustness check compares the same options. The coach records the option each
+  verdict was measured against (`compared` in the analysis), and the oracle now tests
+  that comparison; before, it tested against the highest-scoring option.
+* *A bet where checking was possible is not flagged "overaggressive" when its whole
+  deficit comes from the fold model.* It is graded at most *close*, and the explanation
+  says the gap rests on an assumed fold rate. "Missed value" (checking where a bet scored
+  higher) is unchanged: the same bias makes it conservative, and the oracle confirms it.
+* *A fold before the river is not flagged when the call needed 70% or more of its equity
+  realised* (the same threshold above which a call is a judgement call). In the v0.4.5
+  run such folds did better than the call (preflop +3.5 bb, later streets +5.4 bb; small
+  samples, and the discovery run regraded the same hands, so it is not an independent
+  replication).
+* *"0%" and "100%" equity statements say they are against PokerLab's range estimate*,
+  which has no bluffs or odd holdings, so they are small or likely, not certain.
+
+**Results (report §3, oracle Δ bb per flagged decision, 95%; v0.4.5 → v0.4.7):**
+
+| flags | v0.4.5 coach | v0.4.7 coach |
+|---|---|---|
+| "overaggressive", all streets | 95 flags, **+3.0 ± 2.0** (the bet did better) | 6 flags (insufficient) |
+| untagged (mostly "should have raised" facing a bet) | 113, **+5.5 ± 3.0** | 9 (insufficient) |
+| "folded with the odds" | 135, +0.9 ± 3.4 | 75, +0.5 ± 4.7 (no clear error) |
+| calling without the odds | 487, −10.6 ± 1.2 | 579, **−11.1 ± 1.2** (92% of them lost chips) |
+| calling without the odds, turn | | 173, −12.4 ± 2.1 |
+| "missed value" | 344, −1.3 ± 0.9 | 351, −1.4 ± 0.8 |
+| decisions graded good (control) | not worse at any confidence | not worse at any confidence (high −0.3 ± 1.8) |
+
+Every remaining flag category with a clear verdict now points the right way, with one
+exception explained below. The 92 extra "calling without the odds" flags are mostly the
+former "should have raised" ones; tested against folding, they are confirmed costly.
+
+**Leak detection** (same detector, v0.4.7 coach grades): calling_station is found in 71%
+of 100-hand samples (v0.4.5 coach: 48%), river_station in 23% of 800-hand samples (16%),
+station_then_fixed in 60% (37%), and beginner_style's oracle-confirmed calling leak in
+99% (73%). Precision against oracle-confirmed weaknesses stays 100%; against injected
+tendencies it is 81% at 800 hands (84%), the difference being beginner_style's real but
+not injected leak, which that measure counts as a false positive. The baseline player is
+still never reported at any sample size. Recall rose because more costly calls are now
+graded confidently against folding.
+
+**Open: preflop folds by a random player.** "Folding too tight preflop" flags did better
+than the call (+4.0 ± 2.4 bb over 44; v0.4.5: +1.9 ± 2.1 over 58). All 44 come from the
+`random` policy facing a raise, with the call needing 50–70% realisation. The oracle
+values the call with the player continuing on its own policy, and random postflop play
+loses what the call was worth; the coach's verdict assumes competent later play. These
+flags are low confidence and never produce a leak report. They show the limit of a
+one-street estimate for a player who plays later streets badly, not an error to tune
+against.

@@ -10,204 +10,204 @@
   "v0.4.4": {
    "100": {
     "injected": {
-     "fn": 10.85,
-     "fp": 0.28,
-     "fpr": 0.0032941176470588237,
-     "precision": 0.8847736625514404,
-     "recall": 0.16538461538461538,
-     "tn": 84.72,
-     "tp": 2.15
+     "fn": 10.450000000000001,
+     "fp": 0.5,
+     "fpr": 0.0058823529411764705,
+     "precision": 0.8360655737704918,
+     "recall": 0.19615384615384615,
+     "tn": 84.5,
+     "tp": 2.5500000000000003
     },
     "oracle_confirmed": {
-     "fn": 7.6899999999999995,
+     "fn": 6.07,
      "fp": 0.0,
      "fpr": 0.0,
      "precision": 1.0,
-     "recall": 0.231,
+     "recall": 0.32555555555555554,
      "tn": 1.0,
-     "tp": 2.31
+     "tp": 2.9299999999999997
     }
    },
    "200": {
     "injected": {
-     "fn": 10.11,
-     "fp": 0.57,
-     "fpr": 0.006705882352941176,
-     "precision": 0.8352601156069365,
-     "recall": 0.2223076923076923,
-     "tn": 84.43,
-     "tp": 2.8899999999999997
+     "fn": 9.549999999999999,
+     "fp": 0.74,
+     "fpr": 0.008705882352941178,
+     "precision": 0.8233890214797136,
+     "recall": 0.2653846153846154,
+     "tn": 84.25999999999999,
+     "tp": 3.45
     },
     "oracle_confirmed": {
-     "fn": 6.839999999999999,
+     "fn": 5.109999999999999,
      "fp": 0.0,
      "fpr": 0.0,
      "precision": 1.0,
-     "recall": 0.316,
+     "recall": 0.43222222222222223,
      "tn": 1.0,
-     "tp": 3.1599999999999997
+     "tp": 3.89
     }
    },
    "400": {
     "injected": {
-     "fn": 9.33,
-     "fp": 0.67,
-     "fpr": 0.00788235294117647,
-     "precision": 0.8456221198156683,
-     "recall": 0.2823076923076923,
-     "tn": 84.33,
-     "tp": 3.67
+     "fn": 8.989999999999998,
+     "fp": 0.87,
+     "fpr": 0.01023529411764706,
+     "precision": 0.8217213114754098,
+     "recall": 0.3084615384615385,
+     "tn": 84.13,
+     "tp": 4.01
     },
     "oracle_confirmed": {
-     "fn": 6.0200000000000005,
+     "fn": 4.48,
      "fp": 0.0,
      "fpr": 0.0,
      "precision": 1.0,
-     "recall": 0.398,
+     "recall": 0.5022222222222221,
      "tn": 1.0,
-     "tp": 3.98
+     "tp": 4.52
     }
    },
    "50": {
     "injected": {
-     "fn": 11.919999999999998,
-     "fp": 0.22,
-     "fpr": 0.0025882352941176473,
-     "precision": 0.8307692307692308,
-     "recall": 0.08307692307692308,
-     "tn": 84.78,
-     "tp": 1.0799999999999998
+     "fn": 11.63,
+     "fp": 0.35,
+     "fpr": 0.004117647058823529,
+     "precision": 0.7965116279069768,
+     "recall": 0.10538461538461538,
+     "tn": 84.65,
+     "tp": 1.3699999999999999
     },
     "oracle_confirmed": {
-     "fn": 8.72,
+     "fn": 7.3,
      "fp": 0.0,
      "fpr": 0.0,
      "precision": 1.0,
-     "recall": 0.128,
+     "recall": 0.18888888888888888,
      "tn": 1.0,
-     "tp": 1.28
+     "tp": 1.7
     }
    },
    "800": {
     "injected": {
-     "fn": 8.43,
-     "fp": 0.89,
-     "fpr": 0.010470588235294117,
-     "precision": 0.836996336996337,
-     "recall": 0.3515384615384616,
-     "tn": 84.11,
-     "tp": 4.57
+     "fn": 8.32,
+     "fp": 0.99,
+     "fpr": 0.011647058823529413,
+     "precision": 0.8253968253968254,
+     "recall": 0.36,
+     "tn": 84.00999999999999,
+     "tp": 4.68
     },
     "oracle_confirmed": {
-     "fn": 5.25,
+     "fn": 4.04,
      "fp": 0.0,
      "fpr": 0.0,
      "precision": 1.0,
-     "recall": 0.475,
+     "recall": 0.5511111111111111,
      "tn": 1.0,
-     "tp": 4.75
+     "tp": 4.96
     }
    }
   },
   "v0.4.5": {
    "100": {
     "injected": {
-     "fn": 11.729999999999999,
-     "fp": 0.22,
-     "fpr": 0.0025882352941176473,
-     "precision": 0.8523489932885906,
-     "recall": 0.0976923076923077,
-     "tn": 84.78,
-     "tp": 1.27
+     "fn": 11.17,
+     "fp": 0.33,
+     "fpr": 0.003882352941176471,
+     "precision": 0.8472222222222222,
+     "recall": 0.14076923076923079,
+     "tn": 84.67,
+     "tp": 1.83
     },
     "oracle_confirmed": {
-     "fn": 8.57,
+     "fn": 6.919999999999999,
      "fp": 0.0,
      "fpr": 0.0,
      "precision": 1.0,
-     "recall": 0.14299999999999996,
+     "recall": 0.23111111111111113,
      "tn": 1.0,
-     "tp": 1.4299999999999997
+     "tp": 2.08
     }
    },
    "200": {
     "injected": {
-     "fn": 10.87,
-     "fp": 0.26,
-     "fpr": 0.0030588235294117644,
-     "precision": 0.891213389121339,
-     "recall": 0.16384615384615384,
-     "tn": 84.74000000000001,
-     "tp": 2.13
+     "fn": 10.07,
+     "fp": 0.55,
+     "fpr": 0.006470588235294119,
+     "precision": 0.8419540229885056,
+     "recall": 0.2253846153846154,
+     "tn": 84.45,
+     "tp": 2.93
     },
     "oracle_confirmed": {
-     "fn": 7.76,
+     "fn": 5.7,
      "fp": 0.0,
      "fpr": 0.0,
      "precision": 1.0,
-     "recall": 0.22399999999999998,
+     "recall": 0.36666666666666664,
      "tn": 1.0,
-     "tp": 2.2399999999999998
+     "tp": 3.3
     }
    },
    "400": {
     "injected": {
-     "fn": 9.950000000000001,
-     "fp": 0.45,
-     "fpr": 0.005294117647058823,
-     "precision": 0.8714285714285713,
-     "recall": 0.23461538461538461,
-     "tn": 84.55,
-     "tp": 3.05
+     "fn": 9.31,
+     "fp": 0.84,
+     "fpr": 0.00988235294117647,
+     "precision": 0.814569536423841,
+     "recall": 0.28384615384615386,
+     "tn": 84.16,
+     "tp": 3.69
     },
     "oracle_confirmed": {
-     "fn": 6.85,
+     "fn": 4.84,
      "fp": 0.0,
      "fpr": 0.0,
      "precision": 1.0,
-     "recall": 0.31499999999999995,
+     "recall": 0.46222222222222226,
      "tn": 1.0,
-     "tp": 3.1499999999999995
+     "tp": 4.16
     }
    },
    "50": {
     "injected": {
-     "fn": 12.36,
-     "fp": 0.05,
-     "fpr": 0.0005882352941176471,
-     "precision": 0.9275362318840579,
-     "recall": 0.04923076923076923,
-     "tn": 84.95,
-     "tp": 0.64
+     "fn": 12.09,
+     "fp": 0.14,
+     "fpr": 0.0016470588235294118,
+     "precision": 0.8666666666666666,
+     "recall": 0.07,
+     "tn": 84.86,
+     "tp": 0.9100000000000001
     },
     "oracle_confirmed": {
-     "fn": 9.31,
+     "fn": 7.949999999999999,
      "fp": 0.0,
      "fpr": 0.0,
      "precision": 1.0,
-     "recall": 0.069,
+     "recall": 0.11666666666666667,
      "tn": 1.0,
-     "tp": 0.6900000000000001
+     "tp": 1.05
     }
    },
    "800": {
     "injected": {
-     "fn": 9.04,
-     "fp": 0.73,
-     "fpr": 0.008588235294117647,
-     "precision": 0.8443496801705758,
-     "recall": 0.3046153846153846,
-     "tn": 84.27,
-     "tp": 3.96
+     "fn": 8.67,
+     "fp": 0.99,
+     "fpr": 0.011647058823529413,
+     "precision": 0.8139097744360902,
+     "recall": 0.3330769230769231,
+     "tn": 84.00999999999999,
+     "tp": 4.33
     },
     "oracle_confirmed": {
-     "fn": 5.819999999999999,
+     "fn": 4.1899999999999995,
      "fp": 0.0,
      "fpr": 0.0,
      "precision": 1.0,
-     "recall": 0.418,
+     "recall": 0.5344444444444445,
      "tn": 1.0,
-     "tp": 4.18
+     "tp": 4.8100000000000005
     }
    }
   }
@@ -251,8 +251,8 @@
       "leaks_with_other_condition": null,
       "strength": {
        "bet_sizing": 0.0,
-       "called_without_odds": 0.0,
-       "folded_with_odds": 0.0,
+       "called_without_odds": 0.03,
+       "folded_with_odds": 0.29,
        "missed_value": 0.0,
        "overaggressive": 0.0,
        "preflop_loose": 0.0,
@@ -273,9 +273,9 @@
       "leaks_with_other_condition": null,
       "strength": {
        "bet_sizing": 0.0,
-       "called_without_odds": 0.0,
-       "folded_with_odds": 0.38,
-       "missed_value": 0.0,
+       "called_without_odds": 0.66,
+       "folded_with_odds": 1.0,
+       "missed_value": 0.07,
        "overaggressive": 0.0,
        "preflop_loose": 0.0,
        "preflop_tight": 0.0
@@ -294,11 +294,11 @@
       },
       "leaks_with_other_condition": null,
       "strength": {
-       "bet_sizing": 0.55,
-       "called_without_odds": 0.0,
-       "folded_with_odds": 0.76,
-       "missed_value": 0.0,
-       "overaggressive": 0.1,
+       "bet_sizing": 0.39,
+       "called_without_odds": 1.0,
+       "folded_with_odds": 1.0,
+       "missed_value": 0.05,
+       "overaggressive": 0.39,
        "preflop_loose": 0.0,
        "preflop_tight": 0.0
       },
@@ -317,10 +317,10 @@
       "leaks_with_other_condition": null,
       "strength": {
        "bet_sizing": 1.0,
-       "called_without_odds": 0.54,
-       "folded_with_odds": 0.93,
-       "missed_value": 0.0,
-       "overaggressive": 0.06,
+       "called_without_odds": 1.0,
+       "folded_with_odds": 1.0,
+       "missed_value": 0.05,
+       "overaggressive": 1.0,
        "preflop_loose": 0.0,
        "preflop_tight": 0.0
       },
@@ -364,7 +364,7 @@
       "strength": {
        "bet_sizing": 0.0,
        "called_without_odds": 0.0,
-       "folded_with_odds": 0.0,
+       "folded_with_odds": 0.05,
        "missed_value": 0.0,
        "overaggressive": 0.0,
        "preflop_loose": 0.0,
@@ -385,8 +385,8 @@
       "leaks_with_other_condition": null,
       "strength": {
        "bet_sizing": 0.0,
-       "called_without_odds": 0.0,
-       "folded_with_odds": 0.26,
+       "called_without_odds": 0.18,
+       "folded_with_odds": 0.84,
        "missed_value": 0.0,
        "overaggressive": 0.0,
        "preflop_loose": 0.0,
@@ -406,11 +406,11 @@
       },
       "leaks_with_other_condition": null,
       "strength": {
-       "bet_sizing": 0.03,
-       "called_without_odds": 0.0,
-       "folded_with_odds": 0.5,
-       "missed_value": 0.0,
-       "overaggressive": 0.0,
+       "bet_sizing": 0.05,
+       "called_without_odds": 0.98,
+       "folded_with_odds": 1.0,
+       "missed_value": 0.02,
+       "overaggressive": 0.05,
        "preflop_loose": 0.0,
        "preflop_tight": 0.0
       },
@@ -428,11 +428,11 @@
       },
       "leaks_with_other_condition": null,
       "strength": {
-       "bet_sizing": 0.97,
-       "called_without_odds": 0.05,
-       "folded_with_odds": 0.91,
-       "missed_value": 0.0,
-       "overaggressive": 0.03,
+       "bet_sizing": 1.0,
+       "called_without_odds": 1.0,
+       "folded_with_odds": 1.0,
+       "missed_value": 0.06,
+       "overaggressive": 1.0,
        "preflop_loose": 0.0,
        "preflop_tight": 0.0
       },
@@ -477,9 +477,9 @@
       "leaks_with_other_condition": null,
       "strength": {
        "bet_sizing": 0.0,
-       "called_without_odds": 0.0,
-       "folded_with_odds": 0.03,
-       "missed_value": 0.0,
+       "called_without_odds": 0.24,
+       "folded_with_odds": 0.24,
+       "missed_value": 0.01,
        "overaggressive": 0.0,
        "preflop_loose": 0.0,
        "preflop_tight": 0.0
@@ -498,11 +498,11 @@
       },
       "leaks_with_other_condition": null,
       "strength": {
-       "bet_sizing": 0.36,
-       "called_without_odds": 0.02,
-       "folded_with_odds": 0.08,
-       "missed_value": 0.0,
-       "overaggressive": 0.04,
+       "bet_sizing": 0.3,
+       "called_without_odds": 0.85,
+       "folded_with_odds": 0.58,
+       "missed_value": 0.01,
+       "overaggressive": 0.51,
        "preflop_loose": 0.0,
        "preflop_tight": 0.0
       },
@@ -520,11 +520,11 @@
       },
       "leaks_with_other_condition": null,
       "strength": {
-       "bet_sizing": 0.68,
-       "called_without_odds": 0.29,
-       "folded_with_odds": 0.07,
+       "bet_sizing": 0.67,
+       "called_without_odds": 1.0,
+       "folded_with_odds": 0.88,
        "missed_value": 0.0,
-       "overaggressive": 0.05,
+       "overaggressive": 1.0,
        "preflop_loose": 0.0,
        "preflop_tight": 0.0
       },
@@ -543,10 +543,10 @@
       "leaks_with_other_condition": null,
       "strength": {
        "bet_sizing": 0.49,
-       "called_without_odds": 0.71,
-       "folded_with_odds": 0.08,
+       "called_without_odds": 1.0,
+       "folded_with_odds": 1.0,
        "missed_value": 0.0,
-       "overaggressive": 0.0,
+       "overaggressive": 1.0,
        "preflop_loose": 0.0,
        "preflop_tight": 0.0
       },
@@ -589,8 +589,8 @@
       "leaks_with_other_condition": null,
       "strength": {
        "bet_sizing": 0.0,
-       "called_without_odds": 0.0,
-       "folded_with_odds": 0.01,
+       "called_without_odds": 0.01,
+       "folded_with_odds": 0.11,
        "missed_value": 0.0,
        "overaggressive": 0.0,
        "preflop_loose": 0.0,
@@ -610,11 +610,11 @@
       },
       "leaks_with_other_condition": null,
       "strength": {
-       "bet_sizing": 0.01,
-       "called_without_odds": 0.0,
-       "folded_with_odds": 0.02,
+       "bet_sizing": 0.03,
+       "called_without_odds": 0.42,
+       "folded_with_odds": 0.29,
        "missed_value": 0.0,
-       "overaggressive": 0.0,
+       "overaggressive": 0.03,
        "preflop_loose": 0.0,
        "preflop_tight": 0.0
       },
@@ -632,11 +632,11 @@
       },
       "leaks_with_other_condition": null,
       "strength": {
-       "bet_sizing": 0.38,
-       "called_without_odds": 0.01,
-       "folded_with_odds": 0.0,
+       "bet_sizing": 0.56,
+       "called_without_odds": 0.97,
+       "folded_with_odds": 0.83,
        "missed_value": 0.0,
-       "overaggressive": 0.01,
+       "overaggressive": 1.0,
        "preflop_loose": 0.0,
        "preflop_tight": 0.0
       },
@@ -654,11 +654,11 @@
       },
       "leaks_with_other_condition": null,
       "strength": {
-       "bet_sizing": 0.89,
-       "called_without_odds": 0.49,
-       "folded_with_odds": 0.04,
+       "bet_sizing": 0.95,
+       "called_without_odds": 1.0,
+       "folded_with_odds": 0.99,
        "missed_value": 0.0,
-       "overaggressive": 0.0,
+       "overaggressive": 1.0,
        "preflop_loose": 0.0,
        "preflop_tight": 0.0
       },
@@ -671,14 +671,14 @@
      "50": {
       "leak": {
        "bet_sizing": 0.0,
-       "called_without_odds": 0.22,
+       "called_without_odds": 0.35,
        "folded_with_odds": 0.0,
        "missed_value": 0.0,
        "overaggressive": 0.0,
        "preflop_loose": 0.0,
        "preflop_tight": 0.0
       },
-      "leaks_with_other_condition": 0.6363636363636364,
+      "leaks_with_other_condition": 0.45714285714285713,
       "strength": {
        "bet_sizing": 0.0,
        "called_without_odds": 0.0,
@@ -693,19 +693,19 @@
      "100": {
       "leak": {
        "bet_sizing": 0.0,
-       "called_without_odds": 0.28,
+       "called_without_odds": 0.5,
        "folded_with_odds": 0.0,
        "missed_value": 0.0,
        "overaggressive": 0.0,
        "preflop_loose": 0.0,
        "preflop_tight": 0.0
       },
-      "leaks_with_other_condition": 0.5714285714285714,
+      "leaks_with_other_condition": 0.46,
       "strength": {
        "bet_sizing": 0.0,
        "called_without_odds": 0.0,
-       "folded_with_odds": 0.01,
-       "missed_value": 0.0,
+       "folded_with_odds": 0.02,
+       "missed_value": 0.01,
        "overaggressive": 0.0,
        "preflop_loose": 0.0,
        "preflop_tight": 0.0
@@ -715,20 +715,20 @@
      "200": {
       "leak": {
        "bet_sizing": 0.0,
-       "called_without_odds": 0.57,
+       "called_without_odds": 0.74,
        "folded_with_odds": 0.0,
        "missed_value": 0.0,
        "overaggressive": 0.0,
        "preflop_loose": 0.0,
        "preflop_tight": 0.0
       },
-      "leaks_with_other_condition": 0.7543859649122807,
+      "leaks_with_other_condition": 0.6486486486486487,
       "strength": {
-       "bet_sizing": 0.46,
+       "bet_sizing": 0.28,
        "called_without_odds": 0.0,
-       "folded_with_odds": 0.69,
+       "folded_with_odds": 0.77,
        "missed_value": 0.0,
-       "overaggressive": 0.05,
+       "overaggressive": 0.28,
        "preflop_loose": 0.0,
        "preflop_tight": 0.0
       },
@@ -737,20 +737,20 @@
      "400": {
       "leak": {
        "bet_sizing": 0.0,
-       "called_without_odds": 0.67,
+       "called_without_odds": 0.87,
        "folded_with_odds": 0.0,
        "missed_value": 0.0,
        "overaggressive": 0.0,
        "preflop_loose": 0.0,
        "preflop_tight": 0.0
       },
-      "leaks_with_other_condition": 0.835820895522388,
+      "leaks_with_other_condition": 0.6666666666666666,
       "strength": {
        "bet_sizing": 1.0,
        "called_without_odds": 0.0,
        "folded_with_odds": 1.0,
        "missed_value": 0.0,
-       "overaggressive": 0.08,
+       "overaggressive": 1.0,
        "preflop_loose": 0.0,
        "preflop_tight": 0.0
       },
@@ -759,20 +759,20 @@
      "800": {
       "leak": {
        "bet_sizing": 0.0,
-       "called_without_odds": 0.89,
+       "called_without_odds": 0.99,
        "folded_with_odds": 0.0,
        "missed_value": 0.0,
        "overaggressive": 0.0,
        "preflop_loose": 0.0,
        "preflop_tight": 0.0
       },
-      "leaks_with_other_condition": 0.9550561797752809,
+      "leaks_with_other_condition": 0.8787878787878788,
       "strength": {
        "bet_sizing": 1.0,
        "called_without_odds": 0.0,
        "folded_with_odds": 1.0,
        "missed_value": 0.0,
-       "overaggressive": 0.0,
+       "overaggressive": 1.0,
        "preflop_loose": 0.0,
        "preflop_tight": 0.0
       },
@@ -783,14 +783,14 @@
      "50": {
       "leak": {
        "bet_sizing": 0.0,
-       "called_without_odds": 0.05,
+       "called_without_odds": 0.14,
        "folded_with_odds": 0.0,
        "missed_value": 0.0,
        "overaggressive": 0.0,
        "preflop_loose": 0.0,
        "preflop_tight": 0.0
       },
-      "leaks_with_other_condition": 0.2,
+      "leaks_with_other_condition": 0.07142857142857142,
       "strength": {
        "bet_sizing": 0.0,
        "called_without_odds": 0.0,
@@ -805,14 +805,14 @@
      "100": {
       "leak": {
        "bet_sizing": 0.0,
-       "called_without_odds": 0.22,
+       "called_without_odds": 0.33,
        "folded_with_odds": 0.0,
        "missed_value": 0.0,
        "overaggressive": 0.0,
        "preflop_loose": 0.0,
        "preflop_tight": 0.0
       },
-      "leaks_with_other_condition": 0.13636363636363635,
+      "leaks_with_other_condition": 0.06060606060606061,
       "strength": {
        "bet_sizing": 0.0,
        "called_without_odds": 0.0,
@@ -827,18 +827,18 @@
      "200": {
       "leak": {
        "bet_sizing": 0.0,
-       "called_without_odds": 0.26,
+       "called_without_odds": 0.55,
        "folded_with_odds": 0.0,
        "missed_value": 0.0,
        "overaggressive": 0.0,
        "preflop_loose": 0.0,
        "preflop_tight": 0.0
       },
-      "leaks_with_other_condition": 0.23076923076923078,
+      "leaks_with_other_condition": 0.18181818181818182,
       "strength": {
        "bet_sizing": 0.0,
        "called_without_odds": 0.0,
-       "folded_with_odds": 0.07,
+       "folded_with_odds": 0.12,
        "missed_value": 0.0,
        "overaggressive": 0.0,
        "preflop_loose": 0.0,
@@ -849,20 +849,20 @@
      "400": {
       "leak": {
        "bet_sizing": 0.0,
-       "called_without_odds": 0.45,
+       "called_without_odds": 0.84,
        "folded_with_odds": 0.0,
        "missed_value": 0.0,
        "overaggressive": 0.0,
        "preflop_loose": 0.0,
        "preflop_tight": 0.0
       },
-      "leaks_with_other_condition": 0.4666666666666667,
+      "leaks_with_other_condition": 0.23809523809523808,
       "strength": {
-       "bet_sizing": 0.92,
+       "bet_sizing": 0.95,
        "called_without_odds": 0.0,
-       "folded_with_odds": 0.97,
+       "folded_with_odds": 1.0,
        "missed_value": 0.0,
-       "overaggressive": 0.01,
+       "overaggressive": 0.95,
        "preflop_loose": 0.0,
        "preflop_tight": 0.0
       },
@@ -871,20 +871,20 @@
      "800": {
       "leak": {
        "bet_sizing": 0.0,
-       "called_without_odds": 0.73,
+       "called_without_odds": 0.99,
        "folded_with_odds": 0.0,
        "missed_value": 0.0,
        "overaggressive": 0.0,
        "preflop_loose": 0.0,
        "preflop_tight": 0.0
       },
-      "leaks_with_other_condition": 0.863013698630137,
+      "leaks_with_other_condition": 0.5656565656565656,
       "strength": {
        "bet_sizing": 1.0,
        "called_without_odds": 0.0,
        "folded_with_odds": 1.0,
        "missed_value": 0.0,
-       "overaggressive": 0.02,
+       "overaggressive": 1.0,
        "preflop_loose": 0.0,
        "preflop_tight": 0.0
       },
@@ -931,8 +931,8 @@
       "leaks_with_other_condition": null,
       "strength": {
        "bet_sizing": 0.0,
-       "called_without_odds": 0.0,
-       "folded_with_odds": 0.01,
+       "called_without_odds": 0.01,
+       "folded_with_odds": 0.3,
        "missed_value": 0.0,
        "overaggressive": 0.0,
        "preflop_loose": 0.0,
@@ -954,10 +954,10 @@
       },
       "leaks_with_other_condition": null,
       "strength": {
-       "bet_sizing": 0.04,
-       "called_without_odds": 0.0,
-       "folded_with_odds": 0.17,
-       "missed_value": 0.0,
+       "bet_sizing": 0.0,
+       "called_without_odds": 0.3,
+       "folded_with_odds": 1.0,
+       "missed_value": 0.02,
        "overaggressive": 0.0,
        "preflop_loose": 0.0,
        "preflop_tight": 0.0
@@ -978,11 +978,11 @@
       },
       "leaks_with_other_condition": null,
       "strength": {
-       "bet_sizing": 0.93,
-       "called_without_odds": 0.0,
-       "folded_with_odds": 0.27,
-       "missed_value": 0.0,
-       "overaggressive": 0.02,
+       "bet_sizing": 0.76,
+       "called_without_odds": 0.48,
+       "folded_with_odds": 1.0,
+       "missed_value": 0.01,
+       "overaggressive": 0.76,
        "preflop_loose": 0.0,
        "preflop_tight": 0.0
       },
@@ -1003,10 +1003,10 @@
       "leaks_with_other_condition": null,
       "strength": {
        "bet_sizing": 1.0,
-       "called_without_odds": 0.06,
-       "folded_with_odds": 0.61,
+       "called_without_odds": 0.16,
+       "folded_with_odds": 1.0,
        "missed_value": 0.0,
-       "overaggressive": 0.01,
+       "overaggressive": 1.0,
        "preflop_loose": 0.0,
        "preflop_tight": 0.0
       },
@@ -1054,7 +1054,7 @@
       "strength": {
        "bet_sizing": 0.0,
        "called_without_odds": 0.0,
-       "folded_with_odds": 0.0,
+       "folded_with_odds": 0.08,
        "missed_value": 0.0,
        "overaggressive": 0.0,
        "preflop_loose": 0.0,
@@ -1077,9 +1077,9 @@
       "leaks_with_other_condition": null,
       "strength": {
        "bet_sizing": 0.0,
-       "called_without_odds": 0.0,
-       "folded_with_odds": 0.1,
-       "missed_value": 0.0,
+       "called_without_odds": 0.08,
+       "folded_with_odds": 0.85,
+       "missed_value": 0.02,
        "overaggressive": 0.0,
        "preflop_loose": 0.0,
        "preflop_tight": 0.0
@@ -1100,11 +1100,11 @@
       },
       "leaks_with_other_condition": null,
       "strength": {
-       "bet_sizing": 0.07,
-       "called_without_odds": 0.0,
-       "folded_with_odds": 0.14,
+       "bet_sizing": 0.17,
+       "called_without_odds": 0.26,
+       "folded_with_odds": 1.0,
        "missed_value": 0.0,
-       "overaggressive": 0.0,
+       "overaggressive": 0.17,
        "preflop_loose": 0.0,
        "preflop_tight": 0.0
       },
@@ -1124,11 +1124,11 @@
       },
       "leaks_with_other_condition": null,
       "strength": {
-       "bet_sizing": 0.98,
-       "called_without_odds": 0.05,
-       "folded_with_odds": 0.37,
+       "bet_sizing": 1.0,
+       "called_without_odds": 0.79,
+       "folded_with_odds": 1.0,
        "missed_value": 0.0,
-       "overaggressive": 0.0,
+       "overaggressive": 1.0,
        "preflop_loose": 0.0,
        "preflop_tight": 0.0
       },
@@ -1143,14 +1143,14 @@
      "50": {
       "leak": {
        "bet_sizing": 0.0,
-       "called_without_odds": 0.48,
+       "called_without_odds": 0.58,
        "folded_with_odds": 0.0,
        "missed_value": 0.0,
        "overaggressive": 0.0,
        "preflop_loose": 0.0,
        "preflop_tight": 0.0
       },
-      "leaks_with_other_condition": 0.6041666666666666,
+      "leaks_with_other_condition": 0.43103448275862066,
       "strength": {
        "bet_sizing": 0.0,
        "called_without_odds": 0.0,
@@ -1165,14 +1165,14 @@
      "100": {
       "leak": {
        "bet_sizing": 0.0,
-       "called_without_odds": 0.77,
+       "called_without_odds": 0.86,
        "folded_with_odds": 0.0,
        "missed_value": 0.0,
        "overaggressive": 0.0,
        "preflop_loose": 0.0,
        "preflop_tight": 0.0
       },
-      "leaks_with_other_condition": 0.8311688311688312,
+      "leaks_with_other_condition": 0.6511627906976745,
       "strength": {
        "bet_sizing": 0.0,
        "called_without_odds": 0.0,
@@ -1187,20 +1187,20 @@
      "200": {
       "leak": {
        "bet_sizing": 0.0,
-       "called_without_odds": 0.9,
+       "called_without_odds": 0.98,
        "folded_with_odds": 0.0,
        "missed_value": 0.0,
        "overaggressive": 0.0,
        "preflop_loose": 0.0,
        "preflop_tight": 0.0
       },
-      "leaks_with_other_condition": 0.9555555555555556,
+      "leaks_with_other_condition": 0.8877551020408163,
       "strength": {
-       "bet_sizing": 0.21,
+       "bet_sizing": 0.08,
        "called_without_odds": 0.0,
-       "folded_with_odds": 0.02,
+       "folded_with_odds": 0.13,
        "missed_value": 0.0,
-       "overaggressive": 0.01,
+       "overaggressive": 0.08,
        "preflop_loose": 0.0,
        "preflop_tight": 0.0
       },
@@ -1209,20 +1209,20 @@
      "400": {
       "leak": {
        "bet_sizing": 0.0,
-       "called_without_odds": 0.97,
+       "called_without_odds": 0.99,
        "folded_with_odds": 0.0,
        "missed_value": 0.0,
        "overaggressive": 0.0,
        "preflop_loose": 0.0,
        "preflop_tight": 0.0
       },
-      "leaks_with_other_condition": 1.0,
+      "leaks_with_other_condition": 0.98989898989899,
       "strength": {
-       "bet_sizing": 1.0,
+       "bet_sizing": 0.99,
        "called_without_odds": 0.0,
-       "folded_with_odds": 0.25,
+       "folded_with_odds": 1.0,
        "missed_value": 0.0,
-       "overaggressive": 0.15,
+       "overaggressive": 0.99,
        "preflop_loose": 0.0,
        "preflop_tight": 0.0
       },
@@ -1242,9 +1242,9 @@
       "strength": {
        "bet_sizing": 1.0,
        "called_without_odds": 0.0,
-       "folded_with_odds": 0.52,
+       "folded_with_odds": 1.0,
        "missed_value": 0.0,
-       "overaggressive": 0.04,
+       "overaggressive": 1.0,
        "preflop_loose": 0.0,
        "preflop_tight": 0.0
       },
@@ -1255,14 +1255,14 @@
      "50": {
       "leak": {
        "bet_sizing": 0.0,
-       "called_without_odds": 0.31,
+       "called_without_odds": 0.47,
        "folded_with_odds": 0.0,
        "missed_value": 0.0,
        "overaggressive": 0.0,
        "preflop_loose": 0.0,
        "preflop_tight": 0.0
       },
-      "leaks_with_other_condition": 0.3225806451612903,
+      "leaks_with_other_condition": 0.2553191489361702,
       "strength": {
        "bet_sizing": 0.0,
        "called_without_odds": 0.0,
@@ -1277,14 +1277,14 @@
      "100": {
       "leak": {
        "bet_sizing": 0.0,
-       "called_without_odds": 0.48,
+       "called_without_odds": 0.71,
        "folded_with_odds": 0.0,
        "missed_value": 0.0,
        "overaggressive": 0.0,
        "preflop_loose": 0.0,
        "preflop_tight": 0.0
       },
-      "leaks_with_other_condition": 0.6875,
+      "leaks_with_other_condition": 0.30985915492957744,
       "strength": {
        "bet_sizing": 0.0,
        "called_without_odds": 0.0,
@@ -1299,14 +1299,14 @@
      "200": {
       "leak": {
        "bet_sizing": 0.0,
-       "called_without_odds": 0.81,
+       "called_without_odds": 0.96,
        "folded_with_odds": 0.0,
        "missed_value": 0.0,
        "overaggressive": 0.0,
        "preflop_loose": 0.0,
        "preflop_tight": 0.0
       },
-      "leaks_with_other_condition": 0.7777777777777778,
+      "leaks_with_other_condition": 0.5625,
       "strength": {
        "bet_sizing": 0.0,
        "called_without_odds": 0.0,
@@ -1321,20 +1321,20 @@
      "400": {
       "leak": {
        "bet_sizing": 0.0,
-       "called_without_odds": 0.96,
+       "called_without_odds": 0.98,
        "folded_with_odds": 0.0,
        "missed_value": 0.0,
        "overaggressive": 0.0,
        "preflop_loose": 0.0,
        "preflop_tight": 0.0
       },
-      "leaks_with_other_condition": 0.9895833333333334,
+      "leaks_with_other_condition": 0.8469387755102041,
       "strength": {
-       "bet_sizing": 0.39,
+       "bet_sizing": 0.67,
        "called_without_odds": 0.0,
-       "folded_with_odds": 0.0,
+       "folded_with_odds": 0.68,
        "missed_value": 0.0,
-       "overaggressive": 0.07,
+       "overaggressive": 0.67,
        "preflop_loose": 0.0,
        "preflop_tight": 0.0
       },
@@ -1354,9 +1354,9 @@
       "strength": {
        "bet_sizing": 1.0,
        "called_without_odds": 0.0,
-       "folded_with_odds": 0.19,
+       "folded_with_odds": 1.0,
        "missed_value": 0.0,
-       "overaggressive": 0.16,
+       "overaggressive": 1.0,
        "preflop_loose": 0.0,
        "preflop_tight": 0.0
       },
@@ -1401,8 +1401,8 @@
       "leaks_with_other_condition": null,
       "strength": {
        "bet_sizing": 0.0,
-       "called_without_odds": 0.0,
-       "folded_with_odds": 0.04,
+       "called_without_odds": 0.04,
+       "folded_with_odds": 0.4,
        "missed_value": 0.0,
        "overaggressive": 0.0,
        "preflop_loose": 0.0,
@@ -1423,8 +1423,8 @@
       "leaks_with_other_condition": null,
       "strength": {
        "bet_sizing": 0.31,
-       "called_without_odds": 0.0,
-       "folded_with_odds": 0.4,
+       "called_without_odds": 0.63,
+       "folded_with_odds": 1.0,
        "missed_value": 0.0,
        "overaggressive": 0.31,
        "preflop_loose": 0.0,
@@ -1445,8 +1445,8 @@
       "leaks_with_other_condition": null,
       "strength": {
        "bet_sizing": 1.0,
-       "called_without_odds": 0.03,
-       "folded_with_odds": 0.76,
+       "called_without_odds": 0.93,
+       "folded_with_odds": 1.0,
        "missed_value": 0.0,
        "overaggressive": 1.0,
        "preflop_loose": 0.0,
@@ -1467,8 +1467,8 @@
       "leaks_with_other_condition": null,
       "strength": {
        "bet_sizing": 1.0,
-       "called_without_odds": 0.78,
-       "folded_with_odds": 0.95,
+       "called_without_odds": 1.0,
+       "folded_with_odds": 1.0,
        "missed_value": 0.0,
        "overaggressive": 1.0,
        "preflop_loose": 0.0,
@@ -1513,8 +1513,8 @@
       "leaks_with_other_condition": null,
       "strength": {
        "bet_sizing": 0.0,
-       "called_without_odds": 0.0,
-       "folded_with_odds": 0.0,
+       "called_without_odds": 0.01,
+       "folded_with_odds": 0.08,
        "missed_value": 0.0,
        "overaggressive": 0.0,
        "preflop_loose": 0.0,
@@ -1535,8 +1535,8 @@
       "leaks_with_other_condition": null,
       "strength": {
        "bet_sizing": 0.02,
-       "called_without_odds": 0.0,
-       "folded_with_odds": 0.29,
+       "called_without_odds": 0.31,
+       "folded_with_odds": 0.86,
        "missed_value": 0.0,
        "overaggressive": 0.02,
        "preflop_loose": 0.0,
@@ -1556,11 +1556,11 @@
       },
       "leaks_with_other_condition": null,
       "strength": {
-       "bet_sizing": 0.92,
-       "called_without_odds": 0.0,
-       "folded_with_odds": 0.64,
+       "bet_sizing": 0.93,
+       "called_without_odds": 0.92,
+       "folded_with_odds": 1.0,
        "missed_value": 0.0,
-       "overaggressive": 0.92,
+       "overaggressive": 0.93,
        "preflop_loose": 0.0,
        "preflop_tight": 0.0
       },
@@ -1579,8 +1579,8 @@
       "leaks_with_other_condition": null,
       "strength": {
        "bet_sizing": 1.0,
-       "called_without_odds": 0.19,
-       "folded_with_odds": 0.91,
+       "called_without_odds": 1.0,
+       "folded_with_odds": 1.0,
        "missed_value": 0.0,
        "overaggressive": 1.0,
        "preflop_loose": 0.0,
@@ -1627,8 +1627,8 @@
       "leaks_with_other_condition": null,
       "strength": {
        "bet_sizing": 0.0,
-       "called_without_odds": 0.0,
-       "folded_with_odds": 0.0,
+       "called_without_odds": 0.01,
+       "folded_with_odds": 0.06,
        "missed_value": 0.0,
        "overaggressive": 0.0,
        "preflop_loose": 0.0,
@@ -1649,10 +1649,10 @@
       "leaks_with_other_condition": null,
       "strength": {
        "bet_sizing": 0.03,
-       "called_without_odds": 0.0,
-       "folded_with_odds": 0.12,
-       "missed_value": 0.0,
-       "overaggressive": 0.01,
+       "called_without_odds": 0.85,
+       "folded_with_odds": 0.47,
+       "missed_value": 0.01,
+       "overaggressive": 0.03,
        "preflop_loose": 0.0,
        "preflop_tight": 0.0
       },
@@ -1670,11 +1670,11 @@
       },
       "leaks_with_other_condition": null,
       "strength": {
-       "bet_sizing": 0.9,
-       "called_without_odds": 0.0,
-       "folded_with_odds": 0.25,
+       "bet_sizing": 0.86,
+       "called_without_odds": 1.0,
+       "folded_with_odds": 0.86,
        "missed_value": 0.0,
-       "overaggressive": 0.17,
+       "overaggressive": 0.86,
        "preflop_loose": 0.0,
        "preflop_tight": 0.0
       },
@@ -1693,10 +1693,10 @@
       "leaks_with_other_condition": null,
       "strength": {
        "bet_sizing": 1.0,
-       "called_without_odds": 0.65,
-       "folded_with_odds": 0.33,
+       "called_without_odds": 1.0,
+       "folded_with_odds": 1.0,
        "missed_value": 0.0,
-       "overaggressive": 0.22,
+       "overaggressive": 1.0,
        "preflop_loose": 0.0,
        "preflop_tight": 0.0
       },
@@ -1761,8 +1761,8 @@
       "leaks_with_other_condition": null,
       "strength": {
        "bet_sizing": 0.0,
-       "called_without_odds": 0.0,
-       "folded_with_odds": 0.07,
+       "called_without_odds": 0.14,
+       "folded_with_odds": 0.31,
        "missed_value": 0.0,
        "overaggressive": 0.0,
        "preflop_loose": 0.0,
@@ -1782,11 +1782,11 @@
       },
       "leaks_with_other_condition": null,
       "strength": {
-       "bet_sizing": 0.15,
-       "called_without_odds": 0.0,
-       "folded_with_odds": 0.09,
+       "bet_sizing": 0.28,
+       "called_without_odds": 0.98,
+       "folded_with_odds": 0.7,
        "missed_value": 0.0,
-       "overaggressive": 0.05,
+       "overaggressive": 0.28,
        "preflop_loose": 0.0,
        "preflop_tight": 0.0
       },
@@ -1805,10 +1805,10 @@
       "leaks_with_other_condition": null,
       "strength": {
        "bet_sizing": 1.0,
-       "called_without_odds": 0.06,
-       "folded_with_odds": 0.23,
+       "called_without_odds": 1.0,
+       "folded_with_odds": 1.0,
        "missed_value": 0.0,
-       "overaggressive": 0.22,
+       "overaggressive": 1.0,
        "preflop_loose": 0.0,
        "preflop_tight": 0.0
       },
@@ -1874,7 +1874,7 @@
       },
       "leaks_with_other_condition": null,
       "strength": {
-       "bet_sizing": 0.01,
+       "bet_sizing": 0.0,
        "called_without_odds": 0.0,
        "folded_with_odds": 0.0,
        "missed_value": 0.0,
@@ -1896,11 +1896,11 @@
       },
       "leaks_with_other_condition": null,
       "strength": {
-       "bet_sizing": 0.34,
-       "called_without_odds": 0.0,
+       "bet_sizing": 0.15,
+       "called_without_odds": 0.1,
        "folded_with_odds": 0.0,
-       "missed_value": 0.0,
-       "overaggressive": 0.0,
+       "missed_value": 0.01,
+       "overaggressive": 0.31,
        "preflop_loose": 0.0,
        "preflop_tight": 0.0
       },
@@ -1918,11 +1918,11 @@
       },
       "leaks_with_other_condition": null,
       "strength": {
-       "bet_sizing": 0.68,
-       "called_without_odds": 0.0,
+       "bet_sizing": 0.51,
+       "called_without_odds": 0.97,
        "folded_with_odds": 0.0,
-       "missed_value": 0.01,
-       "overaggressive": 0.0,
+       "missed_value": 0.02,
+       "overaggressive": 0.99,
        "preflop_loose": 0.0,
        "preflop_tight": 0.0
       },
@@ -2030,11 +2030,11 @@
       },
       "leaks_with_other_condition": null,
       "strength": {
-       "bet_sizing": 0.24,
-       "called_without_odds": 0.0,
+       "bet_sizing": 0.19,
+       "called_without_odds": 0.48,
        "folded_with_odds": 0.0,
        "missed_value": 0.0,
-       "overaggressive": 0.0,
+       "overaggressive": 0.57,
        "preflop_loose": 0.0,
        "preflop_tight": 0.0
       },
@@ -2079,8 +2079,8 @@
       "leaks_with_other_condition": null,
       "strength": {
        "bet_sizing": 0.0,
-       "called_without_odds": 0.0,
-       "folded_with_odds": 0.0,
+       "called_without_odds": 0.02,
+       "folded_with_odds": 0.38,
        "missed_value": 0.0,
        "overaggressive": 0.0,
        "preflop_loose": 0.0,
@@ -2100,11 +2100,11 @@
       },
       "leaks_with_other_condition": null,
       "strength": {
-       "bet_sizing": 0.14,
-       "called_without_odds": 0.0,
-       "folded_with_odds": 0.92,
+       "bet_sizing": 0.04,
+       "called_without_odds": 0.63,
+       "folded_with_odds": 1.0,
        "missed_value": 0.01,
-       "overaggressive": 0.0,
+       "overaggressive": 0.06,
        "preflop_loose": 0.0,
        "preflop_tight": 0.0
       },
@@ -2122,11 +2122,11 @@
       },
       "leaks_with_other_condition": null,
       "strength": {
-       "bet_sizing": 0.66,
-       "called_without_odds": 0.0,
+       "bet_sizing": 0.56,
+       "called_without_odds": 1.0,
        "folded_with_odds": 1.0,
        "missed_value": 0.0,
-       "overaggressive": 0.03,
+       "overaggressive": 0.9,
        "preflop_loose": 0.0,
        "preflop_tight": 0.0
       },
@@ -2145,10 +2145,10 @@
       "leaks_with_other_condition": null,
       "strength": {
        "bet_sizing": 0.73,
-       "called_without_odds": 0.41,
+       "called_without_odds": 1.0,
        "folded_with_odds": 1.0,
        "missed_value": 0.0,
-       "overaggressive": 0.0,
+       "overaggressive": 1.0,
        "preflop_loose": 0.0,
        "preflop_tight": 0.0
       },
@@ -2192,7 +2192,7 @@
       "strength": {
        "bet_sizing": 0.0,
        "called_without_odds": 0.0,
-       "folded_with_odds": 0.01,
+       "folded_with_odds": 0.09,
        "missed_value": 0.0,
        "overaggressive": 0.0,
        "preflop_loose": 0.0,
@@ -2213,8 +2213,8 @@
       "leaks_with_other_condition": null,
       "strength": {
        "bet_sizing": 0.0,
-       "called_without_odds": 0.0,
-       "folded_with_odds": 0.55,
+       "called_without_odds": 0.15,
+       "folded_with_odds": 0.88,
        "missed_value": 0.0,
        "overaggressive": 0.0,
        "preflop_loose": 0.0,
@@ -2234,11 +2234,11 @@
       },
       "leaks_with_other_condition": null,
       "strength": {
-       "bet_sizing": 0.41,
-       "called_without_odds": 0.0,
+       "bet_sizing": 0.36,
+       "called_without_odds": 0.97,
        "folded_with_odds": 1.0,
        "missed_value": 0.0,
-       "overaggressive": 0.01,
+       "overaggressive": 0.52,
        "preflop_loose": 0.0,
        "preflop_tight": 0.0
       },
@@ -2256,11 +2256,11 @@
       },
       "leaks_with_other_condition": null,
       "strength": {
-       "bet_sizing": 0.85,
-       "called_without_odds": 0.03,
+       "bet_sizing": 0.82,
+       "called_without_odds": 1.0,
        "folded_with_odds": 1.0,
        "missed_value": 0.0,
-       "overaggressive": 0.0,
+       "overaggressive": 1.0,
        "preflop_loose": 0.0,
        "preflop_tight": 0.0
       },
@@ -2273,14 +2273,14 @@
      "50": {
       "leak": {
        "bet_sizing": 0.0,
-       "called_without_odds": 0.01,
+       "called_without_odds": 0.03,
        "folded_with_odds": 0.0,
        "missed_value": 0.0,
        "overaggressive": 0.0,
        "preflop_loose": 0.0,
        "preflop_tight": 0.0
       },
-      "leaks_with_other_condition": 0.2222222222222222,
+      "leaks_with_other_condition": 0.38461538461538464,
       "strength": {
        "bet_sizing": 0.0,
        "called_without_odds": 0.0,
@@ -2295,14 +2295,14 @@
      "100": {
       "leak": {
        "bet_sizing": 0.0,
-       "called_without_odds": 0.29,
+       "called_without_odds": 0.54,
        "folded_with_odds": 0.12,
        "missed_value": 0.0,
        "overaggressive": 0.0,
        "preflop_loose": 0.0,
        "preflop_tight": 0.0
       },
-      "leaks_with_other_condition": 0.30434782608695654,
+      "leaks_with_other_condition": 0.29473684210526313,
       "strength": {
        "bet_sizing": 0.0,
        "called_without_odds": 0.0,
@@ -2317,14 +2317,14 @@
      "200": {
       "leak": {
        "bet_sizing": 0.0,
-       "called_without_odds": 0.61,
+       "called_without_odds": 0.87,
        "folded_with_odds": 0.3,
        "missed_value": 0.0,
        "overaggressive": 0.0,
        "preflop_loose": 0.0,
        "preflop_tight": 0.0
       },
-      "leaks_with_other_condition": 0.4621212121212121,
+      "leaks_with_other_condition": 0.422360248447205,
       "strength": {
        "bet_sizing": 0.0,
        "called_without_odds": 0.0,
@@ -2339,16 +2339,16 @@
      "400": {
       "leak": {
        "bet_sizing": 0.0,
-       "called_without_odds": 0.89,
+       "called_without_odds": 0.98,
        "folded_with_odds": 0.36,
        "missed_value": 0.0,
        "overaggressive": 0.0,
        "preflop_loose": 0.0,
        "preflop_tight": 0.0
       },
-      "leaks_with_other_condition": 0.6740331491712708,
+      "leaks_with_other_condition": 0.5303867403314917,
       "strength": {
-       "bet_sizing": 0.08,
+       "bet_sizing": 0.02,
        "called_without_odds": 0.0,
        "folded_with_odds": 0.0,
        "missed_value": 0.0,
@@ -2361,20 +2361,20 @@
      "800": {
       "leak": {
        "bet_sizing": 0.0,
-       "called_without_odds": 0.96,
+       "called_without_odds": 1.0,
        "folded_with_odds": 0.71,
        "missed_value": 0.0,
        "overaggressive": 0.0,
        "preflop_loose": 0.0,
        "preflop_tight": 0.0
       },
-      "leaks_with_other_condition": 0.768595041322314,
+      "leaks_with_other_condition": 0.6529680365296804,
       "strength": {
-       "bet_sizing": 0.11,
+       "bet_sizing": 0.06,
        "called_without_odds": 0.0,
        "folded_with_odds": 0.0,
        "missed_value": 0.0,
-       "overaggressive": 0.0,
+       "overaggressive": 0.01,
        "preflop_loose": 0.0,
        "preflop_tight": 0.0
       },
@@ -2385,14 +2385,14 @@
      "50": {
       "leak": {
        "bet_sizing": 0.0,
-       "called_without_odds": 0.02,
+       "called_without_odds": 0.04,
        "folded_with_odds": 0.0,
        "missed_value": 0.0,
        "overaggressive": 0.0,
        "preflop_loose": 0.0,
        "preflop_tight": 0.0
       },
-      "leaks_with_other_condition": 0.0,
+      "leaks_with_other_condition": 0.0625,
       "strength": {
        "bet_sizing": 0.0,
        "called_without_odds": 0.0,
@@ -2407,14 +2407,14 @@
      "100": {
       "leak": {
        "bet_sizing": 0.0,
-       "called_without_odds": 0.19,
-       "folded_with_odds": 0.06,
+       "called_without_odds": 0.36,
+       "folded_with_odds": 0.08,
        "missed_value": 0.0,
        "overaggressive": 0.0,
        "preflop_loose": 0.0,
        "preflop_tight": 0.0
       },
-      "leaks_with_other_condition": 0.1388888888888889,
+      "leaks_with_other_condition": 0.09523809523809523,
       "strength": {
        "bet_sizing": 0.0,
        "called_without_odds": 0.0,
@@ -2429,14 +2429,14 @@
      "200": {
       "leak": {
        "bet_sizing": 0.0,
-       "called_without_odds": 0.32,
-       "folded_with_odds": 0.15,
+       "called_without_odds": 0.63,
+       "folded_with_odds": 0.18,
        "missed_value": 0.0,
        "overaggressive": 0.0,
        "preflop_loose": 0.0,
        "preflop_tight": 0.0
       },
-      "leaks_with_other_condition": 0.3181818181818182,
+      "leaks_with_other_condition": 0.17094017094017094,
       "strength": {
        "bet_sizing": 0.0,
        "called_without_odds": 0.0,
@@ -2451,14 +2451,14 @@
      "400": {
       "leak": {
        "bet_sizing": 0.0,
-       "called_without_odds": 0.61,
-       "folded_with_odds": 0.35,
+       "called_without_odds": 0.92,
+       "folded_with_odds": 0.37,
        "missed_value": 0.0,
        "overaggressive": 0.0,
        "preflop_loose": 0.0,
        "preflop_tight": 0.0
       },
-      "leaks_with_other_condition": 0.23129251700680273,
+      "leaks_with_other_condition": 0.11351351351351352,
       "strength": {
        "bet_sizing": 0.0,
        "called_without_odds": 0.0,
@@ -2473,16 +2473,16 @@
      "800": {
       "leak": {
        "bet_sizing": 0.0,
-       "called_without_odds": 0.93,
+       "called_without_odds": 0.99,
        "folded_with_odds": 0.51,
        "missed_value": 0.0,
        "overaggressive": 0.0,
        "preflop_loose": 0.0,
        "preflop_tight": 0.0
       },
-      "leaks_with_other_condition": 0.410958904109589,
+      "leaks_with_other_condition": 0.15920398009950248,
       "strength": {
-       "bet_sizing": 0.04,
+       "bet_sizing": 0.02,
        "called_without_odds": 0.0,
        "folded_with_odds": 0.0,
        "missed_value": 0.0,
@@ -2534,7 +2534,7 @@
       "strength": {
        "bet_sizing": 0.0,
        "called_without_odds": 0.0,
-       "folded_with_odds": 0.0,
+       "folded_with_odds": 0.22,
        "missed_value": 0.0,
        "overaggressive": 0.0,
        "preflop_loose": 0.0,
@@ -2556,10 +2556,10 @@
       },
       "leaks_with_other_condition": 0.0,
       "strength": {
-       "bet_sizing": 0.06,
+       "bet_sizing": 0.01,
        "called_without_odds": 0.0,
-       "folded_with_odds": 0.27,
-       "missed_value": 0.0,
+       "folded_with_odds": 1.0,
+       "missed_value": 0.01,
        "overaggressive": 0.02,
        "preflop_loose": 0.0,
        "preflop_tight": 0.0
@@ -2580,11 +2580,11 @@
       },
       "leaks_with_other_condition": 0.0,
       "strength": {
-       "bet_sizing": 0.55,
+       "bet_sizing": 0.53,
        "called_without_odds": 0.0,
-       "folded_with_odds": 0.5,
-       "missed_value": 0.02,
-       "overaggressive": 0.16,
+       "folded_with_odds": 1.0,
+       "missed_value": 0.07,
+       "overaggressive": 0.93,
        "preflop_loose": 0.0,
        "preflop_tight": 0.0
       },
@@ -2604,11 +2604,11 @@
       },
       "leaks_with_other_condition": 0.0,
       "strength": {
-       "bet_sizing": 0.68,
+       "bet_sizing": 0.67,
        "called_without_odds": 0.0,
-       "folded_with_odds": 0.87,
-       "missed_value": 0.01,
-       "overaggressive": 0.06,
+       "folded_with_odds": 1.0,
+       "missed_value": 0.07,
+       "overaggressive": 1.0,
        "preflop_loose": 0.0,
        "preflop_tight": 0.0
       },
@@ -2656,7 +2656,7 @@
       "strength": {
        "bet_sizing": 0.0,
        "called_without_odds": 0.0,
-       "folded_with_odds": 0.0,
+       "folded_with_odds": 0.03,
        "missed_value": 0.0,
        "overaggressive": 0.0,
        "preflop_loose": 0.0,
@@ -2680,7 +2680,7 @@
       "strength": {
        "bet_sizing": 0.0,
        "called_without_odds": 0.0,
-       "folded_with_odds": 0.06,
+       "folded_with_odds": 0.69,
        "missed_value": 0.0,
        "overaggressive": 0.0,
        "preflop_loose": 0.0,
@@ -2702,11 +2702,11 @@
       },
       "leaks_with_other_condition": 0.0,
       "strength": {
-       "bet_sizing": 0.1,
+       "bet_sizing": 0.27,
        "called_without_odds": 0.0,
-       "folded_with_odds": 0.14,
-       "missed_value": 0.0,
-       "overaggressive": 0.0,
+       "folded_with_odds": 1.0,
+       "missed_value": 0.03,
+       "overaggressive": 0.36,
        "preflop_loose": 0.0,
        "preflop_tight": 0.0
       },
@@ -2717,7 +2717,7 @@
      "800": {
       "leak": {
        "bet_sizing": 0.0,
-       "called_without_odds": 0.16,
+       "called_without_odds": 0.23,
        "folded_with_odds": 0.0,
        "missed_value": 0.0,
        "overaggressive": 0.0,
@@ -2726,11 +2726,11 @@
       },
       "leaks_with_other_condition": 0.0,
       "strength": {
-       "bet_sizing": 0.73,
+       "bet_sizing": 0.81,
        "called_without_odds": 0.0,
-       "folded_with_odds": 0.55,
-       "missed_value": 0.0,
-       "overaggressive": 0.13,
+       "folded_with_odds": 1.0,
+       "missed_value": 0.04,
+       "overaggressive": 1.0,
        "preflop_loose": 0.0,
        "preflop_tight": 0.0
       },
@@ -2777,8 +2777,8 @@
       "leaks_with_other_condition": null,
       "strength": {
        "bet_sizing": 0.0,
-       "called_without_odds": 0.0,
-       "folded_with_odds": 0.0,
+       "called_without_odds": 0.09,
+       "folded_with_odds": 0.31,
        "missed_value": 0.0,
        "overaggressive": 0.0,
        "preflop_loose": 0.0,
@@ -2799,8 +2799,8 @@
       "leaks_with_other_condition": null,
       "strength": {
        "bet_sizing": 0.0,
-       "called_without_odds": 0.0,
-       "folded_with_odds": 0.21,
+       "called_without_odds": 0.73,
+       "folded_with_odds": 0.93,
        "missed_value": 0.0,
        "overaggressive": 0.0,
        "preflop_loose": 0.0,
@@ -2820,11 +2820,11 @@
       },
       "leaks_with_other_condition": null,
       "strength": {
-       "bet_sizing": 0.14,
-       "called_without_odds": 0.0,
-       "folded_with_odds": 0.4,
+       "bet_sizing": 0.01,
+       "called_without_odds": 1.0,
+       "folded_with_odds": 1.0,
        "missed_value": 0.0,
-       "overaggressive": 0.0,
+       "overaggressive": 0.01,
        "preflop_loose": 0.0,
        "preflop_tight": 0.0
       },
@@ -2842,11 +2842,11 @@
       },
       "leaks_with_other_condition": null,
       "strength": {
-       "bet_sizing": 0.99,
-       "called_without_odds": 0.2,
-       "folded_with_odds": 0.57,
+       "bet_sizing": 0.92,
+       "called_without_odds": 1.0,
+       "folded_with_odds": 1.0,
        "missed_value": 0.0,
-       "overaggressive": 0.01,
+       "overaggressive": 0.92,
        "preflop_loose": 0.0,
        "preflop_tight": 0.0
       },
@@ -2889,8 +2889,8 @@
       "leaks_with_other_condition": null,
       "strength": {
        "bet_sizing": 0.0,
-       "called_without_odds": 0.0,
-       "folded_with_odds": 0.0,
+       "called_without_odds": 0.01,
+       "folded_with_odds": 0.11,
        "missed_value": 0.0,
        "overaggressive": 0.0,
        "preflop_loose": 0.0,
@@ -2911,8 +2911,8 @@
       "leaks_with_other_condition": null,
       "strength": {
        "bet_sizing": 0.0,
-       "called_without_odds": 0.0,
-       "folded_with_odds": 0.11,
+       "called_without_odds": 0.46,
+       "folded_with_odds": 0.75,
        "missed_value": 0.0,
        "overaggressive": 0.0,
        "preflop_loose": 0.0,
@@ -2933,8 +2933,8 @@
       "leaks_with_other_condition": null,
       "strength": {
        "bet_sizing": 0.0,
-       "called_without_odds": 0.0,
-       "folded_with_odds": 0.23,
+       "called_without_odds": 1.0,
+       "folded_with_odds": 1.0,
        "missed_value": 0.0,
        "overaggressive": 0.0,
        "preflop_loose": 0.0,
@@ -2954,11 +2954,11 @@
       },
       "leaks_with_other_condition": null,
       "strength": {
-       "bet_sizing": 0.43,
-       "called_without_odds": 0.02,
-       "folded_with_odds": 0.38,
+       "bet_sizing": 0.53,
+       "called_without_odds": 1.0,
+       "folded_with_odds": 1.0,
        "missed_value": 0.0,
-       "overaggressive": 0.0,
+       "overaggressive": 0.53,
        "preflop_loose": 0.0,
        "preflop_tight": 0.0
       },
@@ -2971,14 +2971,14 @@
      "50": {
       "leak": {
        "bet_sizing": 0.0,
-       "called_without_odds": 0.36,
+       "called_without_odds": 0.51,
        "folded_with_odds": 0.0,
        "missed_value": 0.0,
        "overaggressive": 0.0,
        "preflop_loose": 0.0,
        "preflop_tight": 0.0
       },
-      "leaks_with_other_condition": 0.4166666666666667,
+      "leaks_with_other_condition": 0.35294117647058826,
       "strength": {
        "bet_sizing": 0.0,
        "called_without_odds": 0.0,
@@ -2993,14 +2993,14 @@
      "100": {
       "leak": {
        "bet_sizing": 0.0,
-       "called_without_odds": 0.57,
+       "called_without_odds": 0.63,
        "folded_with_odds": 0.0,
        "missed_value": 0.0,
        "overaggressive": 0.0,
        "preflop_loose": 0.0,
        "preflop_tight": 0.0
       },
-      "leaks_with_other_condition": 0.7719298245614035,
+      "leaks_with_other_condition": 0.6666666666666666,
       "strength": {
        "bet_sizing": 0.0,
        "called_without_odds": 0.0,
@@ -3015,20 +3015,20 @@
      "200": {
       "leak": {
        "bet_sizing": 0.0,
-       "called_without_odds": 0.74,
+       "called_without_odds": 0.87,
        "folded_with_odds": 0.0,
        "missed_value": 0.0,
        "overaggressive": 0.0,
        "preflop_loose": 0.0,
        "preflop_tight": 0.0
       },
-      "leaks_with_other_condition": 0.8243243243243243,
+      "leaks_with_other_condition": 0.8160919540229885,
       "strength": {
-       "bet_sizing": 0.5,
+       "bet_sizing": 0.43,
        "called_without_odds": 0.0,
-       "folded_with_odds": 0.0,
+       "folded_with_odds": 0.03,
        "missed_value": 0.0,
-       "overaggressive": 0.03,
+       "overaggressive": 0.43,
        "preflop_loose": 0.0,
        "preflop_tight": 0.0
       },
@@ -3037,20 +3037,20 @@
      "400": {
       "leak": {
        "bet_sizing": 0.0,
-       "called_without_odds": 0.9,
+       "called_without_odds": 0.99,
        "folded_with_odds": 0.0,
        "missed_value": 0.0,
        "overaggressive": 0.0,
        "preflop_loose": 0.0,
        "preflop_tight": 0.0
       },
-      "leaks_with_other_condition": 0.9888888888888889,
+      "leaks_with_other_condition": 0.98989898989899,
       "strength": {
        "bet_sizing": 1.0,
        "called_without_odds": 0.0,
-       "folded_with_odds": 0.69,
+       "folded_with_odds": 0.97,
        "missed_value": 0.0,
-       "overaggressive": 0.05,
+       "overaggressive": 1.0,
        "preflop_loose": 0.0,
        "preflop_tight": 0.0
       },
@@ -3066,13 +3066,13 @@
        "preflop_loose": 0.0,
        "preflop_tight": 0.0
       },
-      "leaks_with_other_condition": 0.99,
+      "leaks_with_other_condition": 1.0,
       "strength": {
        "bet_sizing": 1.0,
        "called_without_odds": 0.0,
        "folded_with_odds": 1.0,
        "missed_value": 0.0,
-       "overaggressive": 0.0,
+       "overaggressive": 1.0,
        "preflop_loose": 0.0,
        "preflop_tight": 0.0
       },
@@ -3083,14 +3083,14 @@
      "50": {
       "leak": {
        "bet_sizing": 0.0,
-       "called_without_odds": 0.22,
+       "called_without_odds": 0.31,
        "folded_with_odds": 0.0,
        "missed_value": 0.0,
        "overaggressive": 0.0,
        "preflop_loose": 0.0,
        "preflop_tight": 0.0
       },
-      "leaks_with_other_condition": 0.09090909090909091,
+      "leaks_with_other_condition": 0.06451612903225806,
       "strength": {
        "bet_sizing": 0.0,
        "called_without_odds": 0.0,
@@ -3105,14 +3105,14 @@
      "100": {
       "leak": {
        "bet_sizing": 0.0,
-       "called_without_odds": 0.37,
+       "called_without_odds": 0.51,
        "folded_with_odds": 0.0,
        "missed_value": 0.0,
        "overaggressive": 0.0,
        "preflop_loose": 0.0,
        "preflop_tight": 0.0
       },
-      "leaks_with_other_condition": 0.13513513513513514,
+      "leaks_with_other_condition": 0.17647058823529413,
       "strength": {
        "bet_sizing": 0.0,
        "called_without_odds": 0.0,
@@ -3127,48 +3127,26 @@
      "200": {
       "leak": {
        "bet_sizing": 0.0,
-       "called_without_odds": 0.59,
+       "called_without_odds": 0.82,
        "folded_with_odds": 0.0,
        "missed_value": 0.0,
        "overaggressive": 0.0,
        "preflop_loose": 0.0,
        "preflop_tight": 0.0
       },
-      "leaks_with_other_condition": 0.23728813559322035,
+      "leaks_with_other_condition": 0.3780487804878049,
       "strength": {
-       "bet_sizing": 0.0,
+       "bet_sizing": 0.08,
        "called_without_odds": 0.0,
        "folded_with_odds": 0.0,
        "missed_value": 0.0,
-       "overaggressive": 0.0,
+       "overaggressive": 0.08,
        "preflop_loose": 0.0,
        "preflop_tight": 0.0
       },
       "target_condition_named": {}
      },
      "400": {
-      "leak": {
-       "bet_sizing": 0.0,
-       "called_without_odds": 0.84,
-       "folded_with_odds": 0.0,
-       "missed_value": 0.0,
-       "overaggressive": 0.0,
-       "preflop_loose": 0.0,
-       "preflop_tight": 0.0
-      },
-      "leaks_with_other_condition": 0.5476190476190477,
-      "strength": {
-       "bet_sizing": 0.93,
-       "called_without_odds": 0.0,
-       "folded_with_odds": 0.21,
-       "missed_value": 0.0,
-       "overaggressive": 0.03,
-       "preflop_loose": 0.0,
-       "preflop_tight": 0.0
-      },
-      "target_condition_named": {}
-     },
-     "800": {
       "leak": {
        "bet_sizing": 0.0,
        "called_without_odds": 0.99,
@@ -3178,13 +3156,35 @@
        "preflop_loose": 0.0,
        "preflop_tight": 0.0
       },
-      "leaks_with_other_condition": 0.8282828282828283,
+      "leaks_with_other_condition": 0.7070707070707071,
+      "strength": {
+       "bet_sizing": 0.99,
+       "called_without_odds": 0.0,
+       "folded_with_odds": 0.54,
+       "missed_value": 0.0,
+       "overaggressive": 0.99,
+       "preflop_loose": 0.0,
+       "preflop_tight": 0.0
+      },
+      "target_condition_named": {}
+     },
+     "800": {
+      "leak": {
+       "bet_sizing": 0.0,
+       "called_without_odds": 1.0,
+       "folded_with_odds": 0.0,
+       "missed_value": 0.0,
+       "overaggressive": 0.0,
+       "preflop_loose": 0.0,
+       "preflop_tight": 0.0
+      },
+      "leaks_with_other_condition": 0.91,
       "strength": {
        "bet_sizing": 1.0,
        "called_without_odds": 0.0,
        "folded_with_odds": 1.0,
        "missed_value": 0.0,
-       "overaggressive": 0.01,
+       "overaggressive": 1.0,
        "preflop_loose": 0.0,
        "preflop_tight": 0.0
       },
@@ -3197,14 +3197,14 @@
      "50": {
       "leak": {
        "bet_sizing": 0.0,
-       "called_without_odds": 0.13,
+       "called_without_odds": 0.15,
        "folded_with_odds": 0.0,
        "missed_value": 0.0,
        "overaggressive": 0.0,
        "preflop_loose": 0.0,
        "preflop_tight": 0.0
       },
-      "leaks_with_other_condition": 0.7692307692307693,
+      "leaks_with_other_condition": 0.6,
       "strength": {
        "bet_sizing": 0.0,
        "called_without_odds": 0.0,
@@ -3226,7 +3226,7 @@
        "preflop_loose": 0.0,
        "preflop_tight": 0.0
       },
-      "leaks_with_other_condition": 0.88,
+      "leaks_with_other_condition": 0.8,
       "strength": {
        "bet_sizing": 0.0,
        "called_without_odds": 0.0,
@@ -3241,18 +3241,18 @@
      "200": {
       "leak": {
        "bet_sizing": 0.0,
-       "called_without_odds": 0.24,
+       "called_without_odds": 0.33,
        "folded_with_odds": 0.0,
        "missed_value": 0.0,
        "overaggressive": 0.0,
        "preflop_loose": 0.0,
        "preflop_tight": 0.0
       },
-      "leaks_with_other_condition": 1.0,
+      "leaks_with_other_condition": 0.9696969696969697,
       "strength": {
-       "bet_sizing": 0.05,
+       "bet_sizing": 0.0,
        "called_without_odds": 0.0,
-       "folded_with_odds": 0.19,
+       "folded_with_odds": 0.76,
        "missed_value": 0.0,
        "overaggressive": 0.0,
        "preflop_loose": 0.0,
@@ -3263,20 +3263,20 @@
      "400": {
       "leak": {
        "bet_sizing": 0.0,
-       "called_without_odds": 0.4,
+       "called_without_odds": 0.54,
        "folded_with_odds": 0.0,
        "missed_value": 0.0,
        "overaggressive": 0.0,
        "preflop_loose": 0.0,
        "preflop_tight": 0.0
       },
-      "leaks_with_other_condition": 1.0,
+      "leaks_with_other_condition": 0.9814814814814815,
       "strength": {
-       "bet_sizing": 0.99,
+       "bet_sizing": 0.89,
        "called_without_odds": 0.0,
-       "folded_with_odds": 0.32,
-       "missed_value": 0.0,
-       "overaggressive": 0.02,
+       "folded_with_odds": 0.92,
+       "missed_value": 0.01,
+       "overaggressive": 0.89,
        "preflop_loose": 0.0,
        "preflop_tight": 0.0
       },
@@ -3285,7 +3285,7 @@
      "800": {
       "leak": {
        "bet_sizing": 0.0,
-       "called_without_odds": 0.57,
+       "called_without_odds": 0.64,
        "folded_with_odds": 0.0,
        "missed_value": 0.0,
        "overaggressive": 0.0,
@@ -3296,9 +3296,9 @@
       "strength": {
        "bet_sizing": 1.0,
        "called_without_odds": 0.0,
-       "folded_with_odds": 0.71,
+       "folded_with_odds": 1.0,
        "missed_value": 0.0,
-       "overaggressive": 0.0,
+       "overaggressive": 1.0,
        "preflop_loose": 0.0,
        "preflop_tight": 0.0
       },
@@ -3353,18 +3353,18 @@
      "200": {
       "leak": {
        "bet_sizing": 0.0,
-       "called_without_odds": 0.17,
+       "called_without_odds": 0.25,
        "folded_with_odds": 0.0,
        "missed_value": 0.0,
        "overaggressive": 0.0,
        "preflop_loose": 0.0,
        "preflop_tight": 0.0
       },
-      "leaks_with_other_condition": 0.7647058823529411,
+      "leaks_with_other_condition": 0.6,
       "strength": {
        "bet_sizing": 0.0,
        "called_without_odds": 0.0,
-       "folded_with_odds": 0.0,
+       "folded_with_odds": 0.08,
        "missed_value": 0.0,
        "overaggressive": 0.0,
        "preflop_loose": 0.0,
@@ -3375,20 +3375,20 @@
      "400": {
       "leak": {
        "bet_sizing": 0.0,
-       "called_without_odds": 0.13,
+       "called_without_odds": 0.27,
        "folded_with_odds": 0.0,
        "missed_value": 0.0,
        "overaggressive": 0.0,
        "preflop_loose": 0.0,
        "preflop_tight": 0.0
       },
-      "leaks_with_other_condition": 0.9230769230769231,
+      "leaks_with_other_condition": 0.8518518518518519,
       "strength": {
-       "bet_sizing": 0.12,
+       "bet_sizing": 0.37,
        "called_without_odds": 0.0,
-       "folded_with_odds": 0.12,
+       "folded_with_odds": 0.76,
        "missed_value": 0.0,
-       "overaggressive": 0.0,
+       "overaggressive": 0.37,
        "preflop_loose": 0.0,
        "preflop_tight": 0.0
       },
@@ -3397,7 +3397,7 @@
      "800": {
       "leak": {
        "bet_sizing": 0.0,
-       "called_without_odds": 0.37,
+       "called_without_odds": 0.6,
        "folded_with_odds": 0.0,
        "missed_value": 0.0,
        "overaggressive": 0.0,
@@ -3408,9 +3408,9 @@
       "strength": {
        "bet_sizing": 1.0,
        "called_without_odds": 0.0,
-       "folded_with_odds": 0.48,
+       "folded_with_odds": 1.0,
        "missed_value": 0.0,
-       "overaggressive": 0.0,
+       "overaggressive": 1.0,
        "preflop_loose": 0.0,
        "preflop_tight": 0.0
       },
@@ -3431,7 +3431,8 @@
      "strengths": [
       "bet_sizing",
       "called_without_odds",
-      "folded_with_odds"
+      "folded_with_odds",
+      "overaggressive"
      ],
      "trend": {}
     },
@@ -3440,7 +3441,9 @@
      "leaks": [],
      "strengths": [
       "bet_sizing",
-      "folded_with_odds"
+      "called_without_odds",
+      "folded_with_odds",
+      "overaggressive"
      ],
      "trend": {}
     }
@@ -3454,7 +3457,9 @@
      "conditions": {},
      "leaks": [],
      "strengths": [
-      "called_without_odds"
+      "called_without_odds",
+      "folded_with_odds",
+      "overaggressive"
      ],
      "trend": {}
     },
@@ -3462,7 +3467,10 @@
      "conditions": {},
      "leaks": [],
      "strengths": [
-      "bet_sizing"
+      "bet_sizing",
+      "called_without_odds",
+      "folded_with_odds",
+      "overaggressive"
      ],
      "trend": {}
     }
@@ -3487,7 +3495,8 @@
      ],
      "strengths": [
       "bet_sizing",
-      "folded_with_odds"
+      "folded_with_odds",
+      "overaggressive"
      ],
      "trend": {
       "called_without_odds": "no_clear_change"
@@ -3504,7 +3513,8 @@
      ],
      "strengths": [
       "bet_sizing",
-      "folded_with_odds"
+      "folded_with_odds",
+      "overaggressive"
      ],
      "trend": {
       "called_without_odds": "no_clear_change"
@@ -3521,7 +3531,8 @@
      "leaks": [],
      "strengths": [
       "bet_sizing",
-      "folded_with_odds"
+      "folded_with_odds",
+      "overaggressive"
      ],
      "trend": {}
     },
@@ -3529,7 +3540,10 @@
      "conditions": {},
      "leaks": [],
      "strengths": [
-      "bet_sizing"
+      "bet_sizing",
+      "called_without_odds",
+      "folded_with_odds",
+      "overaggressive"
      ],
      "trend": {}
     }
@@ -3553,7 +3567,9 @@
       "called_without_odds"
      ],
      "strengths": [
-      "bet_sizing"
+      "bet_sizing",
+      "folded_with_odds",
+      "overaggressive"
      ],
      "trend": {
       "called_without_odds": "no_clear_change"
@@ -3569,7 +3585,9 @@
       "called_without_odds"
      ],
      "strengths": [
-      "bet_sizing"
+      "bet_sizing",
+      "folded_with_odds",
+      "overaggressive"
      ],
      "trend": {
       "called_without_odds": "no_clear_change"
@@ -3597,6 +3615,7 @@
      "leaks": [],
      "strengths": [
       "bet_sizing",
+      "called_without_odds",
       "folded_with_odds",
       "overaggressive"
      ],
@@ -3613,7 +3632,9 @@
      "leaks": [],
      "strengths": [
       "bet_sizing",
-      "called_without_odds"
+      "called_without_odds",
+      "folded_with_odds",
+      "overaggressive"
      ],
      "trend": {}
     },
@@ -3621,7 +3642,10 @@
      "conditions": {},
      "leaks": [],
      "strengths": [
-      "bet_sizing"
+      "bet_sizing",
+      "called_without_odds",
+      "folded_with_odds",
+      "overaggressive"
      ],
      "trend": {}
     }
@@ -3635,14 +3659,18 @@
      "conditions": {},
      "leaks": [],
      "strengths": [
-      "bet_sizing"
+      "called_without_odds",
+      "overaggressive"
      ],
      "trend": {}
     },
     "v0.4.5": {
      "conditions": {},
      "leaks": [],
-     "strengths": [],
+     "strengths": [
+      "called_without_odds",
+      "overaggressive"
+     ],
      "trend": {}
     }
    },
@@ -3656,7 +3684,9 @@
      "leaks": [],
      "strengths": [
       "bet_sizing",
-      "folded_with_odds"
+      "called_without_odds",
+      "folded_with_odds",
+      "overaggressive"
      ],
      "trend": {}
     },
@@ -3665,7 +3695,9 @@
      "leaks": [],
      "strengths": [
       "bet_sizing",
-      "folded_with_odds"
+      "called_without_odds",
+      "folded_with_odds",
+      "overaggressive"
      ],
      "trend": {}
     }
@@ -3687,36 +3719,28 @@
       "called_without_odds": [
        "river"
       ],
-      "folded_with_odds": [],
-      "pot_odds_mixed": [
-       "river"
-      ]
+      "folded_with_odds": []
      },
      "leaks": [
       "called_without_odds",
-      "folded_with_odds",
-      "pot_odds_mixed"
+      "folded_with_odds"
      ],
      "strengths": [],
      "trend": {
       "called_without_odds": "no_clear_change",
-      "folded_with_odds": "no_clear_change",
-      "pot_odds_mixed": "no_clear_change"
+      "folded_with_odds": "no_clear_change"
      }
     },
     "v0.4.5": {
      "conditions": {
-      "called_without_odds": [],
-      "pot_odds_mixed": []
+      "called_without_odds": []
      },
      "leaks": [
-      "called_without_odds",
-      "pot_odds_mixed"
+      "called_without_odds"
      ],
      "strengths": [],
      "trend": {
-      "called_without_odds": "no_clear_change",
-      "pot_odds_mixed": "no_clear_change"
+      "called_without_odds": "no_clear_change"
      }
     }
    },
@@ -3734,7 +3758,8 @@
      "leaks": [],
      "strengths": [
       "bet_sizing",
-      "folded_with_odds"
+      "folded_with_odds",
+      "overaggressive"
      ],
      "trend": {}
     },
@@ -3743,7 +3768,8 @@
      "leaks": [],
      "strengths": [
       "bet_sizing",
-      "folded_with_odds"
+      "folded_with_odds",
+      "overaggressive"
      ],
      "trend": {}
     }
@@ -3758,14 +3784,21 @@
      "leaks": [],
      "strengths": [
       "bet_sizing",
-      "folded_with_odds"
+      "called_without_odds",
+      "folded_with_odds",
+      "overaggressive"
      ],
      "trend": {}
     },
     "v0.4.5": {
      "conditions": {},
      "leaks": [],
-     "strengths": [],
+     "strengths": [
+      "bet_sizing",
+      "called_without_odds",
+      "folded_with_odds",
+      "overaggressive"
+     ],
      "trend": {}
     }
    },
@@ -3790,7 +3823,8 @@
      ],
      "strengths": [
       "bet_sizing",
-      "folded_with_odds"
+      "folded_with_odds",
+      "overaggressive"
      ],
      "trend": {
       "called_without_odds": "no_clear_change"
@@ -3808,7 +3842,8 @@
      ],
      "strengths": [
       "bet_sizing",
-      "folded_with_odds"
+      "folded_with_odds",
+      "overaggressive"
      ],
      "trend": {
       "called_without_odds": "no_clear_change"
@@ -3827,8 +3862,7 @@
     "v0.4.4": {
      "conditions": {
       "called_without_odds": [
-       "river",
-       "deep_stack"
+       "river"
       ]
      },
      "leaks": [
@@ -3836,19 +3870,30 @@
      ],
      "strengths": [
       "bet_sizing",
-      "folded_with_odds"
+      "folded_with_odds",
+      "overaggressive"
      ],
      "trend": {
       "called_without_odds": "no_clear_change"
      }
     },
     "v0.4.5": {
-     "conditions": {},
-     "leaks": [],
-     "strengths": [
-      "bet_sizing"
+     "conditions": {
+      "called_without_odds": [
+       "river"
+      ]
+     },
+     "leaks": [
+      "called_without_odds"
      ],
-     "trend": {}
+     "strengths": [
+      "bet_sizing",
+      "folded_with_odds",
+      "overaggressive"
+     ],
+     "trend": {
+      "called_without_odds": "no_clear_change"
+     }
     }
    }
   }
@@ -9827,27 +9872,27 @@
  "oracle": {
   "control": {
    "high": {
-    "coach_mean_bb": 2.3915570954819803,
-    "mean_bb": -0.24104578275013902,
-    "n": 265,
-    "se_bb": 0.8339120499676822,
-    "share_negative": 0.49433962264150944,
+    "coach_mean_bb": 2.9275122305766246,
+    "mean_bb": -0.27487717182545013,
+    "n": 278,
+    "se_bb": 0.9124002770141987,
+    "share_negative": 0.4856115107913669,
     "verdict": "unclear"
    },
    "low": {
-    "coach_mean_bb": 0.49889143237654915,
-    "mean_bb": 0.5566788507821901,
-    "n": 809,
-    "se_bb": 0.28605535857192516,
-    "share_negative": 0.40173053152039556,
+    "coach_mean_bb": 0.2901352077820455,
+    "mean_bb": 0.42610077129443324,
+    "n": 713,
+    "se_bb": 0.39603141791409024,
+    "share_negative": 0.3899018232819074,
     "verdict": "unclear"
    },
    "medium": {
-    "coach_mean_bb": 0.20740744642029035,
-    "mean_bb": 0.802505720072042,
-    "n": 606,
-    "se_bb": 0.32795924346681005,
-    "share_negative": 0.5742574257425742,
+    "coach_mean_bb": -0.16995586140822092,
+    "mean_bb": 1.3373145591163058,
+    "n": 689,
+    "se_bb": 0.36509940548699943,
+    "share_negative": 0.5616835994194485,
     "verdict": "gains"
    }
   },
@@ -9951,109 +9996,109 @@
   },
   "flag": {
    "(no tag)": {
-    "coach_mean_bb": -4.401518610285864,
-    "mean_bb": 5.450725618091991,
-    "n": 113,
-    "se_bb": 1.541098239392036,
-    "share_negative": 0.2920353982300885,
-    "verdict": "gains"
+    "coach_mean_bb": -1.4292182569961653,
+    "mean_bb": 0.48888888888888893,
+    "n": 9,
+    "se_bb": 1.9086345387394454,
+    "share_negative": 0.5555555555555556,
+    "verdict": "insufficient"
    },
    "bet_sizing": {
-    "coach_mean_bb": -5.514067852091402,
-    "mean_bb": -6.1789972899729,
-    "n": 8,
-    "se_bb": 4.602754536192958,
-    "share_negative": 0.5,
+    "coach_mean_bb": -5.090122145581968,
+    "mean_bb": -3.5198346106412965,
+    "n": 9,
+    "se_bb": 3.4771776837434665,
+    "share_negative": 0.5555555555555556,
     "verdict": "insufficient"
    },
    "called_without_odds": {
-    "coach_mean_bb": -6.927515513819377,
-    "mean_bb": -10.576880124626593,
-    "n": 487,
-    "se_bb": 0.6084465416080105,
-    "share_negative": 0.919917864476386,
+    "coach_mean_bb": -6.2069247575216995,
+    "mean_bb": -11.108174019651917,
+    "n": 579,
+    "se_bb": 0.6094019435761661,
+    "share_negative": 0.9153713298791019,
     "verdict": "costly"
    },
    "folded_with_odds": {
-    "coach_mean_bb": -5.708475911560663,
-    "mean_bb": 0.9078268216668114,
-    "n": 135,
-    "se_bb": 1.7573109786760992,
-    "share_negative": 0.45185185185185184,
+    "coach_mean_bb": -6.284635400456661,
+    "mean_bb": 0.5374547944119608,
+    "n": 75,
+    "se_bb": 2.392183558158833,
+    "share_negative": 0.5066666666666667,
     "verdict": "unclear"
    },
    "missed_value": {
-    "coach_mean_bb": -2.539719050932978,
-    "mean_bb": -1.293749382526525,
-    "n": 344,
-    "se_bb": 0.44917781601256457,
-    "share_negative": 0.5058139534883721,
+    "coach_mean_bb": -2.529047023764265,
+    "mean_bb": -1.4185815299179598,
+    "n": 351,
+    "se_bb": 0.41632333238544833,
+    "share_negative": 0.5156695156695157,
     "verdict": "costly"
    },
    "overaggressive": {
-    "coach_mean_bb": -2.5728717793068787,
-    "mean_bb": 3.002906828602261,
-    "n": 95,
-    "se_bb": 0.9997107673325871,
-    "share_negative": 0.24210526315789474,
-    "verdict": "gains"
+    "coach_mean_bb": -4.2797635437402395,
+    "mean_bb": -9.910094724722004,
+    "n": 6,
+    "se_bb": 13.967730487141555,
+    "share_negative": 0.5,
+    "verdict": "insufficient"
    },
    "preflop_loose": {
-    "coach_mean_bb": -0.57,
-    "mean_bb": -5.872701954759433,
-    "n": 34,
-    "se_bb": 2.7027119946920237,
-    "share_negative": 0.7352941176470589,
+    "coach_mean_bb": -0.56524,
+    "mean_bb": -5.618412655619212,
+    "n": 37,
+    "se_bb": 2.5632807489293854,
+    "share_negative": 0.7297297297297297,
     "verdict": "costly"
    },
    "preflop_tight": {
-    "coach_mean_bb": -0.9806228448275862,
-    "mean_bb": 1.8984067636663489,
-    "n": 58,
-    "se_bb": 1.0778987965315407,
-    "share_negative": 0.5,
-    "verdict": "unclear"
+    "coach_mean_bb": -1.220528409090909,
+    "mean_bb": 3.987900168545844,
+    "n": 44,
+    "se_bb": 1.2050672786385845,
+    "share_negative": 0.3409090909090909,
+    "verdict": "gains"
    }
   },
   "flag_by_confidence": {
    "high|True": {
-    "coach_mean_bb": -10.319645217545798,
-    "mean_bb": -10.521015133746886,
-    "n": 185,
-    "se_bb": 1.0177834093460234,
-    "share_negative": 0.9513513513513514,
+    "coach_mean_bb": -9.974112698247163,
+    "mean_bb": -9.992976286650816,
+    "n": 191,
+    "se_bb": 0.9335438758785594,
+    "share_negative": 0.9528795811518325,
     "verdict": "costly"
    },
    "low|False": {
-    "coach_mean_bb": -6.8386622271608335,
-    "mean_bb": -6.95420065976019,
-    "n": 171,
-    "se_bb": 1.2411903779738938,
-    "share_negative": 0.7719298245614035,
+    "coach_mean_bb": -5.980926282351577,
+    "mean_bb": -8.725412954699177,
+    "n": 204,
+    "se_bb": 0.9891075331059638,
+    "share_negative": 0.8235294117647058,
     "verdict": "costly"
    },
    "low|None": {
     "coach_mean_bb": null,
-    "mean_bb": -8.733311268798984,
-    "n": 11,
-    "se_bb": 6.701659691362047,
-    "share_negative": 0.5454545454545454,
+    "mean_bb": -10.05767711936989,
+    "n": 12,
+    "se_bb": 6.669391250668356,
+    "share_negative": 0.5833333333333334,
     "verdict": "insufficient"
    },
    "low|True": {
-    "coach_mean_bb": -2.354634803031499,
-    "mean_bb": 0.5829299021183852,
-    "n": 602,
-    "se_bb": 0.46770529275087835,
-    "share_negative": 0.4850498338870432,
+    "coach_mean_bb": -2.0158949082924815,
+    "mean_bb": -0.5455363124857039,
+    "n": 438,
+    "se_bb": 0.3817365939754834,
+    "share_negative": 0.5251141552511416,
     "verdict": "unclear"
    },
    "medium|True": {
-    "coach_mean_bb": -4.517590128227607,
-    "mean_bb": -5.7458200307464695,
-    "n": 305,
-    "se_bb": 0.8804878006016691,
-    "share_negative": 0.6262295081967213,
+    "coach_mean_bb": -4.138762384566054,
+    "mean_bb": -10.72396867283228,
+    "n": 265,
+    "se_bb": 1.2013889215403437,
+    "share_negative": 0.8188679245283019,
     "verdict": "costly"
    }
   },
@@ -10075,226 +10120,146 @@
     "verdict": "insufficient"
    },
    "baseline_vs_changing_opponent|folded_with_odds": {
-    "coach_mean_bb": -4.123842798818074,
-    "mean_bb": 8.27107843137255,
-    "n": 17,
-    "se_bb": 3.588273293320439,
-    "share_negative": 0.29411764705882354,
-    "verdict": "gains"
-   },
-   "baseline_vs_changing_opponent|missed_value": {
-    "coach_mean_bb": -2.4844190734530165,
-    "mean_bb": -6.6515625,
-    "n": 32,
-    "se_bb": 1.6719774022963836,
-    "share_negative": 0.6875,
-    "verdict": "costly"
-   },
-   "baseline_vs_changing_opponent|overaggressive": {
-    "coach_mean_bb": -1.2236525231474407,
-    "mean_bb": 0.9145833333333333,
-    "n": 12,
-    "se_bb": 1.7147063697770157,
-    "share_negative": 0.6666666666666666,
-    "verdict": "insufficient"
-   },
-   "baseline|folded_with_odds": {
-    "coach_mean_bb": -2.7499694327307256,
-    "mean_bb": -1.2305555555555554,
-    "n": 3,
-    "se_bb": 2.9684464594659694,
+    "coach_mean_bb": -5.925651327600889,
+    "mean_bb": 5.4375,
+    "n": 6,
+    "se_bb": 7.488206081837897,
     "share_negative": 0.3333333333333333,
     "verdict": "insufficient"
    },
+   "baseline_vs_changing_opponent|missed_value": {
+    "coach_mean_bb": -2.4844190734530165,
+    "mean_bb": -7.026302083333333,
+    "n": 32,
+    "se_bb": 1.8079812549555012,
+    "share_negative": 0.65625,
+    "verdict": "costly"
+   },
    "baseline|missed_value": {
     "coach_mean_bb": -1.5789095560450166,
-    "mean_bb": 0.29583333333333334,
+    "mean_bb": -0.04097222222222236,
     "n": 12,
-    "se_bb": 1.1788699344671456,
+    "se_bb": 1.0371748904099334,
     "share_negative": 0.4166666666666667,
     "verdict": "insufficient"
    },
-   "baseline|overaggressive": {
-    "coach_mean_bb": -1.450844673079279,
-    "mean_bb": 0.08333333333333334,
-    "n": 4,
-    "se_bb": 2.0429417786885438,
-    "share_negative": 0.25,
-    "verdict": "insufficient"
-   },
-   "beginner_style|(no tag)": {
-    "coach_mean_bb": -4.234687224958665,
-    "mean_bb": 5.4446355085243985,
-    "n": 31,
-    "se_bb": 3.80452482716855,
-    "share_negative": 0.2903225806451613,
-    "verdict": "unclear"
-   },
    "beginner_style|called_without_odds": {
-    "coach_mean_bb": -6.7836114012210205,
-    "mean_bb": -9.93421740626075,
-    "n": 133,
-    "se_bb": 1.0910945939754968,
-    "share_negative": 0.8947368421052632,
+    "coach_mean_bb": -6.033802912108491,
+    "mean_bb": -10.313455684346096,
+    "n": 161,
+    "se_bb": 0.9592418118858556,
+    "share_negative": 0.8944099378881988,
     "verdict": "costly"
    },
    "beginner_style|missed_value": {
-    "coach_mean_bb": -1.3194515345944449,
-    "mean_bb": -0.39790183387270767,
-    "n": 41,
-    "se_bb": 0.8025668043750716,
-    "share_negative": 0.5853658536585366,
+    "coach_mean_bb": -1.3095190768708431,
+    "mean_bb": -0.625317147856518,
+    "n": 42,
+    "se_bb": 0.6706558258134414,
+    "share_negative": 0.6190476190476191,
     "verdict": "unclear"
    },
-   "beginner_style|overaggressive": {
-    "coach_mean_bb": -7.825013360219403,
-    "mean_bb": 12.053479853479853,
-    "n": 8,
-    "se_bb": 8.910599052038036,
-    "share_negative": 0.0,
-    "verdict": "insufficient"
-   },
    "beginner_style|preflop_loose": {
-    "coach_mean_bb": -0.578,
-    "mean_bb": -5.212943571844095,
-    "n": 16,
-    "se_bb": 1.0361853223011792,
-    "share_negative": 0.875,
+    "coach_mean_bb": -0.5708235294117646,
+    "mean_bb": -3.741571350762528,
+    "n": 17,
+    "se_bb": 1.2890780745387884,
+    "share_negative": 0.8235294117647058,
     "verdict": "costly"
    },
    "big_bet_station|(no tag)": {
-    "coach_mean_bb": -3.9586163411913597,
-    "mean_bb": 3.708333333333333,
-    "n": 2,
-    "se_bb": 8.291666666666668,
-    "share_negative": 0.5,
-    "verdict": "insufficient"
-   },
-   "big_bet_station|called_without_odds": {
-    "coach_mean_bb": -4.579571633899698,
-    "mean_bb": -6.108333333333333,
-    "n": 3,
-    "se_bb": 2.104762016986278,
+    "coach_mean_bb": -2.1052905717961936,
+    "mean_bb": null,
+    "n": 1,
+    "se_bb": null,
     "share_negative": 1.0,
     "verdict": "insufficient"
    },
-   "big_bet_station|folded_with_odds": {
-    "coach_mean_bb": -1.9589396503203322,
-    "mean_bb": 6.545238095238095,
-    "n": 7,
-    "se_bb": 8.045699263829771,
-    "share_negative": 0.5714285714285714,
+   "big_bet_station|called_without_odds": {
+    "coach_mean_bb": -4.6645882861482875,
+    "mean_bb": -7.83125,
+    "n": 4,
+    "se_bb": 1.8771604066061134,
+    "share_negative": 1.0,
     "verdict": "insufficient"
    },
    "big_bet_station|missed_value": {
     "coach_mean_bb": -1.8529122714340784,
-    "mean_bb": 0.4578125,
+    "mean_bb": 0.08802083333333335,
     "n": 16,
-    "se_bb": 0.5628992763731672,
-    "share_negative": 0.25,
+    "se_bb": 0.5710922814681935,
+    "share_negative": 0.375,
     "verdict": "unclear"
-   },
-   "big_bet_station|overaggressive": {
-    "coach_mean_bb": -2.9166159536561502,
-    "mean_bb": -0.16666666666666666,
-    "n": 7,
-    "se_bb": 0.3273268353539886,
-    "share_negative": 0.14285714285714285,
-    "verdict": "insufficient"
    },
    "calling_station|(no tag)": {
-    "coach_mean_bb": -3.4154953936385257,
-    "mean_bb": 5.829722222222222,
-    "n": 30,
-    "se_bb": 3.1442693692545687,
-    "share_negative": 0.26666666666666666,
-    "verdict": "unclear"
+    "coach_mean_bb": -1.1220312500000003,
+    "mean_bb": -0.19999999999999996,
+    "n": 2,
+    "se_bb": 0.8916666666666666,
+    "share_negative": 0.5,
+    "verdict": "insufficient"
    },
    "calling_station|called_without_odds": {
-    "coach_mean_bb": -5.6010257286222265,
-    "mean_bb": -8.867735042735044,
-    "n": 117,
-    "se_bb": 0.7801842858179223,
-    "share_negative": 0.9230769230769231,
+    "coach_mean_bb": -5.159308850967301,
+    "mean_bb": -9.632904411764706,
+    "n": 136,
+    "se_bb": 0.7836483837768875,
+    "share_negative": 0.9338235294117647,
     "verdict": "costly"
-   },
-   "calling_station|folded_with_odds": {
-    "coach_mean_bb": -1.889527883752244,
-    "mean_bb": 2.225,
-    "n": 2,
-    "se_bb": 0.9833333333333334,
-    "share_negative": 0.0,
-    "verdict": "insufficient"
    },
    "calling_station|missed_value": {
     "coach_mean_bb": -1.5958661610485094,
-    "mean_bb": 1.7662878787878789,
+    "mean_bb": 0.8219696969696969,
     "n": 22,
-    "se_bb": 2.856382589903113,
-    "share_negative": 0.45454545454545453,
+    "se_bb": 1.150752172801701,
+    "share_negative": 0.5454545454545454,
     "verdict": "unclear"
    },
-   "calling_station|overaggressive": {
-    "coach_mean_bb": -1.8859091258974143,
-    "mean_bb": -0.45,
-    "n": 5,
-    "se_bb": 0.9879271228182775,
-    "share_negative": 0.4,
-    "verdict": "insufficient"
-   },
    "never_bluffs|(no tag)": {
-    "coach_mean_bb": -2.6963222937300357,
-    "mean_bb": 4.4,
-    "n": 3,
-    "se_bb": 6.574896140568249,
-    "share_negative": 0.3333333333333333,
+    "coach_mean_bb": -1.0106249999999997,
+    "mean_bb": null,
+    "n": 1,
+    "se_bb": null,
+    "share_negative": 0.0,
     "verdict": "insufficient"
    },
-   "never_bluffs|folded_with_odds": {
-    "coach_mean_bb": -1.567217817585169,
-    "mean_bb": -0.8583333333333331,
-    "n": 4,
-    "se_bb": 6.161835570071031,
-    "share_negative": 0.5,
+   "never_bluffs|called_without_odds": {
+    "coach_mean_bb": -3.051625058878945,
+    "mean_bb": null,
+    "n": 1,
+    "se_bb": null,
+    "share_negative": 1.0,
     "verdict": "insufficient"
    },
    "never_bluffs|missed_value": {
     "coach_mean_bb": -1.4349180029468935,
-    "mean_bb": -0.8539682539682539,
+    "mean_bb": -0.3123015873015873,
     "n": 21,
-    "se_bb": 1.2974435102860824,
-    "share_negative": 0.5238095238095238,
+    "se_bb": 1.3481626507042248,
+    "share_negative": 0.47619047619047616,
     "verdict": "unclear"
    },
    "over_bluffer|folded_with_odds": {
-    "coach_mean_bb": -10.44373166820014,
-    "mean_bb": 14.644444444444446,
-    "n": 6,
-    "se_bb": 7.761197008989379,
-    "share_negative": 0.3333333333333333,
+    "coach_mean_bb": -17.28053954612334,
+    "mean_bb": 25.166666666666668,
+    "n": 3,
+    "se_bb": 10.672758677014007,
+    "share_negative": 0.0,
     "verdict": "insufficient"
    },
    "over_bluffer|missed_value": {
     "coach_mean_bb": -2.0000718622847473,
-    "mean_bb": -2.6372807017543862,
+    "mean_bb": -2.3140350877192986,
     "n": 19,
-    "se_bb": 1.9490759761140202,
+    "se_bb": 1.9698679479156211,
     "share_negative": 0.3684210526315789,
     "verdict": "unclear"
    },
-   "over_bluffer|overaggressive": {
-    "coach_mean_bb": -1.346536490423092,
-    "mean_bb": 2.3249999999999997,
-    "n": 3,
-    "se_bb": 1.1995658937021065,
-    "share_negative": 0.0,
-    "verdict": "insufficient"
-   },
    "over_folder|(no tag)": {
     "coach_mean_bb": -1.3248136123136123,
-    "mean_bb": -1.8222222222222222,
+    "mean_bb": -1.4833333333333332,
     "n": 3,
-    "se_bb": 1.4259932644032571,
+    "se_bb": 0.7797049536939051,
     "share_negative": 0.6666666666666666,
     "verdict": "insufficient"
    },
@@ -10307,27 +10272,19 @@
     "verdict": "insufficient"
    },
    "over_folder|folded_with_odds": {
-    "coach_mean_bb": -5.223806309045996,
-    "mean_bb": -1.5134180790960452,
-    "n": 59,
-    "se_bb": 2.841993217865314,
-    "share_negative": 0.559322033898305,
+    "coach_mean_bb": -4.732583201546149,
+    "mean_bb": -0.5470238095238095,
+    "n": 42,
+    "se_bb": 3.616872196728609,
+    "share_negative": 0.5476190476190477,
     "verdict": "unclear"
    },
    "over_folder|missed_value": {
     "coach_mean_bb": -2.536126189223807,
-    "mean_bb": -1.996212121212121,
+    "mean_bb": -3.243939393939394,
     "n": 11,
-    "se_bb": 1.1753284323044717,
-    "share_negative": 0.6363636363636364,
-    "verdict": "insufficient"
-   },
-   "over_folder|overaggressive": {
-    "coach_mean_bb": -1.9977119061746678,
-    "mean_bb": 2.113541666666667,
-    "n": 8,
-    "se_bb": 1.2029002830749629,
-    "share_negative": 0.0,
+    "se_bb": 2.3480061095622777,
+    "share_negative": 0.5454545454545454,
     "verdict": "insufficient"
    },
    "preflop_loose|(no tag)": {
@@ -10348,91 +10305,75 @@
    },
    "preflop_loose|missed_value": {
     "coach_mean_bb": -2.2626621864248437,
-    "mean_bb": -1.763257575757576,
+    "mean_bb": -1.6159090909090912,
     "n": 22,
-    "se_bb": 0.8961737010850669,
+    "se_bb": 0.7979419982096989,
     "share_negative": 0.6363636363636364,
     "verdict": "costly"
    },
-   "preflop_loose|overaggressive": {
-    "coach_mean_bb": -2.19124898396783,
-    "mean_bb": 3.6333333333333333,
-    "n": 8,
-    "se_bb": 2.510391103406697,
-    "share_negative": 0.125,
-    "verdict": "insufficient"
-   },
    "preflop_loose|preflop_loose": {
     "coach_mean_bb": -0.5517142857142857,
-    "mean_bb": -0.6059523809523809,
+    "mean_bb": -0.6916666666666667,
     "n": 7,
-    "se_bb": 0.6289681287867283,
+    "se_bb": 0.624626872747827,
     "share_negative": 0.7142857142857143,
     "verdict": "insufficient"
    },
-   "random|(no tag)": {
-    "coach_mean_bb": -9.996009780853884,
-    "mean_bb": 4.771765725291104,
-    "n": 10,
-    "se_bb": 3.1706852980798295,
-    "share_negative": 0.3,
-    "verdict": "insufficient"
-   },
    "random|bet_sizing": {
-    "coach_mean_bb": -1.2124627974618687,
-    "mean_bb": -4.768518518518518,
-    "n": 3,
-    "se_bb": 6.619219428418106,
-    "share_negative": 0.3333333333333333,
+    "coach_mean_bb": -1.3339862214730251,
+    "mean_bb": -0.11992740544659698,
+    "n": 4,
+    "se_bb": 1.0987411472898156,
+    "share_negative": 0.5,
     "verdict": "insufficient"
    },
    "random|called_without_odds": {
-    "coach_mean_bb": -13.837567901988733,
-    "mean_bb": -20.680569362911623,
-    "n": 30,
-    "se_bb": 3.624979879082966,
-    "share_negative": 0.9666666666666667,
+    "coach_mean_bb": -12.086369332696162,
+    "mean_bb": -21.86271953248379,
+    "n": 40,
+    "se_bb": 4.141219748475088,
+    "share_negative": 0.975,
     "verdict": "costly"
    },
    "random|folded_with_odds": {
-    "coach_mean_bb": -10.42992722522213,
-    "mean_bb": -3.6372494207716324,
-    "n": 24,
-    "se_bb": 4.313155119575571,
-    "share_negative": 0.5,
+    "coach_mean_bb": -8.01782774358029,
+    "mean_bb": -1.6964378214104598,
+    "n": 22,
+    "se_bb": 3.729914305993535,
+    "share_negative": 0.5909090909090909,
     "verdict": "unclear"
    },
    "random|missed_value": {
-    "coach_mean_bb": -2.36607974416795,
-    "mean_bb": -2.7461717162870527,
-    "n": 39,
-    "se_bb": 1.20685766882088,
-    "share_negative": 0.5384615384615384,
-    "verdict": "costly"
+    "coach_mean_bb": -2.342377189614654,
+    "mean_bb": -1.686276186735793,
+    "n": 45,
+    "se_bb": 1.1301243703899202,
+    "share_negative": 0.5555555555555556,
+    "verdict": "unclear"
    },
    "random|overaggressive": {
-    "coach_mean_bb": -2.7354129033381467,
-    "mean_bb": 5.6588909186267715,
-    "n": 13,
-    "se_bb": 2.1180760675774373,
-    "share_negative": 0.07692307692307693,
+    "coach_mean_bb": -4.2797635437402395,
+    "mean_bb": -9.910094724722004,
+    "n": 6,
+    "se_bb": 13.967730487141555,
+    "share_negative": 0.5,
     "verdict": "insufficient"
    },
    "random|preflop_loose": {
-    "coach_mean_bb": null,
-    "mean_bb": -8.733311268798984,
-    "n": 11,
-    "se_bb": 6.701659691362047,
-    "share_negative": 0.5454545454545454,
+    "coach_mean_bb": -0.5649999999999998,
+    "mean_bb": -9.450229734743454,
+    "n": 13,
+    "se_bb": 6.12191994646315,
+    "share_negative": 0.6153846153846154,
     "verdict": "insufficient"
    },
    "random|preflop_tight": {
-    "coach_mean_bb": -0.9806228448275862,
-    "mean_bb": 1.8984067636663489,
-    "n": 58,
-    "se_bb": 1.0778987965315407,
-    "share_negative": 0.5,
-    "verdict": "unclear"
+    "coach_mean_bb": -1.220528409090909,
+    "mean_bb": 3.987900168545844,
+    "n": 44,
+    "se_bb": 1.2050672786385845,
+    "share_negative": 0.3409090909090909,
+    "verdict": "gains"
    },
    "river_station|bet_sizing": {
     "coach_mean_bb": -7.522321428571428,
@@ -10450,36 +10391,20 @@
     "share_negative": 0.9047619047619048,
     "verdict": "costly"
    },
-   "river_station|folded_with_odds": {
-    "coach_mean_bb": -1.794126766964628,
-    "mean_bb": 10.975,
-    "n": 3,
-    "se_bb": 5.953443992377049,
-    "share_negative": 0.0,
-    "verdict": "insufficient"
-   },
    "river_station|missed_value": {
     "coach_mean_bb": -1.4450978341724998,
-    "mean_bb": -2.060185185185185,
+    "mean_bb": -1.7787037037037037,
     "n": 9,
-    "se_bb": 1.119887024602839,
-    "share_negative": 0.6666666666666666,
-    "verdict": "insufficient"
-   },
-   "river_station|overaggressive": {
-    "coach_mean_bb": -1.802695155364382,
-    "mean_bb": 0.46875,
-    "n": 4,
-    "se_bb": 0.6929236820651079,
-    "share_negative": 0.25,
+    "se_bb": 0.7703190365286379,
+    "share_negative": 0.7777777777777778,
     "verdict": "insufficient"
    },
    "slow_player|(no tag)": {
-    "coach_mean_bb": -2.6616699263496133,
-    "mean_bb": 13.55,
-    "n": 2,
-    "se_bb": 15.766666666666667,
-    "share_negative": 0.5,
+    "coach_mean_bb": -1.0671875,
+    "mean_bb": null,
+    "n": 1,
+    "se_bb": null,
+    "share_negative": 1.0,
     "verdict": "insufficient"
    },
    "slow_player|called_without_odds": {
@@ -10491,166 +10416,126 @@
     "verdict": "insufficient"
    },
    "slow_player|folded_with_odds": {
-    "coach_mean_bb": -5.077962938247315,
-    "mean_bb": 8.926388888888889,
-    "n": 6,
-    "se_bb": 3.457059615955676,
-    "share_negative": 0.16666666666666666,
+    "coach_mean_bb": -5.913441955193482,
+    "mean_bb": null,
+    "n": 1,
+    "se_bb": null,
+    "share_negative": 0.0,
     "verdict": "insufficient"
    },
    "slow_player|missed_value": {
     "coach_mean_bb": -5.264746804945865,
-    "mean_bb": 1.0276785714285714,
+    "mean_bb": 0.5912202380952379,
     "n": 56,
-    "se_bb": 1.5843472503645415,
+    "se_bb": 1.4160149127777586,
     "share_negative": 0.4107142857142857,
     "verdict": "unclear"
    },
-   "slow_player|overaggressive": {
-    "coach_mean_bb": -2.770033823534877,
-    "mean_bb": 4.833333333333333,
-    "n": 6,
-    "se_bb": 4.204177816305004,
-    "share_negative": 0.3333333333333333,
-    "verdict": "insufficient"
-   },
-   "station_and_bluffer|(no tag)": {
-    "coach_mean_bb": -4.713948416828003,
-    "mean_bb": 3.1845833333333333,
-    "n": 20,
-    "se_bb": 3.4700686156044416,
-    "share_negative": 0.4,
-    "verdict": "unclear"
-   },
    "station_and_bluffer|called_without_odds": {
-    "coach_mean_bb": -7.687188322083485,
-    "mean_bb": -12.31201754385965,
-    "n": 95,
-    "se_bb": 1.5718812413754866,
-    "share_negative": 0.9157894736842105,
+    "coach_mean_bb": -6.78188234074618,
+    "mean_bb": -12.146086956521739,
+    "n": 115,
+    "se_bb": 1.3838853337073702,
+    "share_negative": 0.8782608695652174,
     "verdict": "costly"
    },
    "station_and_bluffer|missed_value": {
     "coach_mean_bb": -2.747303096849393,
-    "mean_bb": -1.4557971014492754,
+    "mean_bb": -2.6945652173913044,
     "n": 23,
-    "se_bb": 2.042452151527084,
+    "se_bb": 2.6084016083732666,
     "share_negative": 0.43478260869565216,
     "verdict": "unclear"
    },
-   "station_and_bluffer|overaggressive": {
-    "coach_mean_bb": -2.5560477256183693,
-    "mean_bb": -1.05,
-    "n": 10,
-    "se_bb": 1.5785097089452973,
-    "share_negative": 0.4,
-    "verdict": "insufficient"
-   },
-   "station_then_fixed|(no tag)": {
-    "coach_mean_bb": -3.7842757160807294,
-    "mean_bb": 9.499287749287749,
-    "n": 11,
-    "se_bb": 1.8524739069107967,
-    "share_negative": 0.0,
-    "verdict": "insufficient"
-   },
    "station_then_fixed|called_without_odds": {
-    "coach_mean_bb": -5.992530949633599,
-    "mean_bb": -9.843094883258816,
-    "n": 65,
-    "se_bb": 1.1346572678482225,
-    "share_negative": 0.9692307692307692,
+    "coach_mean_bb": -4.719530346071162,
+    "mean_bb": -10.082589658048374,
+    "n": 78,
+    "se_bb": 1.1119731929263748,
+    "share_negative": 0.9615384615384616,
     "verdict": "costly"
    },
    "station_then_fixed|folded_with_odds": {
-    "coach_mean_bb": -2.8732835034697928,
-    "mean_bb": 0.872916666666667,
-    "n": 4,
-    "se_bb": 6.251682528157549,
-    "share_negative": 0.25,
+    "coach_mean_bb": -2.8779816513761474,
+    "mean_bb": null,
+    "n": 1,
+    "se_bb": null,
+    "share_negative": 0.0,
     "verdict": "insufficient"
    },
    "station_then_fixed|missed_value": {
     "coach_mean_bb": -2.2502133919434573,
-    "mean_bb": -0.6850710900473934,
+    "mean_bb": -1.186445147679325,
     "n": 21,
-    "se_bb": 1.1792959545458561,
-    "share_negative": 0.47619047619047616,
+    "se_bb": 0.7369980371323341,
+    "share_negative": 0.42857142857142855,
     "verdict": "unclear"
-   },
-   "station_then_fixed|overaggressive": {
-    "coach_mean_bb": -1.2837886746537241,
-    "mean_bb": 0.12676056338028172,
-    "n": 7,
-    "se_bb": 0.9218618058871801,
-    "share_negative": 0.2857142857142857,
-    "verdict": "insufficient"
    }
   },
   "flag_by_street": {
    "flop|(no tag)": {
-    "coach_mean_bb": -2.8047345401006667,
-    "mean_bb": 3.882701257697071,
-    "n": 31,
-    "se_bb": 3.298978743254403,
-    "share_negative": 0.25806451612903225,
-    "verdict": "unclear"
+    "coach_mean_bb": -1.0716249999999998,
+    "mean_bb": -0.7916666666666666,
+    "n": 5,
+    "se_bb": 0.588978635718931,
+    "share_negative": 0.6,
+    "verdict": "insufficient"
    },
    "flop|bet_sizing": {
-    "coach_mean_bb": -1.0866666666666667,
-    "mean_bb": null,
-    "n": 1,
-    "se_bb": null,
+    "coach_mean_bb": -1.3926115800865806,
+    "mean_bb": -1.940684899485741,
+    "n": 2,
+    "se_bb": 0.739214232181742,
     "share_negative": 1.0,
     "verdict": "insufficient"
    },
    "flop|called_without_odds": {
-    "coach_mean_bb": -1.8767895451797334,
-    "mean_bb": -9.904107846145978,
-    "n": 91,
-    "se_bb": 1.1708356744046826,
-    "share_negative": 0.8901098901098901,
+    "coach_mean_bb": -1.9461903089327097,
+    "mean_bb": -12.839145571303398,
+    "n": 124,
+    "se_bb": 1.571973693566034,
+    "share_negative": 0.8951612903225806,
     "verdict": "costly"
    },
    "flop|folded_with_odds": {
-    "coach_mean_bb": -4.25973617606667,
-    "mean_bb": 2.3601943697825565,
-    "n": 74,
-    "se_bb": 2.3820294022605513,
-    "share_negative": 0.44594594594594594,
+    "coach_mean_bb": -4.493546906353958,
+    "mean_bb": 4.879142880632446,
+    "n": 38,
+    "se_bb": 3.277151701503165,
+    "share_negative": 0.5,
     "verdict": "unclear"
    },
    "flop|missed_value": {
-    "coach_mean_bb": -1.4895999188425906,
-    "mean_bb": -1.2125640105038484,
-    "n": 190,
-    "se_bb": 0.5533964349089192,
-    "share_negative": 0.5157894736842106,
+    "coach_mean_bb": -1.509115995590997,
+    "mean_bb": -1.1306860128979093,
+    "n": 196,
+    "se_bb": 0.47447545715204464,
+    "share_negative": 0.5051020408163265,
     "verdict": "costly"
    },
    "flop|overaggressive": {
-    "coach_mean_bb": -1.1590329471349807,
-    "mean_bb": 2.4511006289308175,
-    "n": 3,
-    "se_bb": 2.6278155788561843,
-    "share_negative": 0.3333333333333333,
+    "coach_mean_bb": -2.0540824915824913,
+    "mean_bb": null,
+    "n": 1,
+    "se_bb": null,
+    "share_negative": 0.0,
     "verdict": "insufficient"
    },
    "preflop|preflop_loose": {
-    "coach_mean_bb": -0.57,
-    "mean_bb": -5.872701954759433,
-    "n": 34,
-    "se_bb": 2.7027119946920237,
-    "share_negative": 0.7352941176470589,
+    "coach_mean_bb": -0.56524,
+    "mean_bb": -5.618412655619212,
+    "n": 37,
+    "se_bb": 2.5632807489293854,
+    "share_negative": 0.7297297297297297,
     "verdict": "costly"
    },
    "preflop|preflop_tight": {
-    "coach_mean_bb": -0.9806228448275862,
-    "mean_bb": 1.8984067636663489,
-    "n": 58,
-    "se_bb": 1.0778987965315407,
-    "share_negative": 0.5,
-    "verdict": "unclear"
+    "coach_mean_bb": -1.220528409090909,
+    "mean_bb": 3.987900168545844,
+    "n": 44,
+    "se_bb": 1.2050672786385845,
+    "share_negative": 0.3409090909090909,
+    "verdict": "gains"
    },
    "river|(no tag)": {
     "coach_mean_bb": -1.05,
@@ -10662,51 +10547,51 @@
    },
    "river|bet_sizing": {
     "coach_mean_bb": -6.965349195700852,
-    "mean_bb": -5.471428571428571,
+    "mean_bb": -5.823391812865497,
     "n": 6,
-    "se_bb": 5.457578173225554,
+    "se_bb": 5.7062553569173495,
     "share_negative": 0.5,
     "verdict": "insufficient"
    },
    "river|called_without_odds": {
-    "coach_mean_bb": -9.651489842664384,
-    "mean_bb": -9.918768040449248,
-    "n": 278,
-    "se_bb": 0.8377819200852307,
-    "share_negative": 0.9316546762589928,
+    "coach_mean_bb": -9.344996045743995,
+    "mean_bb": -9.536321100409488,
+    "n": 282,
+    "se_bb": 0.7944064669987848,
+    "share_negative": 0.9290780141843972,
     "verdict": "costly"
    },
    "river|folded_with_odds": {
-    "coach_mean_bb": -9.602842870215738,
-    "mean_bb": 0.3143375871650161,
+    "coach_mean_bb": -8.95697730283136,
+    "mean_bb": 0.20868774737068546,
     "n": 17,
-    "se_bb": 5.357733514409814,
-    "share_negative": 0.35294117647058826,
+    "se_bb": 5.44724153739304,
+    "share_negative": 0.4117647058823529,
     "verdict": "unclear"
    },
    "river|missed_value": {
-    "coach_mean_bb": -8.754675520136647,
-    "mean_bb": -1.1301266287548886,
-    "n": 20,
-    "se_bb": 3.1890446844189615,
-    "share_negative": 0.25,
+    "coach_mean_bb": -9.13262423975003,
+    "mean_bb": -0.9773798673429576,
+    "n": 19,
+    "se_bb": 3.074815689634622,
+    "share_negative": 0.2631578947368421,
     "verdict": "unclear"
    },
    "river|overaggressive": {
-    "coach_mean_bb": -2.799600223183756,
-    "mean_bb": 3.249402495463903,
-    "n": 82,
-    "se_bb": 1.1491728352383959,
-    "share_negative": 0.21951219512195122,
-    "verdict": "gains"
+    "coach_mean_bb": -5.732374387254901,
+    "mean_bb": -12.61538246254916,
+    "n": 4,
+    "se_bb": 23.351442454661292,
+    "share_negative": 0.5,
+    "verdict": "insufficient"
    },
    "turn|(no tag)": {
-    "coach_mean_bb": -5.054010274310889,
-    "mean_bb": 6.119719066513296,
-    "n": 81,
-    "se_bb": 1.7456919918148994,
-    "share_negative": 0.30864197530864196,
-    "verdict": "gains"
+    "coach_mean_bb": -2.1516131043218296,
+    "mean_bb": 2.7861111111111114,
+    "n": 3,
+    "se_bb": 6.205911782275245,
+    "share_negative": 0.6666666666666666,
+    "verdict": "insufficient"
    },
    "turn|bet_sizing": {
     "coach_mean_bb": -1.2337809758594376,
@@ -10717,45 +10602,45 @@
     "verdict": "insufficient"
    },
    "turn|called_without_odds": {
-    "coach_mean_bb": -4.405068053881202,
-    "mean_bb": -12.594392842107608,
-    "n": 118,
-    "se_bb": 1.2625721838895414,
-    "share_negative": 0.9152542372881356,
+    "coach_mean_bb": -4.145623996517925,
+    "mean_bb": -12.374054358099832,
+    "n": 173,
+    "se_bb": 1.0821477778678017,
+    "share_negative": 0.9075144508670521,
     "verdict": "costly"
    },
    "turn|folded_with_odds": {
-    "coach_mean_bb": -6.640350959956555,
-    "mean_bb": -1.3885711190553567,
-    "n": 44,
-    "se_bb": 2.979141492343307,
-    "share_negative": 0.5,
+    "coach_mean_bb": -7.416212922233302,
+    "mean_bb": -7.748950505470835,
+    "n": 20,
+    "se_bb": 4.069072257620903,
+    "share_negative": 0.6,
     "verdict": "unclear"
    },
    "turn|missed_value": {
-    "coach_mean_bb": -3.1010884965531296,
-    "mean_bb": -1.4350538699373545,
-    "n": 134,
-    "se_bb": 0.6993302276203115,
-    "share_negative": 0.5298507462686567,
+    "coach_mean_bb": -3.076389041545376,
+    "mean_bb": -1.8941500931747133,
+    "n": 136,
+    "se_bb": 0.7146161831886464,
+    "share_negative": 0.5661764705882353,
     "verdict": "costly"
    },
    "turn|overaggressive": {
-    "coach_mean_bb": -1.1378501891680544,
-    "mean_bb": 1.0125,
-    "n": 10,
-    "se_bb": 0.6300196572477073,
-    "share_negative": 0.4,
+    "coach_mean_bb": -2.147612065354001,
+    "mean_bb": null,
+    "n": 1,
+    "se_bb": null,
+    "share_negative": 1.0,
     "verdict": "insufficient"
    }
   }
  },
  "policies": {
   "baseline": {
-   "confident_flagged": 4,
+   "confident_flagged": 0,
    "decisions": 2127,
    "deviations": 0,
-   "flagged": 19,
+   "flagged": 12,
    "graded": 2127,
    "hands": 800,
    "multi": {
@@ -10795,10 +10680,10 @@
    "net_bb_per_100": 32.8625
   },
   "baseline_vs_changing_opponent": {
-   "confident_flagged": 8,
+   "confident_flagged": 2,
    "decisions": 2400,
    "deviations": 0,
-   "flagged": 64,
+   "flagged": 41,
    "graded": 2400,
    "hands": 800,
    "multi": {
@@ -10838,10 +10723,10 @@
    "net_bb_per_100": 120.475
   },
   "beginner_style": {
-   "confident_flagged": 111,
+   "confident_flagged": 112,
    "decisions": 2843,
    "deviations": 0,
-   "flagged": 279,
+   "flagged": 261,
    "graded": 2843,
    "hands": 800,
    "multi": {
@@ -10881,10 +10766,10 @@
    "net_bb_per_100": -224.4875
   },
   "big_bet_station": {
-   "confident_flagged": 9,
+   "confident_flagged": 3,
    "decisions": 2213,
    "deviations": 4,
-   "flagged": 35,
+   "flagged": 21,
    "graded": 2213,
    "hands": 800,
    "multi": {
@@ -10924,10 +10809,10 @@
    "net_bb_per_100": -1.0374999999999994
   },
   "calling_station": {
-   "confident_flagged": 95,
+   "confident_flagged": 102,
    "decisions": 2292,
    "deviations": 177,
-   "flagged": 176,
+   "flagged": 160,
    "graded": 2292,
    "hands": 800,
    "multi": {
@@ -10970,7 +10855,7 @@
    "confident_flagged": 0,
    "decisions": 2255,
    "deviations": 17,
-   "flagged": 28,
+   "flagged": 23,
    "graded": 2255,
    "hands": 800,
    "multi": {
@@ -11010,10 +10895,10 @@
    "net_bb_per_100": -15.775
   },
   "over_bluffer": {
-   "confident_flagged": 2,
+   "confident_flagged": 0,
    "decisions": 2045,
    "deviations": 185,
-   "flagged": 28,
+   "flagged": 22,
    "graded": 2045,
    "hands": 800,
    "multi": {
@@ -11053,10 +10938,10 @@
    "net_bb_per_100": -49.775
   },
   "over_folder": {
-   "confident_flagged": 25,
+   "confident_flagged": 17,
    "decisions": 2048,
    "deviations": 64,
-   "flagged": 82,
+   "flagged": 57,
    "graded": 2048,
    "hands": 800,
    "multi": {
@@ -11096,10 +10981,10 @@
    "net_bb_per_100": -46.0625
   },
   "preflop_loose": {
-   "confident_flagged": 9,
+   "confident_flagged": 1,
    "decisions": 2195,
    "deviations": 48,
-   "flagged": 39,
+   "flagged": 31,
    "graded": 2195,
    "hands": 800,
    "multi": {
@@ -11139,10 +11024,10 @@
    "net_bb_per_100": 84.3625
   },
   "random": {
-   "confident_flagged": 67,
+   "confident_flagged": 65,
    "decisions": 1752,
    "deviations": 1250,
-   "flagged": 294,
+   "flagged": 253,
    "graded": 1663,
    "hands": 800,
    "multi": {
@@ -11182,10 +11067,10 @@
    "net_bb_per_100": -197.875
   },
   "river_station": {
-   "confident_flagged": 32,
+   "confident_flagged": 28,
    "decisions": 2169,
    "deviations": 46,
-   "flagged": 59,
+   "flagged": 52,
    "graded": 2169,
    "hands": 800,
    "multi": {
@@ -11225,10 +11110,10 @@
    "net_bb_per_100": 32.2375
   },
   "slow_player": {
-   "confident_flagged": 21,
+   "confident_flagged": 15,
    "decisions": 2186,
    "deviations": 89,
-   "flagged": 71,
+   "flagged": 59,
    "graded": 2186,
    "hands": 800,
    "multi": {
@@ -11268,10 +11153,10 @@
    "net_bb_per_100": 31.25
   },
   "station_and_bluffer": {
-   "confident_flagged": 79,
+   "confident_flagged": 80,
    "decisions": 2214,
    "deviations": 401,
-   "flagged": 148,
+   "flagged": 138,
    "graded": 2214,
    "hands": 800,
    "multi": {
@@ -11311,10 +11196,10 @@
    "net_bb_per_100": -58.9125
   },
   "station_then_fixed": {
-   "confident_flagged": 57,
+   "confident_flagged": 51,
    "decisions": 2286,
    "deviations": 112,
-   "flagged": 111,
+   "flagged": 102,
    "graded": 2286,
    "hands": 800,
    "multi": {
@@ -11595,7 +11480,7 @@
    },
    "folded_with_odds": {
     "confirmed": "insufficient",
-    "flags_n": 3,
+    "flags_n": 0,
     "injected": false
    },
    "missed_value": {
@@ -11605,7 +11490,7 @@
    },
    "overaggressive": {
     "confirmed": "insufficient",
-    "flags_n": 4,
+    "flags_n": 0,
     "injected": false
    },
    "preflop_loose": {
@@ -11632,8 +11517,8 @@
     "injected": false
    },
    "folded_with_odds": {
-    "confirmed": "gains",
-    "flags_n": 17,
+    "confirmed": "insufficient",
+    "flags_n": 6,
     "injected": false
    },
    "missed_value": {
@@ -11643,7 +11528,7 @@
    },
    "overaggressive": {
     "confirmed": "insufficient",
-    "flags_n": 12,
+    "flags_n": 0,
     "injected": false
    },
    "preflop_loose": {
@@ -11666,7 +11551,7 @@
    },
    "called_without_odds": {
     "confirmed": "costly",
-    "flags_n": 133,
+    "flags_n": 161,
     "injected": false
    },
    "folded_with_odds": {
@@ -11676,17 +11561,17 @@
    },
    "missed_value": {
     "confirmed": "unclear",
-    "flags_n": 41,
+    "flags_n": 42,
     "injected": false
    },
    "overaggressive": {
     "confirmed": "insufficient",
-    "flags_n": 8,
+    "flags_n": 0,
     "injected": false
    },
    "preflop_loose": {
     "confirmed": "costly",
-    "flags_n": 16,
+    "flags_n": 17,
     "injected": false
    },
    "preflop_tight": {
@@ -11713,12 +11598,12 @@
    },
    "called_without_odds": {
     "confirmed": "insufficient",
-    "flags_n": 3,
+    "flags_n": 4,
     "injected": true
    },
    "folded_with_odds": {
     "confirmed": "insufficient",
-    "flags_n": 7,
+    "flags_n": 0,
     "injected": false
    },
    "missed_value": {
@@ -11728,7 +11613,7 @@
    },
    "overaggressive": {
     "confirmed": "insufficient",
-    "flags_n": 7,
+    "flags_n": 0,
     "injected": false
    },
    "preflop_loose": {
@@ -11760,12 +11645,12 @@
    },
    "called_without_odds": {
     "confirmed": "costly",
-    "flags_n": 117,
+    "flags_n": 136,
     "injected": true
    },
    "folded_with_odds": {
     "confirmed": "insufficient",
-    "flags_n": 2,
+    "flags_n": 0,
     "injected": false
    },
    "missed_value": {
@@ -11775,7 +11660,7 @@
    },
    "overaggressive": {
     "confirmed": "insufficient",
-    "flags_n": 5,
+    "flags_n": 0,
     "injected": false
    },
    "preflop_loose": {
@@ -11807,12 +11692,12 @@
    },
    "called_without_odds": {
     "confirmed": "insufficient",
-    "flags_n": 0,
+    "flags_n": 1,
     "injected": false
    },
    "folded_with_odds": {
     "confirmed": "insufficient",
-    "flags_n": 4,
+    "flags_n": 0,
     "injected": false
    },
    "missed_value": {
@@ -11859,7 +11744,7 @@
    },
    "folded_with_odds": {
     "confirmed": "insufficient",
-    "flags_n": 6,
+    "flags_n": 3,
     "injected": false
    },
    "missed_value": {
@@ -11869,7 +11754,7 @@
    },
    "overaggressive": {
     "confirmed": "insufficient",
-    "flags_n": 3,
+    "flags_n": 0,
     "injected": true
    },
    "preflop_loose": {
@@ -11906,7 +11791,7 @@
    },
    "folded_with_odds": {
     "confirmed": "unclear",
-    "flags_n": 59,
+    "flags_n": 42,
     "injected": true
    },
    "missed_value": {
@@ -11916,7 +11801,7 @@
    },
    "overaggressive": {
     "confirmed": "insufficient",
-    "flags_n": 8,
+    "flags_n": 0,
     "injected": false
    },
    "preflop_loose": {
@@ -11963,7 +11848,7 @@
    },
    "overaggressive": {
     "confirmed": "insufficient",
-    "flags_n": 8,
+    "flags_n": 0,
     "injected": false
    },
    "preflop_loose": {
@@ -11990,37 +11875,37 @@
    },
    "bet_sizing": {
     "confirmed": "insufficient",
-    "flags_n": 3,
+    "flags_n": 4,
     "injected": false
    },
    "called_without_odds": {
     "confirmed": "costly",
-    "flags_n": 30,
+    "flags_n": 40,
     "injected": true
    },
    "folded_with_odds": {
     "confirmed": "unclear",
-    "flags_n": 24,
+    "flags_n": 22,
     "injected": true
    },
    "missed_value": {
-    "confirmed": "costly",
-    "flags_n": 39,
+    "confirmed": "unclear",
+    "flags_n": 45,
     "injected": false
    },
    "overaggressive": {
     "confirmed": "insufficient",
-    "flags_n": 13,
+    "flags_n": 6,
     "injected": true
    },
    "preflop_loose": {
     "confirmed": "insufficient",
-    "flags_n": 11,
+    "flags_n": 13,
     "injected": false
    },
    "preflop_tight": {
-    "confirmed": "unclear",
-    "flags_n": 58,
+    "confirmed": "gains",
+    "flags_n": 44,
     "injected": false
    }
   },
@@ -12047,7 +11932,7 @@
    },
    "folded_with_odds": {
     "confirmed": "insufficient",
-    "flags_n": 3,
+    "flags_n": 0,
     "injected": false
    },
    "missed_value": {
@@ -12057,7 +11942,7 @@
    },
    "overaggressive": {
     "confirmed": "insufficient",
-    "flags_n": 4,
+    "flags_n": 0,
     "injected": false
    },
    "preflop_loose": {
@@ -12094,7 +11979,7 @@
    },
    "folded_with_odds": {
     "confirmed": "insufficient",
-    "flags_n": 6,
+    "flags_n": 1,
     "injected": false
    },
    "missed_value": {
@@ -12104,7 +11989,7 @@
    },
    "overaggressive": {
     "confirmed": "insufficient",
-    "flags_n": 6,
+    "flags_n": 0,
     "injected": false
    },
    "preflop_loose": {
@@ -12144,7 +12029,7 @@
    },
    "called_without_odds": {
     "confirmed": "costly",
-    "flags_n": 95,
+    "flags_n": 115,
     "injected": true
    },
    "folded_with_odds": {
@@ -12159,7 +12044,7 @@
    },
    "overaggressive": {
     "confirmed": "insufficient",
-    "flags_n": 10,
+    "flags_n": 0,
     "injected": true
    },
    "preflop_loose": {
@@ -12191,12 +12076,12 @@
    },
    "called_without_odds": {
     "confirmed": "costly",
-    "flags_n": 65,
+    "flags_n": 78,
     "injected": true
    },
    "folded_with_odds": {
     "confirmed": "insufficient",
-    "flags_n": 4,
+    "flags_n": 1,
     "injected": false
    },
    "missed_value": {
@@ -12206,7 +12091,7 @@
    },
    "overaggressive": {
     "confirmed": "insufficient",
-    "flags_n": 7,
+    "flags_n": 0,
     "injected": false
    },
    "preflop_loose": {
