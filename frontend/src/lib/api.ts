@@ -8,6 +8,11 @@ import type {
   HandReview,
   HandSummary,
   AnalyticsReport,
+  LabConfig,
+  LabEstimate,
+  LabInfo,
+  LabJob,
+  LabJobSummary,
   LeakReport,
   Focus,
   PlayResponse,
@@ -135,3 +140,18 @@ export const profileApi = {
   hand: (token: string, id: string) =>
     request<{ record: HandRecord; frames: HandFrame[] }>(`/api/profile/hands/${encodeURIComponent(id)}`, authed(token)),
 };
+
+/** The Simulation Lab (v0.5.0): strategy-versus-strategy experiments run on the server. */
+export const labApi = {
+  info: () => request<LabInfo>("/api/lab/strategies"),
+  estimate: (config: LabConfig) =>
+    request<LabEstimate>("/api/lab/estimate", { method: "POST", body: JSON.stringify(config) }),
+  submit: (config: LabConfig) =>
+    request<LabJob>("/api/lab/experiments", { method: "POST", body: JSON.stringify(config) }),
+  get: (id: string) => request<LabJob>(`/api/lab/experiments/${encodeURIComponent(id)}`),
+  list: () => request<{ experiments: LabJobSummary[] }>("/api/lab/experiments"),
+  cancel: (id: string) => request<LabJob>(`/api/lab/experiments/${encodeURIComponent(id)}`, { method: "DELETE" }),
+  /** Per-deal results as CSV (a plain link: the browser downloads it). */
+  dealsUrl: (id: string) => `${BASE}/api/lab/experiments/${encodeURIComponent(id)}/deals.csv`,
+};
+

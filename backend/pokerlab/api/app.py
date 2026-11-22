@@ -7,11 +7,12 @@ import os
 import random
 import sqlite3
 import threading
+from contextlib import asynccontextmanager
 from typing import Any, Literal
 
 from fastapi import FastAPI, Header, HTTPException, Query, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import TypeAdapter, ValidationError
 
 from .. import __version__
@@ -23,6 +24,10 @@ from ..coach.spot import Spot, SpotError
 from ..engine import Action, IllegalActionError
 from ..equity import calculate_equity
 from ..history import SUMMARY_VERSION, HistoryError, replay, summarize, validate_record
+from ..lab import config as lab_config
+from ..lab.config import LabConfig
+from ..lab.jobs import Busy, LabJobs
+from ..lab.strategies import STRATEGIES
 from ..session import HeadsUpSession, SessionConfig, SessionStateError
 from ..storage import (
     Profile,
@@ -41,6 +46,7 @@ from .schemas import (
     EquityRequest,
     EquityResponse,
     HandUpload,
+    LabRequest,
     PlayResponse,
     PracticeRequest,
     ProfileCreate,
@@ -65,14 +71,25 @@ def create_app(
     store: SessionStore | None = None,
     allow_seed: bool | None = None,
     progress: ProgressStore | None = None,
+    lab: LabJobs | None = None,
 ) -> FastAPI:
     """Build the API.
 
     ``allow_seed`` (default: ``POKERLAB_ALLOW_SEED``) permits seeded games. ``progress`` is
     the progress database; by default it opens ``POKERLAB_DB`` (or
-    ``POKERLAB_DATA_DIR/pokerlab.sqlite3``) the first time it is needed.
+    ``POKERLAB_DATA_DIR/pokerlab.sqlite3``) the first time it is needed. ``lab`` runs
+    Simulation Lab experiments (default: worker processes per ``POKERLAB_LAB_WORKERS``,
+    started on the first experiment).
     """
-    app = FastAPI(title="PokerLab API", version=__version__)
+    lab_jobs = lab if lab is not None else LabJobs()
+
+    @asynccontextmanager
+    async def lifespan(_: FastAPI):
+        yield
+        lab_jobs.shutdown()
+
+    app = FastAPI(title="PokerLab API", version=__version__, lifespan=lifespan)
+    app.state.lab = lab_jobs
     # Not ``store or ...``: an empty store is falsy because it defines __len__.
     sessions = store if store is not None else SessionStore()
     if allow_seed is None:
@@ -422,6 +439,93 @@ def create_app(
             return training.answer(req.id, req.choice)
         except (SpotError, training.ScenarioError) as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    # ------------------------------------------------------------------ simulation lab
+
+    @app.get("/api/lab/strategies")
+    def lab_strategies() -> dict:
+        """The strategies the lab can compare, its limits and defaults (v0.5.0)."""
+        return {
+            "strategies": [s.view() for s in STRATEGIES.values()],
+            "workers": lab_jobs.workers,
+            "limits": {
+                "min_hands": lab_config.MIN_HANDS,
+                "max_hands": lab_config.MAX_HANDS,
+                "max_total_hands": lab_config.MAX_TOTAL_HANDS,
+                "min_strategies": lab_config.MIN_STRATEGIES,
+                "max_strategies": lab_config.MAX_STRATEGIES,
+                "stacks_bb": list(lab_config.STACKS_BB),
+                "session_range": list(lab_config.SESSION_RANGE),
+                "max_seed": lab_config.MAX_SEED,
+            },
+            "defaults": LabConfig(strategies=("advanced", "intermediate")).view(),
+            "version": __version__,
+        }
+
+    def _lab_config(req: LabRequest) -> LabConfig:
+        try:
+            return LabConfig.build(**req.model_dump())
+        except ValueError as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+    @app.post("/api/lab/estimate")
+    def lab_estimate(req: LabRequest) -> dict:
+        """Validate an experiment and estimate how long it will take, without running it."""
+        cfg = _lab_config(req)
+        return {
+            "config": cfg.view(),
+            "matchups": len(cfg.matchups),
+            "total_hands": cfg.total_hands,
+            "estimate_seconds": lab_jobs.estimate(cfg),
+            "workers": lab_jobs.workers,
+        }
+
+    @app.post("/api/lab/experiments", status_code=202)
+    def lab_submit(req: LabRequest) -> dict:
+        """Start an experiment in the background; poll it with GET."""
+        cfg = _lab_config(req)
+        try:
+            return lab_jobs.submit(cfg)
+        except Busy as exc:
+            raise HTTPException(status_code=429, detail=str(exc)) from exc
+
+    @app.get("/api/lab/experiments")
+    def lab_list() -> dict:
+        """Recent experiments, newest first (kept in memory until the server restarts)."""
+        return {"experiments": lab_jobs.list()}
+
+    @app.get("/api/lab/experiments/{job_id}")
+    def lab_get(job_id: str) -> dict:
+        job = lab_jobs.get(job_id)
+        if job is None:
+            raise HTTPException(status_code=404, detail="Experiment not found")
+        return job
+
+    @app.delete("/api/lab/experiments/{job_id}")
+    def lab_cancel(job_id: str) -> dict:
+        """Stop an experiment. Sessions already finished are kept and reported."""
+        job = lab_jobs.cancel(job_id)
+        if job is None:
+            raise HTTPException(status_code=404, detail="Experiment not found")
+        return job
+
+    @app.get("/api/lab/experiments/{job_id}/deals.csv")
+    def lab_deals(job_id: str) -> StreamingResponse:
+        """Every deal's result for strategy A, in bb, for analysis elsewhere."""
+        rows = lab_jobs.deals(job_id)
+        if rows is None:
+            raise HTTPException(status_code=404, detail="No finished experiment with this id")
+
+        def lines():
+            yield "a,b,session,deal,button,a_net_bb_table1,a_net_bb_table2\n"
+            for r in rows:
+                yield ",".join("" if v is None else str(v) for v in r) + "\n"
+
+        return StreamingResponse(
+            lines(),
+            media_type="text/csv",
+            headers={"Content-Disposition": f'attachment; filename="pokerlab-lab-{job_id}.csv"'},
+        )
 
     @app.post("/api/equity", response_model=EquityResponse)
     def equity(req: EquityRequest) -> EquityResponse:

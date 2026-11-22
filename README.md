@@ -263,6 +263,29 @@ and nothing called winning or losing that variance could explain. Methods:
 - **Earlier versus recent is one split.** It compares halves rather than modelling a trend, and filters change which hands are halved. Mistake cost measures agreement with PokerLab's coach, not with optimal play.
 - **Only the most recent 20,000 saved hands are read**, and the first Stats load after upgrading rebuilds the stored summaries once (about 30 ms per preflop all-in, well under 1 ms for other hands).
 
+**v0.5.0 — AI Simulation Lab**
+
+A **Lab** tab that plays PokerLab's AI strategies against each other over thousands of
+hands and reports which is better, by how much, and how sure that is. Methodology,
+validation and limitations: [`docs/lab.md`](docs/lab.md); generated numbers:
+[`docs/lab/validation.md`](docs/lab/validation.md).
+- **Ten strategies, unchanged:** Advanced and Intermediate (adaptive, as at the table, or with adaptation off), Beginner, the v0.1 bot, three fixed styles with leaks (maniac, calling station, rock) and a random player. Pick two for a head-to-head, one to play against itself (a mirror match, whose true result is zero), or three to six for a round robin.
+- **Duplicate dealing.** Every deal is played at two tables with the seats swapped, so each strategy gets exactly the other's cards, position and board. Most card luck cancels in the sum; the report says by how much, measured on the same hands (1.0× against a random player up to 5.4× between Intermediate and its non-adaptive twin; a deterministic strategy against itself cancels exactly). Standard (single-table) dealing is available, and a standard run is exactly a duplicate run's first table.
+- **Honest statistics.** Win rate in bb/100 with a 95% Student-t interval on button-balanced two-hand units; when a strategy adapts, the session-clustered error is used (hands within a session are not independent), with a warning before the run if there would be fewer than 10 sessions. "A beats B" only when the interval excludes zero. Round robins use Holm-corrected verdicts and a league table of each strategy's average against the field. Validated on mirror matches, whose true result is zero: over 200 seeds per cell the 95% interval covered zero 94–96.5% of the time in seven of eight cells (91.5% for a random player's heavy-tailed results at 400 hands), and the clustered interval for adaptive Intermediate covered 40 of 40.
+- **Charts.** A's cumulative result (the duplicate total and each table swinging the other way, with the break-even band), how the estimate and its interval settled as hands accumulated (with the wider interval the same hands would have had unpaired), playing styles (VPIP, PFR, aggression, WTSD, W$SD) and table statistics. Live progress, hands per second, time remaining and a live chart while it runs.
+- **Reproducible.** Every session's cards and agent seeds come from the seed, strategies and session index (SHA-512 seeded), so a result does not depend on the machine, the number of worker processes or the order sessions finish in. Each result shows the command that reproduces it exactly: `python -m pokerlab.lab advanced intermediate --hands 10000 --seed 1`. Per-deal results download as CSV.
+- **Efficient.** Sessions run in parallel worker processes; finished matchups are cached, so re-runs and round robins that contain an earlier pairing are instant; experiments queue instead of competing for cores; the time estimate uses each strategy's measured cost and then the observed rate. Workers exit if the server dies, and a crashed worker costs only its unfinished sessions, which are re-run with identical results.
+- **API:** `GET /api/lab/strategies`, `POST /api/lab/estimate`, `POST/GET /api/lab/experiments`, `GET/DELETE /api/lab/experiments/{id}`, `GET /api/lab/experiments/{id}/deals.csv`.
+
+**Limitations of the lab**
+- **The equity-based levels are slow:** Advanced plays about 8 hands per second per core against Intermediate (61 ms per hand for Intermediate against itself), and on a 4-core laptop 4 workers ran only 2.3 times as fast as one, so 10,000 Advanced-versus-Intermediate hands take roughly ten minutes there. The agents were deliberately left unchanged (the live game and the calibration use them). The time estimate uses measured costs and corrects itself from completed runs.
+- **Findings at these sample sizes:** Intermediate beats the v0.1 bot (+55, 95% CI +34 to +77 bb/100), Beginner loses to it (−84, −125 to −43), Intermediate's adaptation makes no measurable difference against a copy of itself over 10,000 hands (−0.9, −12.6 to +10.8), and 4,000 hands cannot separate Advanced from Intermediate (+20, −19 to +60).
+- **Worker crashes:** during validation one worker died from a segmentation fault inside CPython 3.14.0's garbage collector (no matching CPython report found). The lab now replaces the pool and re-runs the lost sessions with identical results; if workers keep dying, use fewer workers (`POKERLAB_LAB_WORKERS`) or a newer Python.
+- **Duplicate helps most when strategies react similarly to the cards;** against a random player it barely helps. The lab reports the reduction rather than assuming it.
+- **The result is for this protocol:** fresh stacks every hand, blinds 5/10, alternating button, sessions of a fixed length (adaptive results depend on how long they have to learn).
+- **Experiments live in memory** and are lost when the server restarts; any result can be recreated from its configuration. Stopping an experiment lets sessions already running finish in the background.
+- **Not optimal play:** results compare PokerLab's strategies with each other and depend on the PokerLab version. Running intervals on the charts are descriptive; only the final interval of a run that was not stopped because of its result has its stated coverage.
+
 ## Quick start
 
 Requirements: **Python 3.11+** and **Node.js 20.19+** (CI uses Node 24).
@@ -305,6 +328,7 @@ make lint      # ruff + TypeScript
 - **Frontend (Vitest + Testing Library):** progress storage and sync (v0.3 migration with backup, migration that cannot be written, quarantine of unreadable data, two tabs merging, reset epochs, trimming that keeps unsynced records, storage-full reporting, linking, offline queueing, pulling from another device, refused records, resuming an interrupted upload, unknown keys, import and export), personalised learning (the skill model's posterior and intervals, promotion only on solid evidence, spaced-repetition scheduling and graduation, recommendations, mistake guides, the dashboard, persistence across reloads), training (feedback, retries not counted, difficulty and concept requests, table shortcuts blocked while training), the coach panel and the progress store (recommendations, leaks, trends, malformed storage), difficulty selection and the adaptation toggle, the tendencies panel, the equity panel (live and review modes, reveal timing, percentage formatting), betting controls, seats and hidden cards, sizing helpers, animations, accessibility (focus, dialogs, announcements), connection failures and keyboard shortcuts, the sound engine (against a fake AudioContext) and event-to-sound timing, saved settings, and app flows with a mocked API (deal → act → showdown → next hand, errors, game over).
 - **Leak detection (v0.4.4):** `tests/test_leaks.py` checks the Wilson and two-proportion values against hand computations, small samples (a 75% rate from 4 chances is not a leak; 3 of 40 is normal variation), insufficient data, opportunities limited to where a leak can happen, low-confidence and range-dependent flags reported as uncertain, contradictory tags ignored, mixed pot-odds errors, strengths (guideline decisions never make one), identical reports for won, lost and hidden-card variants of the same hands, no opponent cards in the report, concentration by street and opponent level, trends and practice tracking that need significance, focused scenarios (river and large bets, reproducible ids, unchanged unfocused ids), the cached endpoint, the v0.4.3 summary migration, and resets. Frontend tests cover the dashboard section, the history links, the shared hook (reset, profile switch, errors), answer validation, recommendations, and the full Progress → hand → decision → practice → tracking workflow with a mocked API.
 - **Calibration (v0.4.5):** `tests/test_calibration.py` checks the oracle against a hand-computed river call (calling 200 with no equity costs exactly 200), that simulated policies label their injected deviations and use only visible information, a short session through the real pipeline (reproducible), and synthetic streams with the requested rate. `tests/test_leaks.py` checks the exact binomial tails and Clopper–Pearson bounds against direct summation, Fisher tests against hypergeometric sums, Benjamini–Hochberg/Yekutieli on textbook examples, the design effect, clustered decisions counting for less, a low rate being a strength rather than a "possible" weakness, and multiple-testing behaviour. `tests/test_coach_audit.py` compares pot odds, river equity (against `tests/reference.py`), raise accounting with chips already in, a shove capped by a short stack, all-in calls, grade thresholds, hedged labels, the fold realisation rule and independence from undealt cards with values derived by hand. `tests/test_training_eval.py` checks the evaluation against simulated learners: a memoriser (no credit), a genuine learner, a difficulty change (no false decline), no change, and a hand-computed CMH statistic. The full calibration (`python -m pokerlab.calibration`, ~2 h on 8 cores) is not part of `pytest`.
+- **Simulation Lab (v0.5.0):** `tests/test_lab.py` checks the t distribution against tables, Holm and Welch–Satterthwaite on textbook cases, interval coverage on skewed synthetic results, that the clustered error restores coverage when sessions drift (the naive interval does not), that duplicate dealing gives each seat identical cards, button and board at both tables, that a deterministic strategy against itself cancels exactly, that results are identical whatever the session order or number of worker processes, that a standard run equals a duplicate run's first table, that mirror matches cover zero about 95% of the time (40 seeds, both dealing modes), that duplicate and standard estimates agree, round-robin antisymmetry, the job queue (cache reuse across experiments, cancellation keeping finished sessions and never caching partial results, the queue limit, failures), the API (validation, polling, CSV totals that match the estimate) and the CLI, and that worker processes exit when the server is killed. `python -m pokerlab.lab.validate` reproduces the larger validation in [`docs/lab/validation.md`](docs/lab/validation.md). Frontend tests cover the setup (families, mirror matches, round robins, estimates, the session warning, server validation messages), live progress and stopping, finished head-to-heads, round-robin league and matrix, and lost or unreachable servers, against reports generated by the real backend.
 - **CI:** GitHub Actions runs lint, tests and a production build on every push and pull request (Python 3.11–3.13).
 
 ## Architecture
@@ -340,6 +364,9 @@ backend/pokerlab/
 │   ├── spot.py       a decision point as public data, replayed through the engine
 │   ├── training.py   scenario generation by concept and difficulty, grading, practice spots
 │   └── leaks.py      leak report: evidence rules, statuses, concentration, trends, practice follow-up
+├── lab/              AI Simulation Lab (v0.5.0): strategies, reproducible sessions, duplicate dealing,
+│                     statistics (t / clustered intervals, Holm), reports, background jobs, CLI, validation
+├── analytics.py      performance analytics over saved hands (v0.4.8)
 ├── history.py        hand-history records (public data only), exact replay and validation, summaries
 ├── session.py        heads-up match: hand sequencing, AI turns, per-seat views, log, coach
 ├── storage.py        SQLite progress store: profiles (hashed keys), append-only records, integrity checks
@@ -350,12 +377,12 @@ frontend/src/
 ├── hooks/useGameSounds.ts  plays table sounds from the same event stream
 ├── components/             Table, Seat, PlayingCard, ChipStack, ChipFlights, ActionBar, HandLog, SettingsMenu, modals,
 │                           EquityPanel, TendenciesPanel, CoachPanel, DecisionDetail, TrainingView, ProgressDashboard, SkillMeter,
-│                           HistoryView, HandReplayer, LeakPanel
+│                           HistoryView, HandReplayer, LeakPanel, AnalyticsView, LabView, LabResults, LabCharts
 ├── hooks/useLeakReport.ts  the leak report, fetched once and shared by Progress, History and training
 └── lib/                    API client, betting and card helpers, motion timing, sound engine and cues, progress store,
                             skills (skill model, adaptive level, spaced repetition, recommendations),
                             store (local persistence, migration, quarantine), sync (server sync), hands (hand queue, filters),
-                            leaks (practice plans and links for leak findings)
+                            leaks (practice plans and links for leak findings), analytics and lab (display helpers)
 ```
 
 **How a turn works.** The server holds all game state. Each request (`POST /api/sessions/{id}/actions`) applies the human's action, then lets the AI act until it is the human's turn again or the hand ends. The response contains the final state plus a list of `steps`. Each step is an engine event paired with a state snapshot taken right after it, so the UI can replay the AI's moves, new streets and showdowns one at a time. Opponent hole cards are left out of every snapshot until they are shown down.
@@ -388,6 +415,12 @@ frontend/src/
 | `GET` | `/api/profile/leaks` | The leak report: leaks with evidence, conditions, trend, practice follow-up and recommendation; strengths; early signals; what lacks data |
 | `GET` | `/api/profile/analytics` | `?difficulty?&last?` → performance analytics over saved hands: win rate with intervals, bankroll, all-in luck, earlier versus recent, positions, opponents and the 169 starting hands |
 | `GET` | `/api/profile/hands/{id}` | One saved hand and its replay (the table after every event) |
+| `GET` | `/api/lab/strategies` | Simulation Lab: the strategies, limits, defaults and worker count |
+| `POST` | `/api/lab/estimate` | `{"strategies", "hands"?, "mode"?, "seed"?, "stack_bb"?, "session_hands"?}` → validated configuration and time estimate |
+| `POST` | `/api/lab/experiments` | Same body → `202` and the queued experiment (`429` when too many are waiting) |
+| `GET` | `/api/lab/experiments` | Recent experiments (in memory until the server restarts) |
+| `GET` / `DELETE` | `/api/lab/experiments/{id}` | Progress, live data and, when finished, the full report; stop it (finished sessions are kept) |
+| `GET` | `/api/lab/experiments/{id}/deals.csv` | Every deal's result for strategy A at each table, in bb |
 | `GET` | `/api/sessions/{id}/hands/{n}/record` | The hand-history record of a recently finished hand (public information only) |
 | `POST` | `/api/equity` | `{"players": ["AhKh", "QQ+,AKs"], "board"?, "dead"?, "iterations"?, "seed"?}` → equity, win, tie and standard error per player |
 
@@ -400,7 +433,7 @@ Illegal actions return `400` with an explanation. Out-of-turn or out-of-state re
 - **v0.2 — Visual polish:** v0.2.1 visual redesign, v0.2.2 animations, v0.2.3 sound and themes, and v0.2.4 stability and accessibility (done).
 - **v0.3 — Smarter AI and training:** v0.3.1 equity engine, v0.3.2 equity-driven opponent with equity review, v0.3.3 difficulty levels and live all-in equity, v0.3.4 adaptive opponent, v0.3.5 coaching and decision feedback, v0.3.6 interactive training mode, v0.3.7 personalised learning and skill assessment (done).
 - **v0.4 — Platform:** v0.4.0 reliable progress persistence, v0.4.1 strategy validation and coaching accuracy, v0.4.2 coaching quality and explainability, v0.4.3 hand history, replay and decision analysis, v0.4.4 personalised leak detection and adaptive training, v0.4.5 coaching calibration and statistical reliability, v0.4.6 gameplay polish, UX and reliability, v0.4.7 poker intelligence and decision quality, v0.4.8 performance analytics (done).
-- **v0.4 (continued) — Analytics:** AI-vs-AI simulations.
+- **v0.5 — Simulation and research:** v0.5.0 AI Simulation Lab (in review).
 - **Later:** multiplayer, tournaments, Omaha / Stud / Draw, CFR agents, reinforcement learning, strategy dashboards.
 
 ## Security and privacy

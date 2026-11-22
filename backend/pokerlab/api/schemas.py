@@ -185,3 +185,14 @@ class ProfileCreate(BaseModel):
 
 class ProfileUpdate(BaseModel):
     name: Annotated[str, Field(min_length=1, max_length=40)]
+
+
+class LabRequest(BaseModel):
+    """A Simulation Lab experiment (v0.5.0). Limits are checked by ``LabConfig``."""
+
+    strategies: list[str] = Field(min_length=2, max_length=6)
+    hands: StrictInt = Field(10_000, ge=200, le=100_000)
+    mode: Literal["duplicate", "standard"] = "duplicate"
+    seed: StrictInt = Field(1, ge=0, le=2**31 - 1)
+    stack_bb: StrictInt = 100
+    session_hands: StrictInt = Field(200, ge=50, le=2000)

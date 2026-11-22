@@ -701,3 +701,192 @@ export interface AnalyticsReport {
   window: number;
   truncated: boolean;
 }
+
+// ------------------------------------------------------------------ simulation lab (v0.5.0)
+
+export type LabMode = "duplicate" | "standard";
+
+export interface LabStrategy {
+  id: string;
+  label: string;
+  family: "opponent" | "reference" | "style";
+  description: string;
+  adaptive: boolean;
+  cost_ms: number;
+  cost_deep_ms: number;
+}
+
+export interface LabConfig {
+  strategies: string[];
+  hands: number;
+  mode: LabMode;
+  seed: number;
+  stack_bb: number;
+  session_hands: number;
+}
+
+export interface LabInfo {
+  strategies: LabStrategy[];
+  workers: number;
+  limits: {
+    min_hands: number;
+    max_hands: number;
+    max_total_hands: number;
+    min_strategies: number;
+    max_strategies: number;
+    stacks_bb: number[];
+    session_range: [number, number];
+    max_seed: number;
+  };
+  defaults: LabConfig;
+  version: string;
+}
+
+export interface LabEstimate {
+  config: LabConfig;
+  matchups: number;
+  total_hands: number;
+  estimate_seconds: number;
+  workers: number;
+}
+
+export interface LabEstimateStats {
+  units: number;
+  hands: number;
+  bb_per_100: number | null;
+  sd_unit_bb: number | null;
+  se: number | null;
+  se_iid: number | null;
+  low: number | null;
+  high: number | null;
+  df: number | null;
+  level: number;
+  method: "t" | "clustered" | null;
+  clusters: number | null;
+  p_value: number | null;
+  verdict: "insufficient" | "a_better" | "b_better" | "unclear";
+  dependence_warning: boolean;
+  hands_for_precision: number | null;
+}
+
+export interface LabTrajectory {
+  x_label: "deals" | "hands";
+  x: number[];
+  total: number[];
+  table1: number[] | null;
+  table2: number[] | null;
+  thinned: boolean;
+}
+
+export interface LabConvergencePoint {
+  hands: number;
+  bb_per_100: number;
+  low: number;
+  high: number;
+}
+
+export interface LabStyle {
+  hands: number;
+  vpip: number | null;
+  pfr: number | null;
+  aggression: number | null;
+  saw_flop: number | null;
+  wtsd: number | null;
+  wsd: number | null;
+}
+
+export interface MatchupReport {
+  a: string;
+  b: string;
+  a_label: string;
+  b_label: string;
+  adaptive: boolean;
+  mode: LabMode;
+  sessions: number;
+  deals: number;
+  hands: number;
+  planned_hands: number;
+  complete: boolean;
+  estimate: LabEstimateStats;
+  variance: {
+    unpaired_se: number;
+    paired_se: number;
+    reduction: number | null;
+    equivalent_hands: number | null;
+    table_correlation: number | null;
+  } | null;
+  trajectory: LabTrajectory;
+  band_sd: number | null;
+  convergence: { paired: LabConvergencePoint[]; unpaired: LabConvergencePoint[] | null };
+  styles: { a: LabStyle; b: LabStyle };
+  table: { avg_pot_bb: number | null; flop: number | null; showdown: number | null; allin: number | null };
+}
+
+export interface RoundRobinCell {
+  row: string;
+  col: string;
+  bb_per_100: number;
+  low: number;
+  high: number;
+  p_value: number;
+  p_holm: number;
+  significant: boolean;
+}
+
+export interface RoundRobinReport {
+  league: { strategy: string; label: string; rank: number; bb_per_100: number; se: number; low: number; high: number; df: number | null }[];
+  cells: RoundRobinCell[];
+  comparisons: number;
+}
+
+export interface LabReport {
+  version: string;
+  protocol: number;
+  config: LabConfig;
+  matchups: MatchupReport[];
+  round_robin: RoundRobinReport | null;
+  settings: { level: number; min_clusters: number; precision_target: number; hands_per_unit: number };
+}
+
+export type LabStatus = "queued" | "running" | "done" | "cancelled" | "failed";
+
+export interface LabProgress {
+  hands_done: number;
+  total_hands: number;
+  fraction: number;
+  elapsed: number;
+  hands_per_second: number | null;
+  eta_seconds: number;
+  cpu_seconds: number;
+}
+
+export interface LabJobSummary {
+  id: string;
+  status: LabStatus;
+  config: LabConfig;
+  labels: string[];
+  created: number;
+  finished: number | null;
+  progress: LabProgress;
+}
+
+export interface LabJobMatchup {
+  a: string;
+  b: string;
+  a_label: string;
+  b_label: string;
+  hands_done: number;
+  planned_hands: number;
+  cached: boolean;
+  status: "pending" | "running" | "done";
+  estimate?: LabEstimateStats;
+  live?: { provisional_bb_per_100: number | null; trajectory: LabTrajectory | null };
+}
+
+export interface LabJob extends LabJobSummary {
+  workers: number;
+  estimate_seconds: number;
+  error: string | null;
+  matchups: LabJobMatchup[];
+  report: LabReport | null;
+}

@@ -15,6 +15,7 @@ const ProgressDashboard = lazy(() =>
   import("./components/ProgressDashboard").then((m) => ({ default: m.ProgressDashboard })),
 );
 const AnalyticsView = lazy(() => import("./components/AnalyticsView").then((m) => ({ default: m.AnalyticsView })));
+const LabView = lazy(() => import("./components/LabView").then((m) => ({ default: m.LabView })));
 import { MuteButton, SettingsMenu } from "./components/SettingsMenu";
 import { DIFFICULTY_LABEL, StartScreen } from "./components/StartScreen";
 import { SuitIcon } from "./components/SuitIcon";
@@ -31,13 +32,14 @@ import { useLeakReport } from "./hooks/useLeakReport";
 import { recordAnswer, recordHandReview } from "./lib/skills";
 import type { DecisionReview, GameConfig, GameState, HandReview, TrainingScenario } from "./types";
 
-type Mode = "play" | "train" | "history" | "progress" | "stats";
+type Mode = "play" | "train" | "history" | "progress" | "stats" | "lab";
 const MODE_LABEL: Record<Mode, string> = {
   play: "Play",
   train: "Train",
   history: "History",
   progress: "Progress",
   stats: "Stats",
+  lab: "Lab",
 };
 const COACH_DETAIL_KEY = "pokerlab.coach.detailed";
 
@@ -240,7 +242,7 @@ export default function App() {
         </div>
         <div className="flex min-w-0 flex-wrap items-center justify-end gap-2 max-sm:contents sm:gap-2.5">
           <div className="surface flex rounded-xl p-0.5 max-sm:ml-auto" role="tablist" aria-label="Mode">
-            {(["play", "train", "history", "progress", "stats"] as const).map((m) => (
+            {(["play", "train", "history", "progress", "stats", "lab"] as const).map((m) => (
               <button
                 key={m}
                 type="button"
@@ -373,6 +375,13 @@ export default function App() {
             onShowHand={showHand}
             focusLeak={focusLeak}
           />
+          </Suspense>
+        </main>
+      )}
+      {mode === "lab" && (
+        <main className="mx-auto flex w-full max-w-[1440px] flex-1 flex-col px-3 pb-5 sm:px-6">
+          <Suspense fallback={<div className="surface rounded-2xl p-6 text-slate-400">Loading…</div>}>
+            <LabView />
           </Suspense>
         </main>
       )}

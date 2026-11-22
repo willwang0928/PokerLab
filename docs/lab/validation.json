@@ -1,0 +1,326 @@
+{
+ "version": "0.5.0",
+ "reps": 200,
+ "workers": 4,
+ "seconds": 1940.5022760850006,
+ "coverage": [
+  {
+   "strategy": "aggressive",
+   "mode": "duplicate",
+   "hands": 400,
+   "adaptive": false,
+   "reps": 200,
+   "covered": 188,
+   "clustered": 0,
+   "warned": 0,
+   "share": 0.94,
+   "share_interval": [
+    0.8980683066378271,
+    0.9653478058934853
+   ],
+   "mean_se": 118.77925214628931
+  },
+  {
+   "strategy": "aggressive",
+   "mode": "standard",
+   "hands": 400,
+   "adaptive": false,
+   "reps": 200,
+   "covered": 189,
+   "clustered": 0,
+   "warned": 0,
+   "share": 0.945,
+   "share_interval": [
+    0.904213000830331,
+    0.9690146584342919
+   ],
+   "mean_se": 315.72742643515625
+  },
+  {
+   "strategy": "basic",
+   "mode": "duplicate",
+   "hands": 400,
+   "adaptive": false,
+   "reps": 200,
+   "covered": 192,
+   "clustered": 0,
+   "warned": 0,
+   "share": 0.96,
+   "share_interval": [
+    0.9230679314255735,
+    0.9795943680389804
+   ],
+   "mean_se": 36.82923018032653
+  },
+  {
+   "strategy": "basic",
+   "mode": "standard",
+   "hands": 400,
+   "adaptive": false,
+   "reps": 200,
+   "covered": 188,
+   "clustered": 0,
+   "warned": 0,
+   "share": 0.94,
+   "share_interval": [
+    0.8980683066378271,
+    0.9653478058934853
+   ],
+   "mean_se": 58.634820644853214
+  },
+  {
+   "strategy": "folder",
+   "mode": "duplicate",
+   "hands": 400,
+   "adaptive": false,
+   "reps": 200,
+   "covered": 193,
+   "clustered": 0,
+   "warned": 0,
+   "share": 0.965,
+   "share_interval": [
+    0.9295293881131225,
+    0.9829444580847418
+   ],
+   "mean_se": 9.230740659583768
+  },
+  {
+   "strategy": "folder",
+   "mode": "standard",
+   "hands": 400,
+   "adaptive": false,
+   "reps": 200,
+   "covered": 190,
+   "clustered": 0,
+   "warned": 0,
+   "share": 0.95,
+   "share_interval": [
+    0.9104218514713903,
+    0.972617354526543
+   ],
+   "mean_se": 56.80898130697469
+  },
+  {
+   "strategy": "random",
+   "mode": "duplicate",
+   "hands": 400,
+   "adaptive": false,
+   "reps": 200,
+   "covered": 183,
+   "clustered": 0,
+   "warned": 0,
+   "share": 0.915,
+   "share_interval": [
+    0.8681041288487654,
+    0.9462542500159954
+   ],
+   "mean_se": 254.32670491714035
+  },
+  {
+   "strategy": "random",
+   "mode": "standard",
+   "hands": 400,
+   "adaptive": false,
+   "reps": 200,
+   "covered": 192,
+   "clustered": 0,
+   "warned": 0,
+   "share": 0.96,
+   "share_interval": [
+    0.9230679314255735,
+    0.9795943680389804
+   ],
+   "mean_se": 266.46473135201
+  },
+  {
+   "strategy": "intermediate",
+   "mode": "duplicate",
+   "hands": 1200,
+   "adaptive": true,
+   "reps": 40,
+   "covered": 40,
+   "clustered": 18,
+   "warned": 0,
+   "share": 1.0,
+   "share_interval": [
+    0.9123783975415363,
+    1.0
+   ],
+   "mean_se": 15.340854053725968
+  }
+ ],
+ "pairings": [
+  {
+   "a": "aggressive",
+   "b": "basic",
+   "a_label": "Maniac",
+   "b_label": "v0.1 bot",
+   "hands": 20000,
+   "bb_per_100": -189.7025,
+   "low": -218.7173189222189,
+   "high": -160.6876810777811,
+   "se": 14.801959083129667,
+   "method": "t",
+   "verdict": "b_better",
+   "unpaired_se": 16.097854375379477,
+   "reduction": 1.1827626182196735,
+   "table_correlation": -0.15391037635300991,
+   "hands_per_cpu_second": 995.9002182536907
+  },
+  {
+   "a": "passive",
+   "b": "folder",
+   "a_label": "Calling station",
+   "b_label": "Rock",
+   "hands": 20000,
+   "bb_per_100": -69.4015,
+   "low": -79.21140639582708,
+   "high": -59.5915936041729,
+   "se": 5.004540385711981,
+   "method": "t",
+   "verdict": "b_better",
+   "unpaired_se": 7.04899515981188,
+   "reduction": 1.9839285542219671,
+   "table_correlation": -0.49331014074341584,
+   "hands_per_cpu_second": 836.0892525039841
+  },
+  {
+   "a": "basic",
+   "b": "random",
+   "a_label": "v0.1 bot",
+   "b_label": "Random",
+   "hands": 20000,
+   "bb_per_100": 181.51299999999998,
+   "low": 156.26076592447768,
+   "high": 206.7652340755223,
+   "se": 12.882470042136276,
+   "method": "t",
+   "verdict": "a_better",
+   "unpaired_se": 12.94356991649979,
+   "reduction": 1.0095082338291883,
+   "table_correlation": -0.02011119211824653,
+   "hands_per_cpu_second": 3054.8292723565246
+  },
+  {
+   "a": "basic",
+   "b": "basic",
+   "a_label": "v0.1 bot",
+   "b_label": "v0.1 bot",
+   "hands": 20000,
+   "bb_per_100": -2.6545,
+   "low": -12.845748814029982,
+   "high": 7.5367488140299805,
+   "se": 5.19908286712579,
+   "method": "t",
+   "verdict": "unclear",
+   "unpaired_se": 7.884820077322003,
+   "reduction": 2.3000119692914667,
+   "table_correlation": -0.5637502605805303,
+   "hands_per_cpu_second": 1844.3435375087215
+  },
+  {
+   "a": "beginner",
+   "b": "basic",
+   "a_label": "Beginner",
+   "b_label": "v0.1 bot",
+   "hands": 4000,
+   "bb_per_100": -83.6725,
+   "low": -124.4876558064544,
+   "high": -42.857344193545615,
+   "se": 20.811832963906223,
+   "method": "t",
+   "verdict": "b_better",
+   "unpaired_se": 24.45267325337852,
+   "reduction": 1.3804860620505806,
+   "table_correlation": -0.26963083851505343,
+   "hands_per_cpu_second": 36.35512994075708
+  },
+  {
+   "a": "intermediate",
+   "b": "basic",
+   "a_label": "Intermediate",
+   "b_label": "v0.1 bot",
+   "hands": 4000,
+   "bb_per_100": 55.42999999999999,
+   "low": 34.36002939172026,
+   "high": 76.49997060827972,
+   "se": 10.743673524935742,
+   "method": "t",
+   "verdict": "a_better",
+   "unpaired_se": 12.934979779688504,
+   "reduction": 1.449525643900963,
+   "table_correlation": -0.30176868199973006,
+   "hands_per_cpu_second": 24.660081962862172
+  },
+  {
+   "a": "intermediate",
+   "b": "intermediate_fixed",
+   "a_label": "Intermediate",
+   "b_label": "Intermediate, fixed",
+   "hands": 10000,
+   "bb_per_100": -0.9079999999999999,
+   "low": -12.647861024165188,
+   "high": 10.831861024165189,
+   "se": 5.688196975609524,
+   "method": "clustered",
+   "verdict": "unclear",
+   "unpaired_se": 11.440334844726875,
+   "reduction": 5.392015377470539,
+   "table_correlation": -0.8113044664691272,
+   "hands_per_cpu_second": 8.912121092501387
+  },
+  {
+   "a": "advanced",
+   "b": "intermediate",
+   "a_label": "Advanced",
+   "b_label": "Intermediate",
+   "hands": 4000,
+   "bb_per_100": 20.330000000000002,
+   "low": -19.11644444319426,
+   "high": 59.776444443194265,
+   "se": 17.43763960517592,
+   "method": "clustered",
+   "verdict": "unclear",
+   "unpaired_se": 27.125409249695785,
+   "reduction": 2.5534172383807427,
+   "table_correlation": -0.6031390793313198,
+   "hands_per_cpu_second": 4.843324078914847
+  }
+ ],
+ "agreement": [
+  {
+   "a_label": "Maniac",
+   "b_label": "v0.1 bot",
+   "standard": {
+    "bb_per_100": -234.072,
+    "se": 16.22354699901729,
+    "hands": 20000
+   },
+   "duplicate": {
+    "bb_per_100": -210.61700000000002,
+    "se": 14.658685638131535,
+    "hands": 20000
+   },
+   "difference": 23.454999999999984,
+   "difference_se": 21.865052981113188,
+   "se_ratio": 1.1067531837107614
+  },
+  {
+   "a_label": "v0.1 bot",
+   "b_label": "Calling station",
+   "standard": {
+    "bb_per_100": 88.99950000000001,
+    "se": 9.281324310036247,
+    "hands": 20000
+   },
+   "duplicate": {
+    "bb_per_100": 79.00399999999999,
+    "se": 6.385450430166976,
+    "hands": 20000
+   },
+   "difference": -9.995500000000021,
+   "difference_se": 11.265742680542168,
+   "se_ratio": 1.4535112928272385
+  }
+ ]
+}
