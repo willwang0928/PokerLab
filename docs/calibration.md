@@ -1,9 +1,10 @@
-# Calibration of the coach and the leak detector (v0.4.5, v0.4.7)
+# Calibration of the coach and the leak detector (v0.4.5, v0.4.7, v0.4.8)
 
 This document describes how PokerLab's coaching and leak detection were evaluated
 empirically, what was found, and what was changed. The generated numbers are in
 [`calibration/report.md`](calibration/report.md) (raw: `calibration/results.json`); since
-v0.4.7 they describe the v0.4.7 coach (§7). The v0.4.5 numbers quoted in §2–§6 are in the
+v0.4.7 they describe the v0.4.7 coach (§7); v0.4.8 adds a second oracle continuation
+(§8). The v0.4.5 numbers quoted in §2–§6 are in the
 same files at the `v0.4.5` tag.
 
 Everything here is an estimate from simulation against PokerLab's own opponents. Nothing
@@ -484,3 +485,59 @@ loses what the call was worth; the coach's verdict assumes competent later play.
 flags are low confidence and never produce a leak report. They show the limit of a
 one-street estimate for a player who plays later streets badly, not an error to tune
 against.
+
+### 8. v0.4.8: what a verdict assumes about the later streets
+
+The oracle in §2–§7 lets the player keep playing *their own policy* after the decision. That
+measures what a decision is worth to that player, but the coach's verdicts are one-street
+estimates that take the rest of the hand as played well. §7 left one category open for
+exactly that reason (random-player preflop folds). v0.4.8 evaluates every flag and control
+twice, with the same run-outs: once as before (*own play*), and once with the player's
+later decisions handed to the unmodified Intermediate logic (*competent play*;
+`oracle.competent`). Injected deviations are still priced with own play only, since they
+measure what a tendency costs the player who has it. Report §3 shows both columns.
+
+**Results (oracle Δ bb per flagged decision, 95%; coach's own estimate in the last column):**
+
+| flags | n | own play | competent play | coach |
+|---|---|---|---|---|
+| calling without the odds, all | 579 | −11.1 ± 1.2 | −6.9 ± 0.9 | −6.2 |
+| … flop | 124 | −12.8 ± 3.1 | −3.2 ± 0.7 | |
+| … turn | 173 | −12.4 ± 2.1 | −5.3 ± 1.4 | |
+| … river (no later street) | 282 | −9.5 ± 1.6 | −9.5 ± 1.6 | |
+| "folded with the odds" | 75 | +0.5 ± 4.7 | −2.3 ± 5.1 | −6.3 |
+| … random player only | 22 | −1.7 ± 7.3 | **−8.5 ± 7.4** | −8.0 |
+| "missed value" | 351 | −1.4 ± 0.8 | −1.4 ± 0.7 | −2.5 |
+| "too tight" preflop folds (all random player) | 44 | **+4.0 ± 2.4** | −0.9 ± 1.6 | −1.2 |
+| decisions graded good (control), high / medium / low | | −0.3 / +1.3 / +0.4 | −0.1 / +1.1 / +0.6 | |
+
+What this shows:
+
+* **The coach's size for a bad call is right when the hand is played on well.** Over all
+  579 flags, competent play gives −6.9 ± 0.9 bb against the coach's −6.2. Players who keep
+  playing their own way lose 1.6–1.8× that, because a call without the odds tends to lead
+  to more calls (calling_station −9.6 vs −6.2 competent; station_and_bluffer −12.2 vs −6.9;
+  random −21.9 vs −13.2). On the river, where nothing follows, the two continuations
+  agree exactly, which checks the harness.
+* **The §7 open item was the continuation, not the coach.** The random player's "too
+  tight" preflop folds gained +4.0 bb with own play and are indistinguishable from zero
+  with competent play (−0.9 ± 1.6). The coach is not changed for it.
+* **A recommended call is worth something only if it is followed through.** For the
+  random player the coach's "should have called" verdicts are clearly right with
+  competent play (−8.5 ± 7.4 bb, matching the coach's −8.0) but not with its own play
+  (−1.7 ± 7.3). Over all players the category stays unclear at this sample size.
+* "Missed value" and the good-graded controls hardly move between continuations, and no
+  category with a clear verdict changes sign.
+
+**Change.** The explanation of a flagged call or fold on the flop or turn now says what
+the estimate assumes (`analysis.FOLLOW_THROUGH`): for a call without the odds, that it
+covers this street only and that such calls cost most when they lead to more calls; for a
+fold with the odds, that the call pays when it is followed through, not when it is
+abandoned at the next reasonable bet. No grade or threshold changed, so the leak-detection
+tables (report §4) are unchanged from v0.4.7.
+
+**Limits.** "Competent" means PokerLab's own Intermediate logic against PokerLab's own
+opponents, not optimal play. For a simulated player whose baseline is that logic, it keeps
+its opponent reads; otherwise a fresh agent without reads is used. The own-play numbers
+are unchanged from §7 (same seeds), and the report is byte-reproducible as before.
+

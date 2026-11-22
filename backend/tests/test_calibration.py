@@ -8,7 +8,7 @@ import random
 
 import pytest
 
-from pokerlab.ai.base import Observation
+from pokerlab.ai.base import Agent, Observation
 from pokerlab.ai.difficulty import make_agent
 from pokerlab.calibration import oracle, stats_eval
 from pokerlab.calibration import policies as P
@@ -40,6 +40,59 @@ def test_the_oracle_matches_a_hand_computed_river_call():
     assert r.delta == pytest.approx(-200) and r.se == 0
     # The snapshot is a copy: the real hand is untouched.
     assert h.to_act == 0 and not h.is_complete
+
+
+class _Folder(Agent):
+    """Folds to every bet, checks otherwise: a player who gives up on later streets."""
+
+    def decide(self, obs, legal):
+        return Action.check() if legal.can_check else Action.fold()
+
+
+class _Bettor(Agent):
+    """Bets half the pot whenever it can, calls otherwise."""
+
+    def decide(self, obs, legal):
+        if legal.can_raise and legal.raise_type == ActionType.BET:
+            return Action.bet(max(legal.min_raise_to, min(legal.max_raise_to, 30)))
+        return Action.call() if legal.can_call else Action.check()
+
+
+def _flop_spot():
+    """Hero (seat 0, big blind) holds a set of aces on As7c2d; villain bets 30."""
+    deck = stacked_deck(["AhAd", "KhQd"], "As7c2d9h4c", button=1)
+    h = HoldemHand([1000, 1000], 1, 5, 10, deck=deck)
+    for a in (Action.call(), Action.check(), Action.check(), Action.bet(30)):
+        h.apply(a)
+    return h
+
+
+def test_the_competent_continuation_separates_the_decision_from_later_play():
+    h = _flop_spot()
+    assert h.to_act == 0
+    snap = oracle.snapshot(h, (_Folder(), _Bettor()), 0)
+    own = oracle.compare(snap, Action.call(), Action.fold(), rollouts=3, seed=1)
+    # The player keeps folding: after calling it folds to the turn bet, so the call
+    # only loses the 30 it put in.
+    assert own.delta == pytest.approx(-30) and own.se == 0
+    cont = oracle.competent(snap)
+    assert cont.profile.name == "intermediate"
+    comp = oracle.compare(snap, Action.call(), Action.fold(), rollouts=3, seed=1,
+                          continuation=cont)  # fmt: skip
+    # Played on competently, a set of aces against a betting opponent wins chips.
+    assert comp.delta > 30
+    # Neither the snapshot nor the agent passed in is changed by the rollouts.
+    assert isinstance(snap.agents[0], _Folder) and h.to_act == 0
+
+
+def test_the_competent_continuation_reuses_an_intermediate_players_own_logic():
+    h = _flop_spot()
+    sim = SimPlayer(P.POLICY_BY_NAME["over_folder"], random.Random(3))
+    snap = oracle.snapshot(h, (sim, _Bettor()), 0)
+    assert oracle.competent(snap) is snap.agents[0].base
+    beginner = SimPlayer(P.POLICY_BY_NAME["beginner_style"], random.Random(3))
+    snap = oracle.snapshot(h, (beginner, _Bettor()), 0)
+    assert oracle.competent(snap).profile.name == "intermediate"
 
 
 def test_policies_label_injected_deviations_and_the_baseline_action():
@@ -94,6 +147,8 @@ def test_a_short_session_runs_through_the_real_pipeline_reproducibly():
     assert L.find_leaks(a["summaries"])["hands"] == 4
     for o in a["oracle"]:
         assert o["kind"] in ("deviation", "flag", "control") and o["n"] == 2
+        # Flags and controls are also measured with competent play afterwards.
+        assert (o["delta_competent"] is None) == (o["kind"] == "deviation")
 
 
 def test_synthetic_streams_have_the_requested_rate():

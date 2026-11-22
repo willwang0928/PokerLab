@@ -36,12 +36,21 @@ from typing import Any
 
 from .ai.preflop import hand_class, percentile
 from .cards import parse_cards
+from .equity import calculate_equity
 from .evaluator import evaluate
 
 RECORD_VERSION = 1
-# Summary format: 2 (v0.4.4) adds each decision's range robustness. Older stored summaries
+# Summary format: 2 (v0.4.4) adds each decision's range robustness; 3 (v0.4.8) adds the
+# preflop flags (vpip, pfr), the opponent's adaptation setting, the effective stack and
+# the all-in adjusted result used by the performance analytics. Older stored summaries
 # are rebuilt from their record when read (see api.app), the record itself is unchanged.
-SUMMARY_VERSION = 2
+SUMMARY_VERSION = 3
+# Monte Carlo trials for a preflop all-in's equity (flop and turn all-ins are enumerated
+# exactly). 5,000 trials put the equity within about ±1.4 percentage points (95%), small
+# beside the luck being measured (a hand's outcome has an SD of roughly 0.4-0.5 x pot),
+# and keep a preflop all-in near 30 ms: stored summaries are rebuilt in bulk when the
+# summary format changes (20,000 trials took about 120 ms each).
+ALLIN_TRIALS = 5_000
 MAX_EVENTS = 400
 MAX_RECORD_BYTES = 400_000
 MAX_DECISIONS = 60
@@ -519,6 +528,81 @@ def _compact(d: Mapping[str, Any], i: int) -> dict[str, Any]:
     }
 
 
+def _preflop_flags(record: Mapping[str, Any]) -> tuple[bool, bool]:
+    """(vpip, pfr): did the hero put chips in voluntarily before the flop, and raise?
+
+    Posting a blind is not voluntary, and neither is the big blind checking its option.
+    A call, bet or raise counts, including a small blind's limp."""
+    hero = record["hero"]
+    vpip = pfr = False
+    for e in record["events"]:
+        if e["type"] == "street":
+            break
+        if e["type"] == "action" and e["seat"] == hero:
+            if e["action"] in ("call", "bet", "raise"):
+                vpip = True
+            if e["action"] in ("bet", "raise"):
+                pfr = True
+    return vpip, pfr
+
+
+def allin_adjustment(record: Mapping[str, Any], net: int) -> dict[str, Any] | None:
+    """The hero's all-in adjusted result, when the hands were turned up before the river.
+
+    From the moment both hands are shown nobody can act again, so what happens next is
+    pure luck. The adjusted result replaces the hero's share of the pot (what they were
+    actually paid) with their equity share at that moment:
+
+        adjusted = net - paid + equity x pot
+
+    ``pot`` is everything paid out, which heads-up after any uncalled bet has been
+    returned is the pot both players contested. ``equity`` counts a tie as half. The
+    luck in the hand is ``net - adjusted``; its variance, ``pot² × (win + tie/4 −
+    equity²)`` (approximately ``pot² × e(1 − e)``), lets the analytics say whether the
+    run of all-ins as a whole was unusually lucky.
+
+    Returns ``None`` when there was no reveal (or the opponent's cards are missing).
+    The equity is deterministic: the Monte Carlo seed comes from the hand id.
+    """
+    events = record["events"]
+    hero = record["hero"]
+    reveal = next((e for e in events if e["type"] == "reveal"), None)
+    if reveal is None:
+        return None
+    villain = next((c for s, c in reveal["hands"].items() if int(s) != hero), None)
+    if not villain:
+        return None
+    board: list[str] = []
+    street = "preflop"
+    for e in events:
+        if e is reveal:
+            break
+        if e["type"] == "street":
+            board, street = list(e["board"]), e["street"]
+    seed = int(hashlib.sha256(str(record["id"]).encode()).hexdigest()[:15], 16)
+    r = calculate_equity(
+        ["".join(record["hero_cards"]), "".join(villain)],
+        board="".join(board) or None,
+        iterations=ALLIN_TRIALS,
+        seed=seed,
+    )
+    me = r.players[0]
+    pots = [e for e in events if e["type"] == "pot_awarded"]
+    pot = sum(e["amount"] for e in pots)
+    paid = sum(int(e["payouts"].get(str(hero), 0)) for e in pots)
+    adjusted = net - paid + me.equity * pot
+    # Variance of the hero's share: win -> pot, tie -> pot / 2, lose -> 0.
+    second = me.win + me.tie / 4
+    variance = max(pot * pot * (second - me.equity**2), 0.0)
+    return {
+        "street": street,
+        "equity": round(me.equity, 4),
+        "pot": pot,
+        "adjusted": round(adjusted, 2),
+        "variance": round(variance, 2),
+    }
+
+
 def summarize(record: Mapping[str, Any], frames: list[dict[str, Any]] | None = None) -> dict:
     """What the history list shows and filters on, derived from a valid record."""
     frames = frames if frames is not None else replay(record)
@@ -538,6 +622,9 @@ def summarize(record: Mapping[str, Any], frames: list[dict[str, Any]] | None = N
     decisions = [_compact(d, i) for i, d in enumerate(coaching.get("decisions") or [])]
     flagged = sum(1 for d in decisions if d["grade"] in ("questionable", "mistake"))
     streets = [f["street"] for f in frames if f["street"] in STREETS]
+    vpip, pfr = _preflop_flags(record)
+    allin = allin_adjustment(record, net)
+    won_showdown = showdown and net > 0
     return {
         "sv": SUMMARY_VERSION,
         "id": record["id"],
@@ -566,4 +653,12 @@ def summarize(record: Mapping[str, Any], frames: list[dict[str, Any]] | None = N
         "ev_loss_bb": coaching.get("ev_loss_bb"),
         "tags": sorted({t for d in decisions for t in d["tags"]}),
         "decisions": decisions,
+        # v0.4.8 (summary version 3)
+        "adaptive": record.get("adaptive"),
+        "stack_bb": min(start["stacks"]) / bb,
+        "vpip": vpip,
+        "pfr": pfr,
+        "won_showdown": won_showdown,
+        "allin": None if allin is None else {**allin, "adjusted_bb": allin["adjusted"] / bb},
+        "ev_net_bb": (allin["adjusted"] if allin else net) / bb,
     }

@@ -1225,6 +1225,9 @@ def _explain(a: DecisionAnalysis, chosen: Option, top: Option, loss: float) -> s
             )
         if chosen.action not in ("fold", "call"):
             parts.append(_raise_sentence(chosen, top, loss, a))
+        note = _follow_through_note(a)
+        if note:
+            parts.append(note)
     else:
         if chosen.action == "check":
             parts.append(
@@ -1252,6 +1255,36 @@ def _explain(a: DecisionAnalysis, chosen: Option, top: Option, loss: float) -> s
                     "such hands out, so it is not counted as a mistake."
                 )
     return " ".join(parts)
+
+
+# What a flagged call or fold before the river assumes about the later streets. The
+# verdict is a one-street estimate that takes the rest of the hand as played well. The
+# v0.4.8 calibration measured each flag twice, with the player continuing on their own
+# policy and with competent play afterwards (docs/calibration.md §8): players who kept
+# calling after a call without the odds lost about 1.6-1.8x the coach's estimate (with
+# competent play afterwards the loss matched it), and a random player gained nothing from
+# the calls the coach recommends unless the later streets were played competently.
+FOLLOW_THROUGH = {
+    "called_without_odds": (
+        "This estimate covers this street only: a hand that cannot beat the price now "
+        "usually faces more bets later, and calls like this cost the most when they "
+        "lead to more calls. Folding now is cheaper."
+    ),
+    "folded_with_odds": (
+        "This assumes you play the later streets well: a call here pays when you follow "
+        "it through, not when you call now and fold to the next reasonable bet."
+    ),
+}
+
+
+def _follow_through_note(a: DecisionAnalysis) -> str:
+    """The later-streets caveat for a flagged call or fold, before the river."""
+    if a.street not in ("flop", "turn") or a.betting_closed:
+        return ""  # no betting left to follow through on
+    for tag in a.tags:
+        if tag in FOLLOW_THROUGH:
+            return FOLLOW_THROUGH[tag]
+    return ""
 
 
 def _raise_sentence(chosen: Option, top: Option, loss: float, a: DecisionAnalysis) -> str:

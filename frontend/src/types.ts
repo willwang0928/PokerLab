@@ -410,6 +410,14 @@ export interface HandSummary {
   ev_loss_bb: number | null;
   tags: string[];
   decisions: HandSummaryDecision[];
+  // v0.4.8 (summary version 3)
+  adaptive?: boolean | null;
+  stack_bb?: number;
+  vpip?: boolean;
+  pfr?: boolean;
+  won_showdown?: boolean;
+  allin?: { street: string; equity: number; pot: number; adjusted: number; adjusted_bb: number; variance: number } | null;
+  ev_net_bb?: number;
 }
 
 // ------------------------------------------------------------------ leaks (v0.4.4)
@@ -557,4 +565,139 @@ export interface LeakReport {
     interval: string;
     min_graded: number;
   };
+}
+
+// ------------------------------------------------------------------ analytics (v0.4.8)
+
+export type Verdict = "insufficient" | "winning" | "losing" | "unclear";
+
+export interface WinRate {
+  hands: number;
+  bb_per_100: number | null;
+  total_bb: number;
+  sd_bb: number | null;
+  se: number | null;
+  low: number | null;
+  high: number | null;
+  level: number;
+  method: "t" | "clustered" | null;
+  verdict: Verdict;
+  p_value: number | null;
+  hands_for_precision: number | null;
+  hands_to_confirm: number | null;
+}
+
+export interface Segment {
+  hands: number;
+  sessions: number;
+  win_rate: WinRate;
+  allin_adjusted: WinRate;
+  vpip: number | null;
+  pfr: number | null;
+  saw_flop: number | null;
+  wtsd: number | null;
+  wsd: number | null;
+}
+
+export interface BankrollPoint {
+  n: number;
+  t: number;
+  id: string;
+  net: number;
+  cum: number;
+  ev: number;
+}
+
+export interface HandCell {
+  hand: string;
+  dealt: number;
+  expected: number;
+  net_bb: number;
+  bb_per_hand: number | null;
+  shrunk: number;
+  weight: number;
+  vpip: number | null;
+  pfr: number | null;
+  low: number | null;
+  high: number | null;
+}
+
+export interface Comparison {
+  diff: number;
+  low: number;
+  high: number;
+  p_value: number;
+  significant: boolean;
+}
+
+export type TrendReport =
+  | { status: "insufficient"; needed: number; hands: number }
+  | {
+      status: "ok";
+      split_at: number;
+      early_hands: number;
+      late_hands: number;
+      early: WinRate;
+      late: WinRate;
+      results: Comparison;
+      adjusted: Comparison;
+      quality: {
+        early_loss_per_100: number;
+        late_loss_per_100: number;
+        diff_per_100: number;
+        low: number;
+        high: number;
+        significant: boolean;
+        p_value: number;
+        early_flag_rate: number | null;
+        late_flag_rate: number | null;
+      } | null;
+      verdict: "decisions_improved" | "decisions_worse" | "results_improved" | "results_worse" | "variance";
+    };
+
+export interface AnalyticsReport {
+  hands: number;
+  filters: { difficulty: string | null; last: number | null };
+  available_difficulties: string[];
+  first_t: number | null;
+  last_t: number | null;
+  overall: Segment;
+  bankroll: {
+    points: BankrollPoint[];
+    thinned: boolean;
+    session_starts: number[];
+    sd_bb: number | null;
+    max_drawdown_bb: number;
+    peak_bb: number;
+  };
+  starting_hands: {
+    cells: HandCell[];
+    overall_bb_per_hand: number | null;
+    classes_dealt: number;
+    prior_sd: number;
+    shrink_hands: number;
+  };
+  positions: (Segment & { position: string })[];
+  opponents: (Segment & { difficulty: string; adaptive_share: number | null })[];
+  luck: {
+    spots: number;
+    luck_bb: number;
+    sd_bb: number;
+    z: number | null;
+    p_value: number | null;
+    verdict: "none" | "normal" | "lucky" | "unlucky";
+    mean_equity?: number;
+  };
+  trend: TrendReport;
+  settings: {
+    level: number;
+    min_hands: number;
+    prior_sd_bb: number;
+    prior_weight: number;
+    min_clusters: number;
+    hand_prior_sd: number;
+    precision_target: number;
+  };
+  window: number;
+  truncated: boolean;
 }

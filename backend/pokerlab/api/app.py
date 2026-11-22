@@ -15,6 +15,7 @@ from fastapi.responses import JSONResponse
 from pydantic import TypeAdapter, ValidationError
 
 from .. import __version__
+from ..analytics import DIFFICULTIES, analyze
 from ..coach import training
 from ..coach.evaluation import evaluate_training
 from ..coach.leaks import find_leaks
@@ -54,6 +55,8 @@ log = logging.getLogger(__name__)
 
 # Hands the leak report looks at (the most recent ones).
 LEAK_WINDOW = 2000
+# Hands the performance analytics look at (the most recent ones, v0.4.8).
+ANALYTICS_WINDOW = 20_000
 
 _VALIDATORS = {"answers": TypeAdapter(AnswerRecord), "decisions": TypeAdapter(DecisionRecord)}
 
@@ -270,6 +273,34 @@ def create_app(
             if len(leak_cache) > 256:
                 leak_cache.clear()
             leak_cache[profile.id] = (profile.updated_at, report)
+        return report
+
+    analytics_cache: dict[tuple, tuple[float, dict[str, Any]]] = {}
+
+    @app.get("/api/profile/analytics")
+    def analytics(
+        difficulty: Literal[DIFFICULTIES] | None = None,  # type: ignore[valid-type]
+        last: int | None = Query(None, ge=1, le=ANALYTICS_WINDOW),
+        authorization: str | None = Header(None),
+    ) -> dict:
+        """Performance analytics over saved hands: bankroll, win rate with intervals,
+        starting hands, positions, opponents, all-in luck and earlier-vs-recent trends
+        (see ``pokerlab.analytics``)."""
+        db, profile = _authed(authorization)
+        key = (profile.id, difficulty, last)
+        with leak_lock:
+            hit = analytics_cache.get(key)
+        if hit is not None and hit[0] == profile.updated_at:
+            return hit[1]
+        summaries = _summaries(db, profile, ANALYTICS_WINDOW)
+        report = analyze(summaries, difficulty=difficulty, last=last)
+        total = db.counts(profile)["hands"]
+        report["window"] = ANALYTICS_WINDOW
+        report["truncated"] = total > len(summaries)
+        with leak_lock:
+            if len(analytics_cache) > 512:
+                analytics_cache.clear()
+            analytics_cache[key] = (profile.updated_at, report)
         return report
 
     @app.get("/api/profile/hands/{hand_id}")

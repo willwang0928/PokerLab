@@ -388,7 +388,7 @@ class RunConfig:
     coach_iterations: int | None = None  # None = the production setting
     seed: int = 20261112
     # Part of the cache key: sessions graded by a different coach are not reused.
-    extra: dict = field(default_factory=lambda: {"coach": "0.4.7-r2"})
+    extra: dict = field(default_factory=lambda: {"coach": "0.4.7-r2", "oracle": "competent"})
 
 
 # The discovery run (graded by the v0.4.4 coach, before the fixes it led to) is kept in

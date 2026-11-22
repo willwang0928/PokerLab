@@ -10,6 +10,7 @@ import pytest
 
 from pokerlab.coach import leaks as L
 from pokerlab.coach import training
+from pokerlab.history import SUMMARY_VERSION
 
 T0 = 1.8e12
 
@@ -512,7 +513,7 @@ def test_summaries_from_v0_4_3_are_rebuilt_once_with_robustness(db_path):
     p = store.profile(key)
     assert store.add_hands(p, [(rec, old)]) == 1
     listed = c.get("/api/profile/hands", headers=h).json()["hands"][0]
-    assert listed["sv"] == 2 and all("robust" in d for d in listed["decisions"])
+    assert listed["sv"] == SUMMARY_VERSION and all("robust" in d for d in listed["decisions"])
     stored = store.hand_summaries(p, 5)[0]
     assert stored == summarize(rec)  # saved, so it is rebuilt only once
     assert store.hand(p, rec["id"]) == rec  # the record itself is untouched

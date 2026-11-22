@@ -18,6 +18,7 @@ from pokerlab.ai.base import Observation
 from pokerlab.ai.player_model import BASELINES, MIN_OPPORTUNITIES, PRIOR_STRENGTH
 from pokerlab.cards import parse_cards
 from pokerlab.coach.analysis import (
+    FOLLOW_THROUGH,
     PRINCIPLES,
     REALIZATION_HIGH,
     REALIZATION_LOW,
@@ -29,6 +30,8 @@ from pokerlab.engine import Action, HoldemHand
 
 from .helpers import stacked_deck
 from .test_coach import RIVER_LINE, analysed, spot
+
+RIVER = RIVER_LINE
 
 FLOP = [("raise", 25), ("call", None), ("check", None), ("bet", 30)]
 TURN = [*FLOP, ("call", None), ("check", None), ("bet", 60)]
@@ -61,6 +64,8 @@ def test_folding_a_big_draw_that_clears_the_price_is_a_likely_mistake():
     assert les["principle"] == PRINCIPLES["fold_with_odds"]
     assert {"text": "Price: you needed 27% equity (30 to win 110).", "kind": "exact"} in les["math"]
     assert any(s["kind"] == "assumption" and "45%" in s["text"] for s in les["math"])
+    # v0.4.8: the verdict assumes the later streets are played well, and says so.
+    assert FOLLOW_THROUGH["folded_with_odds"] in a.explanation
 
 
 def test_calling_with_almost_no_equity_is_a_likely_mistake():
@@ -96,6 +101,20 @@ def test_an_unprofitable_call_is_judged_against_folding_not_a_raise():
     assert a.grade in ("questionable", "mistake")
     assert a.tags == ["called_without_odds"]
     assert a.compared == "fold"  # what the calibration oracle tests against
+    assert FOLLOW_THROUGH["called_without_odds"] in a.explanation
+
+
+def test_follow_through_notes_only_where_later_streets_remain():
+    """v0.4.8: the later-streets caveat appears on flagged flop and turn calls and folds,
+    never on the river, on unflagged decisions, or on an all-in call."""
+    river_call = analysed(spot("4c3d", "KhQs9c8d2s", RIVER), Action.call())
+    assert river_call.tags == ["called_without_odds"]
+    assert all(n not in river_call.explanation for n in FOLLOW_THROUGH.values())
+    good_call = analysed(spot("9h8h", "Th7c2h", FLOP), Action.call())
+    assert all(n not in good_call.explanation for n in FOLLOW_THROUGH.values())
+    all_in = analysed(_short_spot("4c3d", "KhQs9c", (200, 200), 175), Action.call())
+    assert all_in.betting_closed and all_in.tags == ["called_without_odds"]
+    assert all(n not in all_in.explanation for n in FOLLOW_THROUGH.values())
 
 
 # ----------------------------------------------------------------- close decisions

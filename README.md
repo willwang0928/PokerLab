@@ -243,6 +243,26 @@ they happened. Details and numbers: [`docs/calibration.md`](docs/calibration.md)
 - **Storage guards** (shipped after v0.4.6): calibration runs check free disk space before and during a run, refuse to overlap, clean up interrupted files, and `python -m pokerlab.calibration.housekeeping [--clean]` lists or removes stale caches.
 - **Data.** No schema change. Decision analyses gain an optional `compared` field.
 
+**v0.4.8 — Performance analytics**
+
+A **Stats** tab built from the saved hand histories, with every number's uncertainty shown
+and nothing called winning or losing that variance could explain. Methods:
+`backend/pokerlab/analytics.py`.
+- **Win rate with an honest interval.** bb/100 with a 95% Student-t interval. With few hands the per-hand variance blends a prior (10 bb, worth 50 hands) with the sample, because early samples miss the big pots and look far too certain; once there are 10 sessions a session-clustered standard error is also computed and the larger one is used. Below 30 hands there is no interval or verdict. The verdict is *winning* or *losing* only when the interval excludes zero, otherwise "not yet clear", with how many more hands would be needed to show the current rate and how many pin it down to ±10 bb/100.
+- **Results over time.** Cumulative result in bb, the all-in adjusted line, and the range a break-even player stays inside 95% of the time (±1.96·σ·√n). Hover for any hand; click to open it in History. Long histories are thinned for drawing but keep every peak and trough; a table view lists recent hands.
+- **Luck versus skill.** *All-in adjusted* results replace the outcome of each hand that was all-in before the river with its equity share of the pot at that moment, and the total all-in luck is tested against its own standard deviation. *Earlier versus recent* compares the two halves with Welch intervals for results, adjusted results and the coach's estimate of what mistakes cost, which is far less noisy than results: when it falls significantly that is reported as genuine improvement even while results are still within variance.
+- **Starting hands.** All 169 classes in a 13×13 grid (win rate, raw result, times dealt, VPIP). Win rates are shrunk toward your average (empirical Bayes: a class carries half its own weight only after roughly 100–250 hands of it, depending on how much your results swing) and coloured against your average, so a hand dealt three times cannot look like your best or worst; the raw figures are shown beside them.
+- **Positions and opponents.** Win rate, interval, VPIP, PFR, went-to-showdown and won-at-showdown on the button and in the big blind, and per opponent level (with whether it was adaptive). Filters: opponent level and the last 100 / 500 / 1,000 hands.
+- **Coaching: what a verdict assumes about later streets.** The calibration oracle now also plays every flagged decision on with competent play afterwards (§8 of [`docs/calibration.md`](docs/calibration.md)). With competent play, calls without the odds cost what the coach says (−6.9 ± 0.9 bb vs the coach's −6.2); players who keep calling lose 1.6–1.8× that. The random player's "too tight" preflop folds, open since v0.4.7, are no longer distinguishable from zero (−0.9 ± 1.6 bb), so that category was an artefact of the old oracle. Explanations of flagged calls and folds on the flop and turn now say what they assume about the later streets. No grade changed.
+- **Data.** Hand summaries move to format 3 (preflop flags, opponent adaptation, effective stack, all-in equity and adjusted result); older summaries are rebuilt from their stored record the first time they are read. New endpoint `GET /api/profile/analytics`.
+
+**Limitations of the statistics**
+- **Heads-up results are very noisy.** A hand's standard deviation is roughly 8–12 bb, so after 1,000 hands a 95% interval is still about ±60 bb/100 wide; most players will see "not yet clear" for a long time, which is correct.
+- **Hands are not independent.** Hands in one session share stack depths and an adapting opponent. The clustered standard error accounts for that only once there are 10 sessions; before that the interval may be somewhat too narrow.
+- **All-in adjustment covers only all-ins before the river.** Other luck (who hits the flop, coolers that are not all-in) stays in the adjusted line. Preflop equities are Monte Carlo (5,000 trials, about ±1.4 percentage points).
+- **Earlier versus recent is one split.** It compares halves rather than modelling a trend, and filters change which hands are halved. Mistake cost measures agreement with PokerLab's coach, not with optimal play.
+- **Only the most recent 20,000 saved hands are read**, and the first Stats load after upgrading rebuilds the stored summaries once (about 30 ms per preflop all-in, well under 1 ms for other hands).
+
 ## Quick start
 
 Requirements: **Python 3.11+** and **Node.js 20.19+** (CI uses Node 24).
@@ -366,6 +386,7 @@ frontend/src/
 | `POST` | `/api/profile/hands` | `{"hands": [...]}` (≤ 200) → hand records validated and replayed one by one; added, accepted and per-record rejection reasons |
 | `GET` | `/api/profile/hands` | `?limit` → summaries of saved hands, newest first, with the total |
 | `GET` | `/api/profile/leaks` | The leak report: leaks with evidence, conditions, trend, practice follow-up and recommendation; strengths; early signals; what lacks data |
+| `GET` | `/api/profile/analytics` | `?difficulty?&last?` → performance analytics over saved hands: win rate with intervals, bankroll, all-in luck, earlier versus recent, positions, opponents and the 169 starting hands |
 | `GET` | `/api/profile/hands/{id}` | One saved hand and its replay (the table after every event) |
 | `GET` | `/api/sessions/{id}/hands/{n}/record` | The hand-history record of a recently finished hand (public information only) |
 | `POST` | `/api/equity` | `{"players": ["AhKh", "QQ+,AKs"], "board"?, "dead"?, "iterations"?, "seed"?}` → equity, win, tie and standard error per player |
@@ -378,8 +399,8 @@ Illegal actions return `400` with an explanation. Out-of-turn or out-of-state re
 
 - **v0.2 — Visual polish:** v0.2.1 visual redesign, v0.2.2 animations, v0.2.3 sound and themes, and v0.2.4 stability and accessibility (done).
 - **v0.3 — Smarter AI and training:** v0.3.1 equity engine, v0.3.2 equity-driven opponent with equity review, v0.3.3 difficulty levels and live all-in equity, v0.3.4 adaptive opponent, v0.3.5 coaching and decision feedback, v0.3.6 interactive training mode, v0.3.7 personalised learning and skill assessment (done).
-- **v0.4 — Platform:** v0.4.0 reliable progress persistence, v0.4.1 strategy validation and coaching accuracy, v0.4.2 coaching quality and explainability, v0.4.3 hand history, replay and decision analysis, v0.4.4 personalised leak detection and adaptive training, v0.4.5 coaching calibration and statistical reliability, v0.4.6 gameplay polish, UX and reliability, v0.4.7 poker intelligence and decision quality (done).
-- **v0.4 (continued) — Analytics:** persistent hand history, replays, performance stats, AI-vs-AI simulations.
+- **v0.4 — Platform:** v0.4.0 reliable progress persistence, v0.4.1 strategy validation and coaching accuracy, v0.4.2 coaching quality and explainability, v0.4.3 hand history, replay and decision analysis, v0.4.4 personalised leak detection and adaptive training, v0.4.5 coaching calibration and statistical reliability, v0.4.6 gameplay polish, UX and reliability, v0.4.7 poker intelligence and decision quality, v0.4.8 performance analytics (done).
+- **v0.4 (continued) — Analytics:** AI-vs-AI simulations.
 - **Later:** multiplayer, tournaments, Omaha / Stud / Draw, CFR agents, reinforcement learning, strategy dashboards.
 
 ## Security and privacy

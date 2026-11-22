@@ -21,6 +21,13 @@ def _bb(m: float | None, se: float | None) -> str:
     return f"{m:+.2f} ± {1.96 * (se or 0):.2f}"
 
 
+def _comp(v: dict[str, Any]) -> list[str]:
+    """Oracle Δ and verdict with competent play after the decision (v0.4.8 caches)."""
+    if not v.get("competent_n"):
+        return ["–", "–"]
+    return [_bb(v["competent_mean_bb"], v["competent_se_bb"]), v["competent_verdict"]]
+
+
 def _table(header: list[str], rows: list[list[str]]) -> list[str]:
     out = ["| " + " | ".join(header) + " |", "|" + "|".join("---" for _ in header) + "|"]
     out += ["| " + " | ".join(r) + " |" for r in rows]
@@ -182,6 +189,12 @@ def _oracle(o: dict[str, Any], level: str = "##") -> list[str]:
         "policies, ± 95% interval. Negative = the chosen action lost chips. *costly*/"
         "*gains* need the interval to exclude 0 and at least 15 evaluations.",
         "",
+        "Two continuations: *own play* lets the player keep playing their own policy after "
+        "the decision (what the decision is worth to this player); *competent play* hands "
+        "the player's later decisions to the unmodified Intermediate logic (what the "
+        "decision is worth when played on well, which is what the coach's verdicts "
+        "assume). Both use the same run-outs.",
+        "",
     ]
     L += ["### Injected deviations versus the baseline action", ""]
     rows = [
@@ -205,25 +218,35 @@ def _oracle(o: dict[str, Any], level: str = "##") -> list[str]:
             _p(v["share_negative"]),
             "–" if v["coach_mean_bb"] is None else f"{v['coach_mean_bb']:+.2f}",
             v["verdict"],
+            *_comp(v),
         ]
         for k, v in sorted(o["flag"].items())
     ]
-    L += _table(["tag", "n", "oracle Δ bb", "share Δ<0", "coach Δ bb", "verdict"], rows)
+    comp_head = ["Δ bb, competent play", "verdict"]
+    L += _table(
+        ["tag", "n", "Δ bb, own play", "share Δ<0", "coach Δ bb", "verdict", *comp_head], rows
+    )
     rows = [
-        [k.replace("|", " / robust="), str(v["n"]), _bb(v["mean_bb"], v["se_bb"]), v["verdict"]]
+        [
+            k.replace("|", " / robust="),
+            str(v["n"]),
+            _bb(v["mean_bb"], v["se_bb"]),
+            v["verdict"],
+            *_comp(v),
+        ]
         for k, v in sorted(o["flag_by_confidence"].items())
     ]
     L += ["### Coach flags by confidence", ""]
-    L += _table(["confidence / robust", "n", "oracle Δ bb", "verdict"], rows)
+    L += _table(["confidence / robust", "n", "Δ bb, own play", "verdict", *comp_head], rows)
     rows = [
-        [k.replace("|", " / "), str(v["n"]), _bb(v["mean_bb"], v["se_bb"]), v["verdict"]]
+        [k.replace("|", " / "), str(v["n"]), _bb(v["mean_bb"], v["se_bb"]), v["verdict"], *_comp(v)]
         for k, v in sorted(o["flag_by_street"].items())
         if v["n"] >= 10
     ]
     L += ["### Coach flags by street and tag (n ≥ 10)", ""]
-    L += _table(["street / tag", "n", "oracle Δ bb", "verdict"], rows)
+    L += _table(["street / tag", "n", "Δ bb, own play", "verdict", *comp_head], rows)
     rows = [
-        [k, str(v["n"]), _bb(v["mean_bb"], v["se_bb"]), v["verdict"]]
+        [k, str(v["n"]), _bb(v["mean_bb"], v["se_bb"]), v["verdict"], *_comp(v)]
         for k, v in sorted(o["control"].items())
     ]
     L += [
@@ -232,7 +255,7 @@ def _oracle(o: dict[str, Any], level: str = "##") -> list[str]:
         "Should not be clearly negative.",
         "",
     ]
-    L += _table(["confidence", "n", "oracle Δ bb", "verdict"], rows)
+    L += _table(["confidence", "n", "Δ bb, own play", "verdict", *comp_head], rows)
     return L
 
 

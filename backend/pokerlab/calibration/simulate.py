@@ -27,7 +27,7 @@ from ..coach.review import HandCoach
 from ..coach.training import _parse_choice
 from ..engine import Action, HoldemHand
 from ..history import build_record, summarize
-from .oracle import compare, snapshot
+from .oracle import compare, competent, snapshot
 from .policies import POLICY_BY_NAME, PolicySpec, RunConfig, SimPlayer
 
 HERO, VILLAIN = 0, 1
@@ -158,9 +158,18 @@ def run_session(policy: str, session: int, cfg: RunConfig) -> dict[str, Any]:
                 alt = _parse_choice(k) if k else None
             if alt is None or cfg.rollouts <= 0:
                 continue
-            res = compare(snap, lab.action, alt, cfg.rollouts, oracle_rng.randrange(2**31))
+            seed = oracle_rng.randrange(2**31)
+            res = compare(snap, lab.action, alt, cfg.rollouts, seed)
             if res is None:
                 continue
+            # The same comparison with competent play after the decision (same seed, so
+            # the two estimates share their run-outs). Not for injected deviations: those
+            # measure what the tendency costs the player who has it.
+            comp = (
+                compare(snap, lab.action, alt, cfg.rollouts, seed, competent(snap))
+                if kind != "deviation"
+                else None
+            )
             oracle.append(
                 {
                     "kind": kind,
@@ -180,6 +189,8 @@ def run_session(policy: str, session: int, cfg: RunConfig) -> dict[str, Any]:
                     "delta": res.delta,
                     "se": res.se,
                     "n": res.n,
+                    "delta_competent": comp.delta if comp else None,
+                    "se_competent": comp.se if comp else None,
                     "big_blind": bb,
                     "sampled_from": len(refs),
                 }

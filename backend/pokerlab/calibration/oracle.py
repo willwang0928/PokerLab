@@ -15,6 +15,14 @@ one-street cut-off, and it sees the opponent's real cards. It is *not* an optima
 benchmark either: it measures value against these particular simulated policies, and
 the player keeps playing their own (possibly flawed) policy afterwards.
 
+**Two continuations.** By default the player keeps playing their own policy after the
+decision, which measures what the decision is worth *to this player*. A decision can be
+right in principle and still lose for a player who misplays the later streets (a call
+by a player who then folds every turn). ``continuation`` replaces the player's agent
+for the rest of the hand, after the decision, with another one; the calibration uses
+the unmodified Intermediate logic (:func:`competent`), which measures what the decision
+is worth when the player plays on competently. The coach's verdicts assume the latter.
+
 A single decision's estimate is noisy (the opponent's cards are fixed but the run-out
 is not). Averaged over many decisions of one kind, the opponent's hands are drawn from
 their true distribution at that point, so the average is an unbiased estimate of the
@@ -57,10 +65,29 @@ def _reseed(agent, seed: int) -> None:
         agent.rng = random.Random(seed)
 
 
-def _play_out(snap: Snapshot, action: Action, seed: int) -> int | None:
-    hand, agents = copy.deepcopy((snap.hand, snap.agents))
+def competent(snap: Snapshot):
+    """The unmodified Intermediate logic, to play the player's later decisions.
+
+    A simulated player's own baseline agent is reused when it is the Intermediate logic
+    (it has watched the same hands, so it keeps its opponent reads); otherwise a fresh
+    Intermediate agent is used.
+    """
+    from ..ai.difficulty import INTERMEDIATE
+    from ..ai.equity_agent import EquityAgent
+
+    base = getattr(snap.agents[snap.hero], "base", None)
+    if isinstance(base, EquityAgent) and base.profile == INTERMEDIATE:
+        return base
+    return EquityAgent(random.Random(0), profile=INTERMEDIATE)
+
+
+def _play_out(snap: Snapshot, action: Action, seed: int, continuation=None) -> int | None:
+    hand, agents, cont = copy.deepcopy((snap.hand, snap.agents, continuation))
+    agents = list(agents)
     r = random.Random(seed)
     r.shuffle(hand._deck._cards)  # a fresh run-out; the hole cards are already dealt
+    if cont is not None:
+        agents[snap.hero] = cont
     for i, a in enumerate(agents):
         _reseed(a, seed * 7 + i)
     try:
@@ -84,13 +111,24 @@ class OracleResult:
     n: int
 
 
-def compare(snap: Snapshot, chosen: Action, alternative: Action, rollouts: int, seed: int):
-    """Paired rollouts of ``chosen`` versus ``alternative`` (chips, from the decision)."""
+def compare(
+    snap: Snapshot,
+    chosen: Action,
+    alternative: Action,
+    rollouts: int,
+    seed: int,
+    continuation=None,
+):
+    """Paired rollouts of ``chosen`` versus ``alternative`` (chips, from the decision).
+
+    ``continuation``: an agent that plays the player's decisions after this one (default:
+    the player's own agent).
+    """
     diffs: list[float] = []
     for k in range(rollouts):
         s = seed * 1009 + k
-        a = _play_out(snap, chosen, s)
-        b = _play_out(snap, alternative, s)
+        a = _play_out(snap, chosen, s, continuation)
+        b = _play_out(snap, alternative, s, continuation)
         if a is None or b is None:
             return None
         diffs.append(a - b)

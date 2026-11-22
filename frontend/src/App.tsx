@@ -14,6 +14,7 @@ const HistoryView = lazy(() => import("./components/HistoryView").then((m) => ({
 const ProgressDashboard = lazy(() =>
   import("./components/ProgressDashboard").then((m) => ({ default: m.ProgressDashboard })),
 );
+const AnalyticsView = lazy(() => import("./components/AnalyticsView").then((m) => ({ default: m.AnalyticsView })));
 import { MuteButton, SettingsMenu } from "./components/SettingsMenu";
 import { DIFFICULTY_LABEL, StartScreen } from "./components/StartScreen";
 import { SuitIcon } from "./components/SuitIcon";
@@ -30,8 +31,14 @@ import { useLeakReport } from "./hooks/useLeakReport";
 import { recordAnswer, recordHandReview } from "./lib/skills";
 import type { DecisionReview, GameConfig, GameState, HandReview, TrainingScenario } from "./types";
 
-type Mode = "play" | "train" | "history" | "progress";
-const MODE_LABEL: Record<Mode, string> = { play: "Play", train: "Train", history: "History", progress: "Progress" };
+type Mode = "play" | "train" | "history" | "progress" | "stats";
+const MODE_LABEL: Record<Mode, string> = {
+  play: "Play",
+  train: "Train",
+  history: "History",
+  progress: "Progress",
+  stats: "Stats",
+};
 const COACH_DETAIL_KEY = "pokerlab.coach.detailed";
 
 const DEFAULT_CONFIG: GameConfig = {
@@ -233,7 +240,7 @@ export default function App() {
         </div>
         <div className="flex min-w-0 flex-wrap items-center justify-end gap-2 max-sm:contents sm:gap-2.5">
           <div className="surface flex rounded-xl p-0.5 max-sm:ml-auto" role="tablist" aria-label="Mode">
-            {(["play", "train", "history", "progress"] as const).map((m) => (
+            {(["play", "train", "history", "progress", "stats"] as const).map((m) => (
               <button
                 key={m}
                 type="button"
@@ -365,6 +372,18 @@ export default function App() {
             onRetryLeaks={() => void leakReport.reload()}
             onShowHand={showHand}
             focusLeak={focusLeak}
+          />
+          </Suspense>
+        </main>
+      )}
+      {mode === "stats" && (
+        <main className="mx-auto flex w-full max-w-[1440px] flex-1 flex-col px-3 pb-5 sm:px-6">
+          <Suspense fallback={<div className="surface rounded-2xl p-6 text-slate-400">Loading…</div>}>
+          <AnalyticsView
+            token={store.active.token}
+            handsVersion={store.handsVersion}
+            pendingHands={store.pendingHands}
+            onShowHand={(id) => showHand(id, null)}
           />
           </Suspense>
         </main>

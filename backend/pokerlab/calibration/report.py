@@ -100,11 +100,22 @@ def oracle_tables(sessions: dict[str, list[dict]]) -> dict[str, Any]:
             for r in rows
             if r[2].get("coach_delta") is not None
         ]
+        # The same comparisons with competent play after the decision (flags and
+        # controls since v0.4.8; absent in older caches).
+        comp_rows = [r for r in rows if r[2].get("delta_competent") is not None]
+        comp = wmean(
+            [r[2]["delta_competent"] / r[2]["big_blind"] for r in comp_rows],
+            [r[1] for r in comp_rows],
+        )
         entry = {
             "n": len(rows),
             "mean_bb": est[0] if est else None,
             "se_bb": est[1] if est else None,
             "verdict": verdict(est, len(rows)),
+            "competent_n": len(comp_rows),
+            "competent_mean_bb": comp[0] if comp else None,
+            "competent_se_bb": comp[1] if comp else None,
+            "competent_verdict": verdict(comp, len(comp_rows)),
             "share_negative": sum(1 for d in ds if d < 0) / len(ds),
             "coach_mean_bb": sum(coach) / len(coach) if coach else None,
         }

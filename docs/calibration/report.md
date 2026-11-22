@@ -51,6 +51,8 @@ The same simulated players and seeds, graded by the coach as it was in v0.4.4. T
 
 Mean of (final stack after the chosen action − after the alternative) in big blinds per decision, from paired multi-street rollouts with the true cards and policies, ± 95% interval. Negative = the chosen action lost chips. *costly*/*gains* need the interval to exclude 0 and at least 15 evaluations.
 
+Two continuations: *own play* lets the player keep playing their own policy after the decision (what the decision is worth to this player); *competent play* hands the player's later decisions to the unmodified Intermediate logic (what the decision is worth when played on well, which is what the coach's verdicts assume). Both use the same run-outs.
+
 ### Injected deviations versus the baseline action
 
 | policy / deviation | n | Δ bb | verdict |
@@ -72,56 +74,56 @@ Mean of (final stack after the chosen action − after the alternative) in big b
 
 If the coach's flags are right, the chosen action should lose chips against the alternative it recommended (Δ < 0). `coach Δ` is the coach's own one-street estimate for the same pairs.
 
-| tag | n | oracle Δ bb | share Δ<0 | coach Δ bb | verdict |
-|---|---|---|---|---|---|
-| (no tag) | 428 | +5.26 ± 1.44 | 33% | -3.24 | gains |
-| bet_sizing | 8 | -3.62 ± 7.34 | 50% | -5.51 | insufficient |
-| called_without_odds | 456 | -10.71 ± 1.24 | 92% | -6.81 | costly |
-| folded_with_odds | 250 | +5.87 ± 2.76 | 37% | -5.16 | gains |
-| missed_value | 543 | -0.20 ± 1.17 | 49% | -3.03 | unclear |
-| overaggressive | 90 | +0.95 ± 3.52 | 29% | -2.52 | unclear |
-| preflop_loose | 32 | -7.40 ± 5.65 | 72% | -0.57 | costly |
-| preflop_tight | 54 | +2.18 ± 2.23 | 48% | -1.04 | unclear |
+| tag | n | Δ bb, own play | share Δ<0 | coach Δ bb | verdict | Δ bb, competent play | verdict |
+|---|---|---|---|---|---|---|---|
+| (no tag) | 428 | +5.26 ± 1.44 | 33% | -3.24 | gains | – | – |
+| bet_sizing | 8 | -3.62 ± 7.34 | 50% | -5.51 | insufficient | – | – |
+| called_without_odds | 456 | -10.71 ± 1.24 | 92% | -6.81 | costly | – | – |
+| folded_with_odds | 250 | +5.87 ± 2.76 | 37% | -5.16 | gains | – | – |
+| missed_value | 543 | -0.20 ± 1.17 | 49% | -3.03 | unclear | – | – |
+| overaggressive | 90 | +0.95 ± 3.52 | 29% | -2.52 | unclear | – | – |
+| preflop_loose | 32 | -7.40 ± 5.65 | 72% | -0.57 | costly | – | – |
+| preflop_tight | 54 | +2.18 ± 2.23 | 48% | -1.04 | unclear | – | – |
 
 ### Coach flags by confidence
 
-| confidence / robust | n | oracle Δ bb | verdict |
-|---|---|---|---|
-| high / robust=True | 172 | -10.34 ± 2.04 | costly |
-| low / robust=False | 175 | -5.70 ± 2.73 | costly |
-| low / robust=None | 10 | -10.45 ± 14.40 | insufficient |
-| low / robust=True | 1192 | +2.94 ± 0.79 | gains |
-| medium / robust=True | 312 | -6.78 ± 2.25 | costly |
+| confidence / robust | n | Δ bb, own play | verdict | Δ bb, competent play | verdict |
+|---|---|---|---|---|---|
+| high / robust=True | 172 | -10.34 ± 2.04 | costly | – | – |
+| low / robust=False | 175 | -5.70 ± 2.73 | costly | – | – |
+| low / robust=None | 10 | -10.45 ± 14.40 | insufficient | – | – |
+| low / robust=True | 1192 | +2.94 ± 0.79 | gains | – | – |
+| medium / robust=True | 312 | -6.78 ± 2.25 | costly | – | – |
 
 ### Coach flags by street and tag (n ≥ 10)
 
-| street / tag | n | oracle Δ bb | verdict |
-|---|---|---|---|
-| flop / (no tag) | 211 | +3.38 ± 1.64 | gains |
-| flop / called_without_odds | 87 | -11.89 ± 2.91 | costly |
-| flop / folded_with_odds | 123 | +4.92 ± 3.32 | gains |
-| flop / missed_value | 308 | -0.22 ± 0.91 | unclear |
-| preflop / preflop_loose | 32 | -7.40 ± 5.65 | costly |
-| preflop / preflop_tight | 54 | +2.18 ± 2.23 | unclear |
-| river / called_without_odds | 265 | -9.83 ± 1.68 | costly |
-| river / folded_with_odds | 16 | +1.81 ± 10.88 | unclear |
-| river / missed_value | 25 | -6.90 ± 16.36 | unclear |
-| river / overaggressive | 76 | +1.28 ± 4.16 | unclear |
-| turn / (no tag) | 213 | +7.03 ± 2.35 | gains |
-| turn / called_without_odds | 104 | -11.93 ± 2.32 | costly |
-| turn / folded_with_odds | 111 | +7.66 ± 4.83 | gains |
-| turn / missed_value | 210 | +0.62 ± 1.87 | unclear |
-| turn / overaggressive | 11 | -2.09 ± 4.57 | insufficient |
+| street / tag | n | Δ bb, own play | verdict | Δ bb, competent play | verdict |
+|---|---|---|---|---|---|
+| flop / (no tag) | 211 | +3.38 ± 1.64 | gains | – | – |
+| flop / called_without_odds | 87 | -11.89 ± 2.91 | costly | – | – |
+| flop / folded_with_odds | 123 | +4.92 ± 3.32 | gains | – | – |
+| flop / missed_value | 308 | -0.22 ± 0.91 | unclear | – | – |
+| preflop / preflop_loose | 32 | -7.40 ± 5.65 | costly | – | – |
+| preflop / preflop_tight | 54 | +2.18 ± 2.23 | unclear | – | – |
+| river / called_without_odds | 265 | -9.83 ± 1.68 | costly | – | – |
+| river / folded_with_odds | 16 | +1.81 ± 10.88 | unclear | – | – |
+| river / missed_value | 25 | -6.90 ± 16.36 | unclear | – | – |
+| river / overaggressive | 76 | +1.28 ± 4.16 | unclear | – | – |
+| turn / (no tag) | 213 | +7.03 ± 2.35 | gains | – | – |
+| turn / called_without_odds | 104 | -11.93 ± 2.32 | costly | – | – |
+| turn / folded_with_odds | 111 | +7.66 ± 4.83 | gains | – | – |
+| turn / missed_value | 210 | +0.62 ± 1.87 | unclear | – | – |
+| turn / overaggressive | 11 | -2.09 ± 4.57 | insufficient | – | – |
 
 ### Decisions graded good: chosen versus the best other option
 
 Should not be clearly negative.
 
-| confidence | n | oracle Δ bb | verdict |
-|---|---|---|---|
-| high | 253 | +0.53 ± 1.90 | unclear |
-| low | 807 | +0.48 ± 0.46 | gains |
-| medium | 620 | +0.45 ± 0.56 | unclear |
+| confidence | n | Δ bb, own play | verdict | Δ bb, competent play | verdict |
+|---|---|---|---|---|---|
+| high | 253 | +0.53 ± 1.90 | unclear | – | – |
+| low | 807 | +0.48 ± 0.46 | gains | – | – |
+| medium | 620 | +0.45 ± 0.56 | unclear | – | – |
 
 ### Detection against injected tendencies, v0.4.4 coach grades
 
@@ -163,6 +165,8 @@ Hands holding more than one opportunity of the same weakness (baseline): called_
 
 Mean of (final stack after the chosen action − after the alternative) in big blinds per decision, from paired multi-street rollouts with the true cards and policies, ± 95% interval. Negative = the chosen action lost chips. *costly*/*gains* need the interval to exclude 0 and at least 15 evaluations.
 
+Two continuations: *own play* lets the player keep playing their own policy after the decision (what the decision is worth to this player); *competent play* hands the player's later decisions to the unmodified Intermediate logic (what the decision is worth when played on well, which is what the coach's verdicts assume). Both use the same run-outs.
+
 ### Injected deviations versus the baseline action
 
 | policy / deviation | n | Δ bb | verdict |
@@ -184,52 +188,52 @@ Mean of (final stack after the chosen action − after the alternative) in big b
 
 If the coach's flags are right, the chosen action should lose chips against the alternative it recommended (Δ < 0). `coach Δ` is the coach's own one-street estimate for the same pairs.
 
-| tag | n | oracle Δ bb | share Δ<0 | coach Δ bb | verdict |
-|---|---|---|---|---|---|
-| (no tag) | 9 | +0.49 ± 3.74 | 56% | -1.43 | insufficient |
-| bet_sizing | 9 | -3.52 ± 6.82 | 56% | -5.09 | insufficient |
-| called_without_odds | 579 | -11.11 ± 1.19 | 92% | -6.21 | costly |
-| folded_with_odds | 75 | +0.54 ± 4.69 | 51% | -6.28 | unclear |
-| missed_value | 351 | -1.42 ± 0.82 | 52% | -2.53 | costly |
-| overaggressive | 6 | -9.91 ± 27.38 | 50% | -4.28 | insufficient |
-| preflop_loose | 37 | -5.62 ± 5.02 | 73% | -0.57 | costly |
-| preflop_tight | 44 | +3.99 ± 2.36 | 34% | -1.22 | gains |
+| tag | n | Δ bb, own play | share Δ<0 | coach Δ bb | verdict | Δ bb, competent play | verdict |
+|---|---|---|---|---|---|---|---|
+| (no tag) | 9 | +0.49 ± 3.74 | 56% | -1.43 | insufficient | +0.22 ± 2.76 | insufficient |
+| bet_sizing | 9 | -3.52 ± 6.82 | 56% | -5.09 | insufficient | -6.65 ± 7.70 | insufficient |
+| called_without_odds | 579 | -11.11 ± 1.19 | 92% | -6.21 | costly | -6.90 ± 0.91 | costly |
+| folded_with_odds | 75 | +0.54 ± 4.69 | 51% | -6.28 | unclear | -2.29 ± 5.10 | unclear |
+| missed_value | 351 | -1.42 ± 0.82 | 52% | -2.53 | costly | -1.36 ± 0.70 | costly |
+| overaggressive | 6 | -9.91 ± 27.38 | 50% | -4.28 | insufficient | -8.91 ± 27.15 | insufficient |
+| preflop_loose | 37 | -5.62 ± 5.02 | 73% | -0.57 | costly | -2.20 ± 4.57 | unclear |
+| preflop_tight | 44 | +3.99 ± 2.36 | 34% | -1.22 | gains | -0.93 ± 1.59 | unclear |
 
 ### Coach flags by confidence
 
-| confidence / robust | n | oracle Δ bb | verdict |
-|---|---|---|---|
-| high / robust=True | 191 | -9.99 ± 1.83 | costly |
-| low / robust=False | 204 | -8.73 ± 1.94 | costly |
-| low / robust=None | 12 | -10.06 ± 13.07 | insufficient |
-| low / robust=True | 438 | -0.55 ± 0.75 | unclear |
-| medium / robust=True | 265 | -10.72 ± 2.35 | costly |
+| confidence / robust | n | Δ bb, own play | verdict | Δ bb, competent play | verdict |
+|---|---|---|---|---|---|
+| high / robust=True | 191 | -9.99 ± 1.83 | costly | -9.99 ± 1.83 | costly |
+| low / robust=False | 204 | -8.73 ± 1.94 | costly | -5.78 ± 1.78 | costly |
+| low / robust=None | 12 | -10.06 ± 13.07 | insufficient | -5.87 ± 12.28 | insufficient |
+| low / robust=True | 438 | -0.55 ± 0.75 | unclear | -1.25 ± 0.61 | costly |
+| medium / robust=True | 265 | -10.72 ± 2.35 | costly | -4.41 ± 1.70 | costly |
 
 ### Coach flags by street and tag (n ≥ 10)
 
-| street / tag | n | oracle Δ bb | verdict |
-|---|---|---|---|
-| flop / called_without_odds | 124 | -12.84 ± 3.08 | costly |
-| flop / folded_with_odds | 38 | +4.88 ± 6.42 | unclear |
-| flop / missed_value | 196 | -1.13 ± 0.93 | costly |
-| preflop / preflop_loose | 37 | -5.62 ± 5.02 | costly |
-| preflop / preflop_tight | 44 | +3.99 ± 2.36 | gains |
-| river / called_without_odds | 282 | -9.54 ± 1.56 | costly |
-| river / folded_with_odds | 17 | +0.21 ± 10.68 | unclear |
-| river / missed_value | 19 | -0.98 ± 6.03 | unclear |
-| turn / called_without_odds | 173 | -12.37 ± 2.12 | costly |
-| turn / folded_with_odds | 20 | -7.75 ± 7.98 | unclear |
-| turn / missed_value | 136 | -1.89 ± 1.40 | costly |
+| street / tag | n | Δ bb, own play | verdict | Δ bb, competent play | verdict |
+|---|---|---|---|---|---|
+| flop / called_without_odds | 124 | -12.84 ± 3.08 | costly | -3.24 ± 0.67 | costly |
+| flop / folded_with_odds | 38 | +4.88 ± 6.42 | unclear | +0.51 ± 6.80 | unclear |
+| flop / missed_value | 196 | -1.13 ± 0.93 | costly | -1.25 ± 0.85 | costly |
+| preflop / preflop_loose | 37 | -5.62 ± 5.02 | costly | -2.20 ± 4.57 | unclear |
+| preflop / preflop_tight | 44 | +3.99 ± 2.36 | gains | -0.93 ± 1.59 | unclear |
+| river / called_without_odds | 282 | -9.54 ± 1.56 | costly | -9.54 ± 1.56 | costly |
+| river / folded_with_odds | 17 | +0.21 ± 10.68 | unclear | +0.21 ± 10.68 | unclear |
+| river / missed_value | 19 | -0.98 ± 6.03 | unclear | -0.49 ± 3.26 | unclear |
+| turn / called_without_odds | 173 | -12.37 ± 2.12 | costly | -5.32 ± 1.42 | costly |
+| turn / folded_with_odds | 20 | -7.75 ± 7.98 | unclear | -10.04 ± 10.65 | unclear |
+| turn / missed_value | 136 | -1.89 ± 1.40 | costly | -1.66 ± 1.23 | costly |
 
 ### Decisions graded good: chosen versus the best other option
 
 Should not be clearly negative.
 
-| confidence | n | oracle Δ bb | verdict |
-|---|---|---|---|
-| high | 278 | -0.27 ± 1.79 | unclear |
-| low | 713 | +0.43 ± 0.78 | unclear |
-| medium | 689 | +1.34 ± 0.72 | gains |
+| confidence | n | Δ bb, own play | verdict | Δ bb, competent play | verdict |
+|---|---|---|---|---|---|
+| high | 278 | -0.27 ± 1.79 | unclear | -0.08 ± 1.82 | unclear |
+| low | 713 | +0.43 ± 0.78 | unclear | +0.59 ± 0.69 | unclear |
+| medium | 689 | +1.34 ± 0.72 | gains | +1.14 ± 0.64 | gains |
 
 ## 4. Leak detection on simulated players
 

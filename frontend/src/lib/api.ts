@@ -7,6 +7,7 @@ import type {
   HandRecord,
   HandReview,
   HandSummary,
+  AnalyticsReport,
   LeakReport,
   Focus,
   PlayResponse,
@@ -123,6 +124,14 @@ export const profileApi = {
     request<{ hands: HandSummary[]; total: number }>(`/api/profile/hands?limit=${limit}`, authed(token)),
   /** Recurring weaknesses with their evidence, strengths, trends and practice (v0.4.4). */
   leaks: (token: string) => request<LeakReport>("/api/profile/leaks", authed(token)),
+  /** Performance analytics over saved hands (v0.4.8). */
+  analytics: (token: string, filters: { difficulty?: string | null; last?: number | null } = {}) => {
+    const q = new URLSearchParams();
+    if (filters.difficulty) q.set("difficulty", filters.difficulty);
+    if (filters.last) q.set("last", String(filters.last));
+    const qs = q.toString();
+    return request<AnalyticsReport>(`/api/profile/analytics${qs ? `?${qs}` : ""}`, authed(token));
+  },
   hand: (token: string, id: string) =>
     request<{ record: HandRecord; frames: HandFrame[] }>(`/api/profile/hands/${encodeURIComponent(id)}`, authed(token)),
 };
